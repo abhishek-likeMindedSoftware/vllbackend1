@@ -1,0 +1,157 @@
+namespace LemonLaw.Core.Enums;
+
+public enum ApplicationType
+{
+    NEW_CAR,
+    USED_CAR,
+    LEASED
+}
+
+public enum ApplicationStatus
+{
+    SUBMITTED,
+    INCOMPLETE,
+    ACCEPTED,
+    DEALER_RESPONDED,
+    HEARING_SCHEDULED,
+    HEARING_COMPLETE,
+    DECISION_ISSUED,
+    WITHDRAWN,
+    CLOSED
+}
+
+public enum PhoneType { MOBILE, HOME, WORK }
+
+public enum PreferredContactMethod { EMAIL, PHONE }
+
+public enum WarrantyType
+{
+    MANUFACTURERS_WARRANTY,
+    IMPLIED_WARRANTY,
+    EXTENDED_WARRANTY
+}
+
+public enum DefectCategory
+{
+    SAFETY_DEFECT,
+    MAJOR_DEFECT,
+    MINOR_DEFECT,
+    BRAKES,
+    STEERING,
+    ENGINE,
+    ELECTRICAL,
+    TRANSMISSION,
+    OTHER
+}
+
+public enum ExpenseType
+{
+    RENTAL_CAR,
+    TOWING,
+    REPAIR_COST,
+    FINANCING_COST,
+    OTHER
+}
+
+public enum DesiredResolution { REFUND, REPLACEMENT, REIMBURSEMENT, ARBITRATION, UNSURE }
+
+public enum DocumentType
+{
+    PURCHASE_CONTRACT,
+    LEASE_AGREEMENT,
+    RMV1_REGISTRATION,
+    REPAIR_RECORDS,
+    WARRANTY_DOCUMENT,
+    MANUFACTURER_CORRESPONDENCE,
+    DEALER_CORRESPONDENCE,
+    EXPENSE_RECEIPT,
+    REPAIR_ORDER,
+    DEALER_STATEMENT,
+    PURCHASE_RECORD,
+    OTHER
+}
+
+public enum DocumentStatus { PENDING_REVIEW, ACCEPTED, REJECTED, REQUESTED }
+
+public enum VirusScanResult { PENDING, CLEAN, INFECTED }
+
+public enum UploadedByRole { CONSUMER, STAFF, DEALER }
+
+public enum TokenType { CONSUMER, DEALER }
+
+public enum EmailDeliveryStatus { PENDING, DELIVERED, OPENED, BOUNCED, FAILED }
+
+public enum CaseEventType
+{
+    STATUS_CHANGE,
+    DOCUMENT_UPLOADED,
+    DOCUMENT_ACCEPTED,
+    DOCUMENT_REJECTED,
+    DOCUMENT_REQUESTED,
+    DEALER_NOTIFIED,
+    DEALER_RESPONDED,
+    NOTE_ADDED,
+    ASSIGNMENT_CHANGED,
+    HEARING_SCHEDULED,
+    DECISION_ISSUED,
+    CONSUMER_ACCESSED_PORTAL
+}
+
+public enum ActorType { STAFF, CONSUMER, DEALER, SYSTEM }
+
+public enum HearingFormat { IN_PERSON, TELEPHONE, VIDEO }
+
+public enum HearingOutcome
+{
+    PENDING,
+    SETTLED,
+    DECISION_FOR_CONSUMER,
+    DECISION_FOR_DEALER,
+    NO_JURISDICTION,
+    WITHDRAWN
+}
+
+public enum DecisionType
+{
+    REFUND_ORDERED,
+    REPLACEMENT_ORDERED,
+    REIMBURSEMENT_ORDERED,
+    CLAIM_DENIED,
+    SETTLED_PRIOR,
+    WITHDRAWN
+}
+
+public enum OutreachType { INITIAL, FOLLOW_UP_1, FOLLOW_UP_2, FINAL_NOTICE }
+
+public enum OutreachStatus { PENDING, SENT, OPENED, RESPONDED, OVERDUE, CLOSED }
+
+public enum DealerPosition
+{
+    DISPUTES_CLAIM,
+    ACKNOWLEDGES_DEFECT,
+    OFFERS_SETTLEMENT,
+    RESOLVED_PRIOR,
+    VEHICLE_NOT_PURCHASED_HERE,
+    OTHER
+}
+
+public enum CorrespondenceDirection { OUTBOUND, INBOUND }
+
+public enum CorrespondenceRecipientType { CONSUMER, DEALER, MANUFACTURER, INTERNAL }
+
+public enum StaffRole { OCABR_ADMIN, CASE_MANAGER, REVIEWER, SUPERVISOR }
+
+public enum NotificationType
+{
+    SUBMISSION_CONFIRMATION,
+    EMAIL_VERIFICATION,
+    APPLICATION_INCOMPLETE,
+    DOCUMENT_REJECTED,
+    DOCUMENT_REQUESTED,
+    APPLICATION_ACCEPTED,
+    DEALER_RESPONDED,
+    HEARING_SCHEDULED,
+    HEARING_REMINDER,
+    DECISION_ISSUED,
+    CASE_CLOSED
+}

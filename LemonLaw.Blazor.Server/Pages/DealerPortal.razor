@@ -1,0 +1,259 @@
+@page "/dealer"
+@using LemonLaw.Blazor.Server.Models
+@inject NavigationManager Nav
+
+<PageTitle>Dealer Response Portal — Lemon Law</PageTitle>
+
+<div class="dealer-portal-wrapper">
+    <!-- Header -->
+    <div class="dealer-header">
+        <div class="dealer-header-inner">
+            <div class="dealer-logo">
+                <div class="ma-seal">MA</div>
+                <div>
+                    <p class="dealer-header-agency">Commonwealth of Massachusetts</p>
+                    <p class="dealer-header-title">OCABR — Vehicle Lemon Law Program</p>
+                </div>
+            </div>
+            <span class="dealer-header-badge">Dealer Response Portal</span>
+        </div>
+    </div>
+
+    <div class="dealer-content">
+        @if (!_tokenValidated)
+        {
+            <!-- Token validation / landing -->
+            <div class="dealer-card" style="max-width:560px; margin:0 auto; text-align:center; padding:48px 40px;">
+                <div class="dealer-icon-circle">
+                    <i class="fa-solid fa-envelope-open-text"></i>
+                </div>
+                <h1 class="dealer-card-title" style="margin-top:20px;">Dealer Response Portal</h1>
+                <p class="dealer-card-subtitle">
+                    You have received a Lemon Law outreach notice from OCABR.
+                    Please review the consumer's application and submit your formal response.
+                </p>
+                <div class="dealer-info-box">
+                    <p><strong>Case:</strong> LL-2026-00142</p>
+                    <p><strong>Response Deadline:</strong> May 14, 2026</p>
+                    <p><strong>Consumer:</strong> Jane M. Smith</p>
+                    <p><strong>Vehicle:</strong> 2021 Honda Civic EX</p>
+                </div>
+                <button class="dealer-btn-primary" @onclick="ValidateToken">
+                    <i class="fa-solid fa-arrow-right"></i> Access Case &amp; Respond
+                </button>
+            </div>
+        }
+        else if (!_submitted)
+        {
+            <div style="max-width:800px; margin:0 auto;">
+                <!-- Case summary -->
+                <div class="dealer-card" style="margin-bottom:24px;">
+                    <div class="dealer-section-header">
+                        <i class="fa-solid fa-file-lines"></i>
+                        <h2>Case Summary</h2>
+                    </div>
+                    <div class="dealer-summary-grid">
+                        <div class="dealer-summary-item">
+                            <span class="dealer-label">Case Number</span>
+                            <strong class="dealer-value theme-value">LL-2026-00142</strong>
+                        </div>
+                        <div class="dealer-summary-item">
+                            <span class="dealer-label">Application Type</span>
+                            <strong class="dealer-value">New Car Lemon Law</strong>
+                        </div>
+                        <div class="dealer-summary-item">
+                            <span class="dealer-label">Consumer</span>
+                            <strong class="dealer-value">Jane M. Smith</strong>
+                        </div>
+                        <div class="dealer-summary-item">
+                            <span class="dealer-label">Vehicle</span>
+                            <strong class="dealer-value">2021 Honda Civic EX</strong>
+                        </div>
+                        <div class="dealer-summary-item">
+                            <span class="dealer-label">VIN</span>
+                            <strong class="dealer-value" style="font-family:monospace;">1HGBH41JXMN109186</strong>
+                        </div>
+                        <div class="dealer-summary-item">
+                            <span class="dealer-label">Response Deadline</span>
+                            <strong class="dealer-value" style="color:#dc3545;">May 14, 2026</strong>
+                        </div>
+                    </div>
+                    <div style="margin-top:20px; padding:16px; background:#f9fafb; border-radius:8px; border-left:4px solid var(--theme-color);">
+                        <p class="dealer-label" style="margin-bottom:6px;">Consumer's Statement</p>
+                        <p style="font-size:0.9rem; line-height:1.7; color:#374151; margin:0;">
+                            "The engine began stalling intermittently at highway speeds approximately 3 months after purchase.
+                            Despite three repair attempts at the selling dealer, the issue persists. The vehicle has been out of
+                            service for a total of 22 days. The defect substantially impairs the safety and use of the vehicle."
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Response form -->
+                <div class="dealer-card">
+                    <div class="dealer-section-header">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        <h2>Your Response</h2>
+                    </div>
+
+                    <div class="dealer-form-grid">
+                        <div class="dealer-form-group">
+                            <label class="dealer-form-label">Your Name <span class="required">*</span></label>
+                            <input type="text" @bind="_response.ResponderName" class="dealer-input" placeholder="John Doe" />
+                        </div>
+                        <div class="dealer-form-group">
+                            <label class="dealer-form-label">Your Title</label>
+                            <input type="text" @bind="_response.ResponderTitle" class="dealer-input" placeholder="Service Manager" />
+                        </div>
+                        <div class="dealer-form-group">
+                            <label class="dealer-form-label">Your Email <span class="required">*</span></label>
+                            <input type="email" @bind="_response.ResponderEmail" class="dealer-input" placeholder="service@dealership.com" />
+                        </div>
+                        <div class="dealer-form-group">
+                            <label class="dealer-form-label">Your Phone</label>
+                            <input type="tel" @bind="_response.ResponderPhone" class="dealer-input" placeholder="(617) 555-0100" />
+                        </div>
+
+                        <div class="dealer-form-group dealer-form-full">
+                            <label class="dealer-form-label">Dealer Position <span class="required">*</span></label>
+                            <select @bind="_response.DealerPosition" class="dealer-input">
+                                <option value="">— Select —</option>
+                                <option value="DISPUTES_CLAIM">We dispute the consumer's claim</option>
+                                <option value="ACKNOWLEDGES_DEFECT">We acknowledge the defect</option>
+                                <option value="OFFERS_SETTLEMENT">We offer a settlement</option>
+                                <option value="RESOLVED_PRIOR">This was resolved prior to this filing</option>
+                                <option value="VEHICLE_NOT_PURCHASED_HERE">Vehicle was not purchased at this dealership</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                        </div>
+
+                        @if (_response.DealerPosition == "OFFERS_SETTLEMENT")
+                        {
+                            <div class="dealer-form-group">
+                                <label class="dealer-form-label">Settlement Amount ($)</label>
+                                <input type="number" @bind="_response.SettlementOffer" class="dealer-input" placeholder="0.00" />
+                            </div>
+                            <div class="dealer-form-group">
+                                <label class="dealer-form-label">Settlement Details</label>
+                                <input type="text" @bind="_response.SettlementDetails" class="dealer-input" placeholder="Describe the proposed settlement…" />
+                            </div>
+                        }
+
+                        <div class="dealer-form-group dealer-form-full">
+                            <label class="dealer-form-label">Response Narrative <span class="required">*</span></label>
+                            <textarea @bind="_response.ResponseNarrative" class="dealer-input" rows="6"
+                                      placeholder="Provide your detailed response to the consumer's claims…"
+                                      style="resize:vertical;"></textarea>
+                            <p style="font-size:0.75rem; color:#6b7280; margin-top:4px;">Minimum 50 characters required.</p>
+                        </div>
+
+                        <div class="dealer-form-group dealer-form-full">
+                            <label class="dealer-form-label">Repair History Notes</label>
+                            <textarea @bind="_response.RepairHistoryNotes" class="dealer-input" rows="3"
+                                      placeholder="Summarize the repair attempts performed at your facility…"
+                                      style="resize:vertical;"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Certification -->
+                    <div style="margin-top:24px; padding:20px; background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb;">
+                        <label style="display:flex; align-items:flex-start; gap:12px; cursor:pointer;">
+                            <input type="checkbox" @bind="_response.CertificationAccepted" style="margin-top:3px; width:18px; height:18px; accent-color:var(--theme-color); flex-shrink:0;" />
+                            <span style="font-size:0.875rem; line-height:1.7; color:#374151;">
+                                I certify that the information provided in this response is accurate and complete to the best of my knowledge,
+                                and that I am authorized to submit this response on behalf of the dealership.
+                            </span>
+                        </label>
+                        <div style="margin-top:16px; max-width:360px;">
+                            <label class="dealer-form-label">Electronic Signature — Type your full name <span class="required">*</span></label>
+                            <input type="text" @bind="_response.CertifierFullName" class="dealer-input" placeholder="John Doe" style="font-style:italic; font-size:1.1rem;" />
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(_validationError))
+                    {
+                        <div class="dealer-alert-error" role="alert">
+                            <i class="fa-solid fa-triangle-exclamation"></i> @_validationError
+                        </div>
+                    }
+
+                    <div style="display:flex; justify-content:flex-end; margin-top:24px; padding-top:20px; border-top:1px solid #e5e7eb;">
+                        <button class="dealer-btn-primary" @onclick="SubmitResponse" disabled="@_submitting">
+                            @if (_submitting)
+                            {
+                                <i class="fa-solid fa-spinner fa-spin"></i>
+                                <span>Submitting…</span>
+                            }
+                            else
+                            {
+                                <i class="fa-solid fa-paper-plane"></i>
+                                <span>Submit Response</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- Success -->
+            <div class="dealer-card" style="max-width:560px; margin:0 auto; text-align:center; padding:48px 40px;">
+                <div class="dealer-icon-circle" style="background:rgba(56,133,87,0.1);">
+                    <i class="fa-solid fa-check" style="color:#388557;"></i>
+                </div>
+                <h2 class="dealer-card-title" style="color:#388557; margin-top:20px;">Response Submitted</h2>
+                <p class="dealer-card-subtitle">
+                    Thank you. Your response to case <strong>LL-2026-00142</strong> has been received by OCABR.
+                    A confirmation has been sent to <strong>@_response.ResponderEmail</strong>.
+                </p>
+                <div class="dealer-info-box">
+                    <p><strong>Submitted by:</strong> @_response.ResponderName</p>
+                    <p><strong>Position:</strong> @_response.DealerPosition?.Replace("_", " ")</p>
+                    <p><strong>Submitted at:</strong> @DateTime.Now.ToString("MMMM d, yyyy h:mm tt")</p>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Footer -->
+    <div class="dealer-footer">
+        <p>© @DateTime.Now.Year Commonwealth of Massachusetts — OCABR Vehicle Lemon Law Program</p>
+    </div>
+</div>
+
+@code {
+    private bool _tokenValidated = false;
+    private bool _submitted = false;
+    private bool _submitting = false;
+    private string _validationError = string.Empty;
+
+    private DealerResponseModel _response = new();
+
+    private void ValidateToken()
+    {
+        // Token validation will be wired to the real token service
+        _tokenValidated = true;
+    }
+
+    private async Task SubmitResponse()
+    {
+        _validationError = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(_response.ResponderName))
+        { _validationError = "Your name is required."; return; }
+        if (string.IsNullOrWhiteSpace(_response.ResponderEmail))
+        { _validationError = "Your email is required."; return; }
+        if (string.IsNullOrWhiteSpace(_response.DealerPosition))
+        { _validationError = "Please select your dealer position."; return; }
+        if (string.IsNullOrWhiteSpace(_response.ResponseNarrative) || _response.ResponseNarrative.Length < 50)
+        { _validationError = "Response narrative must be at least 50 characters."; return; }
+        if (!_response.CertificationAccepted)
+        { _validationError = "You must certify the accuracy of your response."; return; }
+        if (string.IsNullOrWhiteSpace(_response.CertifierFullName))
+        { _validationError = "Electronic signature (full name) is required."; return; }
+
+        _submitting = true;
+        await Task.Delay(1200);
+        _submitting = false;
+        _submitted = true;
+    }
+}
