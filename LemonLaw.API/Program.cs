@@ -25,11 +25,20 @@ try
     builder.Host.UseSerilog();
 
     // ── Services ──────────────────────────────────────────────────────────────
-    builder.Services.AddControllers();
+    builder.Services.AddControllers()
+        .AddJsonOptions(options =>
+        {
+            // Allow enum string names (e.g. "MOBILE") instead of integers
+            options.JsonSerializerOptions.Converters.Add(
+                new System.Text.Json.Serialization.JsonStringEnumConverter());
+            options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+        });
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(c =>
     {
         c.SwaggerDoc("v1", new() { Title = "LemonLaw API", Version = "v1" });
+        // Show enum string names in Swagger UI
+        c.UseInlineDefinitionsForEnums();
         c.AddSecurityDefinition("Bearer", new()
         {
             Name = "Authorization",

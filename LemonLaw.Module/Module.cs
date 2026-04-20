@@ -51,20 +51,40 @@ namespace LemonLaw.Module
                 DevExpress.Persistent.Base.UsedExportedTypes.Custom;
         }
 
-        public override IEnumerable<ModuleUpdater> GetModuleUpdaters(
-            IObjectSpace objectSpace, Version versionFromDB)
-        {
-            return new ModuleUpdater[] { new DatabaseUpdate.Updater(objectSpace, versionFromDB) };
-        }
-
         public override void Setup(XafApplication application)
         {
             base.Setup(application);
+
+            // Register all business entities with XAF's type system.
+            // This is required for XAF ORM to fully resolve relationships,
+            // lazy loading, and detail view navigation.
+            application.TypesInfo.RegisterEntity(typeof(AppEntity));
+            application.TypesInfo.RegisterEntity(typeof(Applicant));
+            application.TypesInfo.RegisterEntity(typeof(Vehicle));
+            application.TypesInfo.RegisterEntity(typeof(Defect));
+            application.TypesInfo.RegisterEntity(typeof(RepairAttempt));
+            application.TypesInfo.RegisterEntity(typeof(Expense));
+            application.TypesInfo.RegisterEntity(typeof(ApplicationDocument));
+            application.TypesInfo.RegisterEntity(typeof(ApplicationToken));
+            application.TypesInfo.RegisterEntity(typeof(CaseEvent));
+            application.TypesInfo.RegisterEntity(typeof(CaseNote));
+            application.TypesInfo.RegisterEntity(typeof(Correspondence));
+            application.TypesInfo.RegisterEntity(typeof(CorrespondenceTemplate));
+            application.TypesInfo.RegisterEntity(typeof(DealerOutreach));
+            application.TypesInfo.RegisterEntity(typeof(DealerResponse));
+            application.TypesInfo.RegisterEntity(typeof(Hearing));
+            application.TypesInfo.RegisterEntity(typeof(Decision));
         }
 
         public override void Setup(ApplicationModulesManager moduleManager)
         {
             base.Setup(moduleManager);
+        }
+
+        public override IEnumerable<ModuleUpdater> GetModuleUpdaters(
+            IObjectSpace objectSpace, Version versionFromDB)
+        {
+            return new ModuleUpdater[] { new DatabaseUpdate.Updater(objectSpace, versionFromDB) };
         }
     }
 }

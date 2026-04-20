@@ -18,6 +18,13 @@ public interface IApplicationService
     Task<CommonResponseDto<bool>> SubmitApplicationAsync(
         Guid applicationId, Step6SubmitDto dto, string ipAddress);
 
+    /// <summary>
+    /// One-shot submission — accepts all wizard data at once (FILIR pattern).
+    /// Saves steps 1-4 and submits in a single transaction.
+    /// </summary>
+    Task<CommonResponseDto<bool>> SubmitFullApplicationAsync(
+        Guid applicationId, FullSubmitDto dto, string ipAddress);
+
     Task<CommonResponseDto<PortalStatusDto>> GetPortalStatusAsync(Guid applicationId);
 
     Task<PagedResponseDto<List<CaseListItemDto>>> GetCaseListAsync(CaseListFilterDto filter);

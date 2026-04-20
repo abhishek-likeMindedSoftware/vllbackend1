@@ -335,6 +335,34 @@ public class ApplicationService(
         }
     }
 
+    // ── Full one-shot submission (FILIR pattern) ──────────────────────────────
+
+    public async Task<CommonResponseDto<bool>> SubmitFullApplicationAsync(
+        Guid applicationId, FullSubmitDto dto, string ipAddress)
+    {
+        try
+        {
+            // Save all steps in a single operation
+            await SaveStep1Async(applicationId, dto.ConsumerInfo);
+            await SaveStep2Async(applicationId, dto.VehicleInfo);
+            await SaveStep3Async(applicationId, dto.DefectsAndRepairs);
+            await SaveStep4Async(applicationId, dto.Narrative);
+
+            // Final submission
+            return await SubmitApplicationAsync(applicationId, new Step6SubmitDto
+            {
+                EmailVerificationCode = dto.EmailVerificationCode,
+                CertificationAccepted = dto.CertificationAccepted,
+                SignatureFullName = dto.SignatureFullName
+            }, ipAddress);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error in full submission for {Id}", applicationId);
+            return Fail<bool>("Failed to submit application.");
+        }
+    }
+
     // ── Portal Status ─────────────────────────────────────────────────────────
 
     public async Task<CommonResponseDto<PortalStatusDto>> GetPortalStatusAsync(Guid applicationId)
