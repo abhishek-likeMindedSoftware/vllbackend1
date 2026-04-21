@@ -104,10 +104,7 @@ public class DealerOutreachService(
             outreachRepository.Update(outreach);
             await outreachRepository.SaveChangesAsync();
 
-            if (outreach.ApplicationId == null)
-                return new CommonResponseDto<bool> { Success = false, Data = false };
-
-            var followUpApplication = await applicationRepository.GetWithFullDetailsAsync(outreach.ApplicationId.Value);
+            var followUpApplication = await applicationRepository.GetWithFullDetailsAsync(outreach.ApplicationId);
             var followUpPortalLink = $"{configuration["DealerPortal:BaseUrl"]}?outreachId={outreach.Id}";
             await emailService.SendFromTemplateAsync(
                 outreach.DealerEmail, outreach.DealerName,
@@ -140,14 +137,7 @@ public class DealerOutreachService(
                     Message = "Outreach record not found."
                 };
 
-            if (outreach.ApplicationId == null)
-                return new CommonResponseDto<DealerCaseSummaryDto>
-                {
-                    Success = false,
-                    Message = "Application not found."
-                };
-
-            var application = await applicationRepository.GetWithFullDetailsAsync(outreach.ApplicationId.Value);
+            var application = await applicationRepository.GetWithFullDetailsAsync(outreach.ApplicationId);
             if (application == null)
                 return new CommonResponseDto<DealerCaseSummaryDto>
                 {
