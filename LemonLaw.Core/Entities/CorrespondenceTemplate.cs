@@ -12,12 +12,18 @@ namespace LemonLaw.Core.Entities;
 [DefaultProperty(nameof(TemplateName))]
 [NavigationItem("Administration")]
 [XafDisplayName("Correspondence Template")]
-public class CorrespondenceTemplate : AuditDetails, INotifyPropertyChanged, IObjectSpaceLink
+public class CorrespondenceTemplate : AuditDetails,
+        INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {
-    #region XAF
-    public new event PropertyChangedEventHandler PropertyChanged;
-    protected new void RaisePropertyChanged(string propertyName)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    #region XAF & INotify
+    public event PropertyChangingEventHandler PropertyChanging;
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    protected void RaisePropertyChanging(string propertyName) =>
+        PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyName));
+
+    protected void RaisePropertyChanged(string propertyName) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
     private IObjectSpace _objectSpace;
 
@@ -29,14 +35,13 @@ public class CorrespondenceTemplate : AuditDetails, INotifyPropertyChanged, IObj
         {
             if (_objectSpace != value)
             {
+                RaisePropertyChanging(nameof(ObjectSpace));
                 _objectSpace = value;
                 RaisePropertyChanged(nameof(ObjectSpace));
             }
         }
     }
     #endregion
-
-    public CorrespondenceTemplate() { }
 
     private Guid _id = Guid.NewGuid();
 

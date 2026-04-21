@@ -11,12 +11,18 @@ namespace LemonLaw.Core.Entities;
 
 [DefaultProperty(nameof(FullName))]
 [XafDisplayName("Applicant")]
-public class Applicant : AuditDetails, INotifyPropertyChanged, IObjectSpaceLink
+public class Applicant : AuditDetails,
+        INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {
-    #region XAF
-    public new event PropertyChangedEventHandler PropertyChanged;
-    protected new void RaisePropertyChanged(string propertyName)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    #region XAF & INotify
+    public event PropertyChangingEventHandler PropertyChanging;
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    protected void RaisePropertyChanging(string propertyName) =>
+        PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyName));
+
+    protected void RaisePropertyChanged(string propertyName) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
     private IObjectSpace _objectSpace;
 
@@ -28,14 +34,13 @@ public class Applicant : AuditDetails, INotifyPropertyChanged, IObjectSpaceLink
         {
             if (_objectSpace != value)
             {
+                RaisePropertyChanging(nameof(ObjectSpace));
                 _objectSpace = value;
                 RaisePropertyChanged(nameof(ObjectSpace));
             }
         }
     }
     #endregion
-
-    public Applicant() { }
 
     private Guid _id = Guid.NewGuid();
 
@@ -57,10 +62,11 @@ public class Applicant : AuditDetails, INotifyPropertyChanged, IObjectSpaceLink
     }
 
     #region Application Relationship (M:1)
-    private Guid _applicationId;
+
+    private Guid? _applicationId;
 
     [Browsable(false)]
-    public virtual Guid ApplicationId
+    public virtual Guid? ApplicationId
     {
         get => _applicationId;
         set
@@ -76,7 +82,7 @@ public class Applicant : AuditDetails, INotifyPropertyChanged, IObjectSpaceLink
 
     private Application? _application;
 
-    [ForeignKey(nameof(ApplicationId))]
+    [ForeignKey("ApplicationId")]
     [Browsable(false)]
     public virtual Application? Application
     {
@@ -87,11 +93,12 @@ public class Applicant : AuditDetails, INotifyPropertyChanged, IObjectSpaceLink
             {
                 RaisePropertyChanging(nameof(Application));
                 _application = value;
-                ApplicationId = value?.Id ?? Guid.Empty;
+                ApplicationId = value?.Id;
                 RaisePropertyChanged(nameof(Application));
             }
         }
     }
+
     #endregion
 
     #region Name

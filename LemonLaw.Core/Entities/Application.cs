@@ -14,12 +14,17 @@ namespace LemonLaw.Core.Entities;
 [DefaultProperty(nameof(CaseNumber))]
 [NavigationItem("Case Management")]
 [XafDisplayName("Applications")]
-public class Application : AuditDetails, INotifyPropertyChanged, IObjectSpaceLink
+public class Application : AuditDetails,
+     INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {
-    #region XAF
-    public new event PropertyChangedEventHandler PropertyChanged;
-    protected new void RaisePropertyChanged(string propertyName)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    #region XAF & INotify
+    public event PropertyChangingEventHandler PropertyChanging;
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    protected void RaisePropertyChanging(string propertyName) =>
+        PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyName));
+    protected void RaisePropertyChanged(string propertyName) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
     private IObjectSpace _objectSpace;
 
@@ -31,6 +36,7 @@ public class Application : AuditDetails, INotifyPropertyChanged, IObjectSpaceLin
         {
             if (_objectSpace != value)
             {
+                RaisePropertyChanging(nameof(ObjectSpace));
                 _objectSpace = value;
                 RaisePropertyChanged(nameof(ObjectSpace));
             }
@@ -435,6 +441,35 @@ public class Application : AuditDetails, INotifyPropertyChanged, IObjectSpaceLin
 
     #endregion
 
+
+    #region Defects Relationship (1:M)
+
+    private readonly ObservableCollection<Defect> _defects = new();
+
+    [XafDisplayName("Defects")]
+    [DevExpress.Xpo.Association("Application-Defects")]
+    public virtual ICollection<Defect> Defects
+    {
+        get => _defects;
+        set
+        {
+            if (!ReferenceEquals(_defects, value))
+            {
+                RaisePropertyChanging(nameof(Defects));
+                _defects.Clear();
+                if (value != null)
+                {
+                    foreach (var item in value)
+                        _defects.Add(item);
+                }
+                RaisePropertyChanged(nameof(Defects));
+            }
+        }
+    }
+
+    #endregion
+
+
     #region Navigation Properties
 
     [XafDisplayName("Applicant")]
@@ -446,30 +481,10 @@ public class Application : AuditDetails, INotifyPropertyChanged, IObjectSpaceLin
     [Browsable(false)]
     public virtual ApplicationToken? Token { get; set; }
 
-    private readonly ObservableCollection<Defect> _defects = new();
-
-    [XafDisplayName("Defects")]
-    [DevExpress.ExpressApp.DC.Aggregated]
-    public virtual ICollection<Defect> Defects
-    {
-        get => _defects;
-        set
-        {
-            if (!ReferenceEquals(_defects, value))
-            {
-                RaisePropertyChanging(nameof(Defects));
-                _defects.Clear();
-                if (value != null)
-                    foreach (var item in value) _defects.Add(item);
-                RaisePropertyChanged(nameof(Defects));
-            }
-        }
-    }
-
     private readonly ObservableCollection<RepairAttempt> _repairAttempts = new();
 
     [XafDisplayName("Repair Attempts")]
-    [DevExpress.ExpressApp.DC.Aggregated]
+    [DevExpress.Xpo.Association("Application-RepairAttempts")]
     public virtual ICollection<RepairAttempt> RepairAttempts
     {
         get => _repairAttempts;
@@ -489,7 +504,7 @@ public class Application : AuditDetails, INotifyPropertyChanged, IObjectSpaceLin
     private readonly ObservableCollection<Expense> _expenses = new();
 
     [XafDisplayName("Expenses")]
-    [DevExpress.ExpressApp.DC.Aggregated]
+    [DevExpress.Xpo.Association("Application-Expenses")]
     public virtual ICollection<Expense> Expenses
     {
         get => _expenses;
@@ -509,7 +524,7 @@ public class Application : AuditDetails, INotifyPropertyChanged, IObjectSpaceLin
     private readonly ObservableCollection<ApplicationDocument> _documents = new();
 
     [XafDisplayName("Documents")]
-    [DevExpress.ExpressApp.DC.Aggregated]
+    [DevExpress.Xpo.Association("Application-Documents")]
     public virtual ICollection<ApplicationDocument> Documents
     {
         get => _documents;
@@ -529,7 +544,7 @@ public class Application : AuditDetails, INotifyPropertyChanged, IObjectSpaceLin
     private readonly ObservableCollection<CaseEvent> _events = new();
 
     [XafDisplayName("Case Timeline")]
-    [DevExpress.ExpressApp.DC.Aggregated]
+    [DevExpress.Xpo.Association("Application-Events")]
     public virtual ICollection<CaseEvent> Events
     {
         get => _events;
@@ -549,7 +564,7 @@ public class Application : AuditDetails, INotifyPropertyChanged, IObjectSpaceLin
     private readonly ObservableCollection<CaseNote> _notes = new();
 
     [XafDisplayName("Internal Notes")]
-    [DevExpress.ExpressApp.DC.Aggregated]
+    [DevExpress.Xpo.Association("Application-Notes")]
     public virtual ICollection<CaseNote> Notes
     {
         get => _notes;
@@ -569,7 +584,7 @@ public class Application : AuditDetails, INotifyPropertyChanged, IObjectSpaceLin
     private readonly ObservableCollection<Correspondence> _correspondences = new();
 
     [XafDisplayName("Correspondence")]
-    [DevExpress.ExpressApp.DC.Aggregated]
+    [DevExpress.Xpo.Association("Application-Correspondences")]
     public virtual ICollection<Correspondence> Correspondences
     {
         get => _correspondences;
@@ -589,7 +604,7 @@ public class Application : AuditDetails, INotifyPropertyChanged, IObjectSpaceLin
     private readonly ObservableCollection<DealerOutreach> _dealerOutreaches = new();
 
     [XafDisplayName("Dealer Outreach")]
-    [DevExpress.ExpressApp.DC.Aggregated]
+    [DevExpress.Xpo.Association("Application-DealerOutreaches")]
     public virtual ICollection<DealerOutreach> DealerOutreaches
     {
         get => _dealerOutreaches;
@@ -609,7 +624,7 @@ public class Application : AuditDetails, INotifyPropertyChanged, IObjectSpaceLin
     private readonly ObservableCollection<Hearing> _hearings = new();
 
     [XafDisplayName("Hearings")]
-    [DevExpress.ExpressApp.DC.Aggregated]
+    [DevExpress.Xpo.Association("Application-Hearings")]
     public virtual ICollection<Hearing> Hearings
     {
         get => _hearings;

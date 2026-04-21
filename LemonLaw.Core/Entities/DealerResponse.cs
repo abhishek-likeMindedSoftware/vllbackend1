@@ -12,12 +12,18 @@ namespace LemonLaw.Core.Entities;
 
 [DefaultProperty(nameof(ResponderName))]
 [XafDisplayName("Dealer Response")]
-public class DealerResponse : AuditDetails, INotifyPropertyChanged, IObjectSpaceLink
+public class DealerResponse : AuditDetails,
+        INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {
-    #region XAF
-    public new event PropertyChangedEventHandler PropertyChanged;
-    protected new void RaisePropertyChanged(string propertyName)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    #region XAF & INotify
+    public event PropertyChangingEventHandler PropertyChanging;
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    protected void RaisePropertyChanging(string propertyName) =>
+        PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyName));
+
+    protected void RaisePropertyChanged(string propertyName) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
     private IObjectSpace _objectSpace;
 
@@ -29,14 +35,13 @@ public class DealerResponse : AuditDetails, INotifyPropertyChanged, IObjectSpace
         {
             if (_objectSpace != value)
             {
+                RaisePropertyChanging(nameof(ObjectSpace));
                 _objectSpace = value;
                 RaisePropertyChanged(nameof(ObjectSpace));
             }
         }
     }
     #endregion
-
-    public DealerResponse() { }
 
     private Guid _id = Guid.NewGuid();
 
@@ -58,10 +63,11 @@ public class DealerResponse : AuditDetails, INotifyPropertyChanged, IObjectSpace
     }
 
     #region Outreach Relationship (M:1)
-    private Guid _outreachId;
+
+    private Guid? _outreachId;
 
     [Browsable(false)]
-    public virtual Guid OutreachId
+    public virtual Guid? OutreachId
     {
         get => _outreachId;
         set
@@ -77,8 +83,8 @@ public class DealerResponse : AuditDetails, INotifyPropertyChanged, IObjectSpace
 
     private DealerOutreach? _outreach;
 
-    [ForeignKey(nameof(OutreachId))]
-    [Browsable(false)]
+    [ForeignKey("OutreachId")]
+    [DevExpress.Xpo.Association("DealerOutreach-Response")]
     public virtual DealerOutreach? Outreach
     {
         get => _outreach;
@@ -88,18 +94,20 @@ public class DealerResponse : AuditDetails, INotifyPropertyChanged, IObjectSpace
             {
                 RaisePropertyChanging(nameof(Outreach));
                 _outreach = value;
-                OutreachId = value?.Id ?? Guid.Empty;
+                OutreachId = value?.Id;
                 RaisePropertyChanged(nameof(Outreach));
             }
         }
     }
+
     #endregion
 
     #region Application Relationship (M:1)
-    private Guid _applicationId;
+
+    private Guid? _applicationId;
 
     [Browsable(false)]
-    public virtual Guid ApplicationId
+    public virtual Guid? ApplicationId
     {
         get => _applicationId;
         set
@@ -115,8 +123,8 @@ public class DealerResponse : AuditDetails, INotifyPropertyChanged, IObjectSpace
 
     private Application? _application;
 
-    [ForeignKey(nameof(ApplicationId))]
-    [Browsable(false)]
+    [ForeignKey("ApplicationId")]
+    [DevExpress.Xpo.Association("Application-DealerResponses")]
     public virtual Application? Application
     {
         get => _application;
@@ -126,11 +134,12 @@ public class DealerResponse : AuditDetails, INotifyPropertyChanged, IObjectSpace
             {
                 RaisePropertyChanging(nameof(Application));
                 _application = value;
-                ApplicationId = value?.Id ?? Guid.Empty;
+                ApplicationId = value?.Id;
                 RaisePropertyChanged(nameof(Application));
             }
         }
     }
+
     #endregion
 
     #region Response Details

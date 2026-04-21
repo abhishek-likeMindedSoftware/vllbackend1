@@ -13,12 +13,18 @@ namespace LemonLaw.Core.Entities;
 [DefaultProperty(nameof(HearingDate))]
 [NavigationItem("Hearings")]
 [XafDisplayName("Hearing")]
-public class Hearing : AuditDetails, INotifyPropertyChanged, IObjectSpaceLink
+public class Hearing : AuditDetails,
+        INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {
-    #region XAF
-    public new event PropertyChangedEventHandler PropertyChanged;
-    protected new void RaisePropertyChanged(string propertyName)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    #region XAF & INotify
+    public event PropertyChangingEventHandler PropertyChanging;
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    protected void RaisePropertyChanging(string propertyName) =>
+        PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyName));
+
+    protected void RaisePropertyChanged(string propertyName) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
     private IObjectSpace _objectSpace;
 
@@ -30,14 +36,13 @@ public class Hearing : AuditDetails, INotifyPropertyChanged, IObjectSpaceLink
         {
             if (_objectSpace != value)
             {
+                RaisePropertyChanging(nameof(ObjectSpace));
                 _objectSpace = value;
                 RaisePropertyChanged(nameof(ObjectSpace));
             }
         }
     }
     #endregion
-
-    public Hearing() { }
 
     private Guid _id = Guid.NewGuid();
 
@@ -59,10 +64,11 @@ public class Hearing : AuditDetails, INotifyPropertyChanged, IObjectSpaceLink
     }
 
     #region Application Relationship (M:1)
-    private Guid _applicationId;
+
+    private Guid? _applicationId;
 
     [Browsable(false)]
-    public virtual Guid ApplicationId
+    public virtual Guid? ApplicationId
     {
         get => _applicationId;
         set
@@ -78,8 +84,8 @@ public class Hearing : AuditDetails, INotifyPropertyChanged, IObjectSpaceLink
 
     private Application? _application;
 
-    [ForeignKey(nameof(ApplicationId))]
-    [Browsable(false)]
+    [ForeignKey("ApplicationId")]
+    [DevExpress.Xpo.Association("Application-Hearings")]
     public virtual Application? Application
     {
         get => _application;
@@ -89,11 +95,12 @@ public class Hearing : AuditDetails, INotifyPropertyChanged, IObjectSpaceLink
             {
                 RaisePropertyChanging(nameof(Application));
                 _application = value;
-                ApplicationId = value?.Id ?? Guid.Empty;
+                ApplicationId = value?.Id;
                 RaisePropertyChanged(nameof(Application));
             }
         }
     }
+
     #endregion
 
     #region Hearing Details

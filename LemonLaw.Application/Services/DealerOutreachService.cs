@@ -104,7 +104,10 @@ public class DealerOutreachService(
             outreachRepository.Update(outreach);
             await outreachRepository.SaveChangesAsync();
 
-            var followUpApplication = await applicationRepository.GetWithFullDetailsAsync(outreach.ApplicationId);
+            if (outreach.ApplicationId == null)
+                return new CommonResponseDto<bool> { Success = false, Data = false };
+
+            var followUpApplication = await applicationRepository.GetWithFullDetailsAsync(outreach.ApplicationId.Value);
             var followUpPortalLink = $"{configuration["DealerPortal:BaseUrl"]}?outreachId={outreach.Id}";
             await emailService.SendFromTemplateAsync(
                 outreach.DealerEmail, outreach.DealerName,
@@ -137,7 +140,14 @@ public class DealerOutreachService(
                     Message = "Outreach record not found."
                 };
 
-            var application = await applicationRepository.GetWithFullDetailsAsync(outreach.ApplicationId);
+            if (outreach.ApplicationId == null)
+                return new CommonResponseDto<DealerCaseSummaryDto>
+                {
+                    Success = false,
+                    Message = "Application not found."
+                };
+
+            var application = await applicationRepository.GetWithFullDetailsAsync(outreach.ApplicationId.Value);
             if (application == null)
                 return new CommonResponseDto<DealerCaseSummaryDto>
                 {
@@ -219,9 +229,12 @@ public class DealerOutreachService(
             outreach.Status = OutreachStatus.RESPONDED;
             outreachRepository.Update(outreach);
 
+            if (outreach.ApplicationId == null)
+                return new CommonResponseDto<bool> { Success = false, Data = false };
+
             await eventRepository.AddAsync(new CaseEvent
             {
-                ApplicationId = outreach.ApplicationId,
+                ApplicationId = outreach.ApplicationId.Value,
                 EventType = CaseEventType.DEALER_RESPONDED,
                 ActorType = ActorType.DEALER,
                 ActorDisplayName = dto.ResponderName,

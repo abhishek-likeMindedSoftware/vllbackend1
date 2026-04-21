@@ -4,6 +4,7 @@ using LemonLaw.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LemonLaw.Infrastructure.Migrations
 {
     [DbContext(typeof(LemonLawDbContext))]
-    partial class LemonLawDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260421105039_UpdatedRelation")]
+    partial class UpdatedRelation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -528,7 +531,7 @@ namespace LemonLaw.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("ApplicationId")
+                    b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("City")
@@ -590,8 +593,7 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId")
-                        .IsUnique()
-                        .HasFilter("[ApplicationId] IS NOT NULL");
+                        .IsUnique();
 
                     b.HasIndex("CreatedById");
 
@@ -707,7 +709,7 @@ namespace LemonLaw.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("NEWSEQUENTIALID()");
 
-                    b.Property<Guid?>("ApplicationId")
+                    b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("CreatedById")
@@ -916,7 +918,7 @@ namespace LemonLaw.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("NEWSEQUENTIALID()");
 
-                    b.Property<Guid?>("ApplicationId")
+                    b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -973,7 +975,7 @@ namespace LemonLaw.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("NEWSEQUENTIALID()");
 
-                    b.Property<Guid?>("ApplicationId")
+                    b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("BodyPreview")
@@ -1120,7 +1122,7 @@ namespace LemonLaw.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("NEWSEQUENTIALID()");
 
-                    b.Property<Guid?>("ApplicationId")
+                    b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("CreatedById")
@@ -1227,7 +1229,7 @@ namespace LemonLaw.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("NEWSEQUENTIALID()");
 
-                    b.Property<Guid?>("ApplicationId")
+                    b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("CertificationAccepted")
@@ -1256,7 +1258,7 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<DateTime?>("ModifiedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("OutreachId")
+                    b.Property<Guid>("OutreachId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("RepairHistoryNotes")
@@ -1305,8 +1307,7 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasIndex("ModifiedById");
 
                     b.HasIndex("OutreachId")
-                        .IsUnique()
-                        .HasFilter("[OutreachId] IS NOT NULL");
+                        .IsUnique();
 
                     b.ToTable("DealerResponses");
                 });
@@ -1318,7 +1319,7 @@ namespace LemonLaw.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("NEWSEQUENTIALID()");
 
-                    b.Property<Guid?>("ApplicationId")
+                    b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateOnly?>("ComplianceDeadline")
@@ -1368,8 +1369,7 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId")
-                        .IsUnique()
-                        .HasFilter("[ApplicationId] IS NOT NULL");
+                        .IsUnique();
 
                     b.HasIndex("CreatedById");
 
@@ -1444,7 +1444,7 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<Guid?>("ApplicationId")
+                    b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("CreatedById")
@@ -1573,7 +1573,7 @@ namespace LemonLaw.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("NEWSEQUENTIALID()");
 
-                    b.Property<Guid?>("ApplicationId")
+                    b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ArbitratorName")
@@ -1641,7 +1641,7 @@ namespace LemonLaw.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("NEWSEQUENTIALID()");
 
-                    b.Property<Guid?>("ApplicationId")
+                    b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("CreatedById")
@@ -1971,7 +1971,8 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasOne("LemonLaw.Core.Entities.Application", "Application")
                         .WithOne("Applicant")
                         .HasForeignKey("LemonLaw.Core.Entities.Applicant", "ApplicationId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
                         .WithMany()
@@ -2008,7 +2009,8 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasOne("LemonLaw.Core.Entities.Application", "Application")
                         .WithMany("Documents")
                         .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
                         .WithMany()
@@ -2063,7 +2065,8 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasOne("LemonLaw.Core.Entities.Application", "Application")
                         .WithMany("Notes")
                         .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
                         .WithMany()
@@ -2085,7 +2088,8 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasOne("LemonLaw.Core.Entities.Application", "Application")
                         .WithMany("Correspondences")
                         .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
                         .WithMany()
@@ -2122,7 +2126,8 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasOne("LemonLaw.Core.Entities.Application", "Application")
                         .WithMany("DealerOutreaches")
                         .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
                         .WithMany()
@@ -2143,7 +2148,9 @@ namespace LemonLaw.Infrastructure.Migrations
                 {
                     b.HasOne("LemonLaw.Core.Entities.Application", "Application")
                         .WithMany()
-                        .HasForeignKey("ApplicationId");
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
                         .WithMany()
@@ -2156,7 +2163,8 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasOne("LemonLaw.Core.Entities.DealerOutreach", "Outreach")
                         .WithOne("Response")
                         .HasForeignKey("LemonLaw.Core.Entities.DealerResponse", "OutreachId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.Navigation("Application");
 
@@ -2172,7 +2180,8 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasOne("LemonLaw.Core.Entities.Application", "Application")
                         .WithOne("Decision")
                         .HasForeignKey("LemonLaw.Core.Entities.Decision", "ApplicationId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
                         .WithMany()
@@ -2216,7 +2225,8 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasOne("LemonLaw.Core.Entities.Application", "Application")
                         .WithMany("Expenses")
                         .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
                         .WithMany()
@@ -2275,7 +2285,8 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasOne("LemonLaw.Core.Entities.Application", "Application")
                         .WithMany("Hearings")
                         .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
                         .WithMany()
@@ -2297,7 +2308,8 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasOne("LemonLaw.Core.Entities.Application", "Application")
                         .WithMany("RepairAttempts")
                         .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
                         .WithMany()

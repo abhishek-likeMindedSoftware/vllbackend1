@@ -15,16 +15,18 @@ namespace LemonLaw.Core.Entities;
 /// </summary>
 [DefaultProperty(nameof(Description))]
 [XafDisplayName("Case Event")]
-public class CaseEvent : INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
+public class CaseEvent : AuditDetails,
+        INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {
-    #region XAF
-    public event PropertyChangingEventHandler? PropertyChanging;
-    public event PropertyChangedEventHandler? PropertyChanged;
+    #region XAF & INotify
+    public event PropertyChangingEventHandler PropertyChanging;
+    public event PropertyChangedEventHandler PropertyChanged;
 
-    protected void RaisePropertyChanging(string propertyName)
-        => PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyName));
-    protected void RaisePropertyChanged(string propertyName)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    protected void RaisePropertyChanging(string propertyName) =>
+        PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyName));
+
+    protected void RaisePropertyChanged(string propertyName) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
     private IObjectSpace _objectSpace;
 
@@ -36,6 +38,7 @@ public class CaseEvent : INotifyPropertyChanging, INotifyPropertyChanged, IObjec
         {
             if (_objectSpace != value)
             {
+                RaisePropertyChanging(nameof(ObjectSpace));
                 _objectSpace = value;
                 RaisePropertyChanged(nameof(ObjectSpace));
             }
@@ -65,10 +68,11 @@ public class CaseEvent : INotifyPropertyChanging, INotifyPropertyChanged, IObjec
     }
 
     #region Application Relationship (M:1)
-    private Guid _applicationId;
+
+    private Guid? _applicationId;
 
     [Browsable(false)]
-    public virtual Guid ApplicationId
+    public virtual Guid? ApplicationId
     {
         get => _applicationId;
         set
@@ -84,8 +88,8 @@ public class CaseEvent : INotifyPropertyChanging, INotifyPropertyChanged, IObjec
 
     private Application? _application;
 
-    [ForeignKey(nameof(ApplicationId))]
-    [Browsable(false)]
+    [ForeignKey("ApplicationId")]
+    [DevExpress.Xpo.Association("Application-Events")]
     public virtual Application? Application
     {
         get => _application;
@@ -95,11 +99,12 @@ public class CaseEvent : INotifyPropertyChanging, INotifyPropertyChanged, IObjec
             {
                 RaisePropertyChanging(nameof(Application));
                 _application = value;
-                ApplicationId = value?.Id ?? Guid.Empty;
+                ApplicationId = value?.Id;
                 RaisePropertyChanged(nameof(Application));
             }
         }
     }
+
     #endregion
 
     #region Event Details
