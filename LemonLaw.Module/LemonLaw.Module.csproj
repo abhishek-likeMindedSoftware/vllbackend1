@@ -27,6 +27,7 @@
     <PackageReference Include="DevExpress.Persistent.Base" Version="25.2.*" />
     <PackageReference Include="DevExpress.Persistent.BaseImpl.EFCore" Version="25.2.*" />
     <PackageReference Include="Azure.Identity" Version="1.17.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.6" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.2" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="5.0.0" />
@@ -48,5 +49,10 @@
     <ProjectReference Include="..\LemonLaw.Core\LemonLaw.Core.csproj" />
     <ProjectReference Include="..\LemonLaw.Infrastructure\LemonLaw.Infrastructure.csproj" />
     <ProjectReference Include="..\LemonLaw.Shared\LemonLaw.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="DevExpress.ExpressApp.Blazor.v25.2">
+      <HintPath>C:\Program Files\DevExpress 25.2\Components\Offline Packages\devexpress.expressapp.blazor\25.2.6\lib\net8.0\DevExpress.ExpressApp.Blazor.v25.2.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>

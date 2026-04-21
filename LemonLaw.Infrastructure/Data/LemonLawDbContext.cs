@@ -8,6 +8,7 @@ using DevExpress.Persistent.BaseImpl.EF;
 using DevExpress.Persistent.BaseImpl.EF.PermissionPolicy;
 using DevExpress.Persistent.BaseImpl.EFCore.AuditTrail;
 using LemonLaw.Core.Entities;
+using LemonLaw.Core.Entities.Faq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using AppEntity = LemonLaw.Core.Entities.Application;
@@ -47,6 +48,8 @@ namespace LemonLaw.Infrastructure.Data
         public DbSet<Hearing> Hearings => Set<Hearing>();
         public DbSet<Decision> Decisions => Set<Decision>();
         public DbSet<CorrespondenceTemplate> CorrespondenceTemplates => Set<CorrespondenceTemplate>();
+        public DbSet<FaqQuestion> FaqQuestions => Set<FaqQuestion>();
+        public DbSet<FaqAnswer> FaqAnswers => Set<FaqAnswer>();
 
         // ── SaveChanges overrides ─────────────────────────────────────────────
 
@@ -326,6 +329,12 @@ namespace LemonLaw.Infrastructure.Data
                 e.HasIndex(x => x.TemplateCode).IsUnique();
                 e.HasQueryFilter(x => !x.IsDeleted);
             });
+
+            modelBuilder.Entity<FaqQuestion>()
+                .HasMany(q => q.Answers)
+                .WithOne(a => a.FaqQuestion)
+                .HasForeignKey(a => a.FaqQuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 

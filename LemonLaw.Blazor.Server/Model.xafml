@@ -1,10 +1,34 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Application>
-  <Options UIType="TabbedMDI"
-         FormStyle="Ribbon"
-         RestoreTabbedMdiLayout="True"
-         ShowTabImage="True"
-	 VirtualScrollingEnabled="True">
-  </Options>
   <NavigationItems NavigationStyle="Accordion" />
+  <Options UIType="TabbedMDI" FormStyle="Ribbon" RestoreTabbedMdiLayout="True" ShowTabImage="True" VirtualScrollingEnabled="True" />
+  <SchemaModules>
+    <SchemaModule Name="SystemModule" Version="25.2.6.0" IsNewNode="True" />
+  </SchemaModules>
+  <Views>
+    <DetailView Id="AuditDetails_DetailView">
+      <Layout>
+        <LayoutGroup Id="Main" RelativeSize="100">
+          <LayoutGroup Id="SimpleEditors" RelativeSize="100">
+            <LayoutGroup Id="AuditDetails" RelativeSize="100">
+              <LayoutGroup Id="Item1" ShowCaption="True" Caption="Audit Details" CaptionLocation="Top" Index="0" RelativeSize="100" Direction="Horizontal" IsNewNode="True">
+                <LayoutGroup Id="Autoc9a5288e-dc58-4402-be30-57d19bca9e64" ShowCaption="False" Caption="" Index="0" RelativeSize="49.94400895856663" IsNewNode="True">
+                  <LayoutItem Id="CreatedDate" ViewItem="CreatedDate" Index="0" RelativeSize="5.247813411078718" IsNewNode="True" />
+                  <LayoutItem Id="CreatedBy" ViewItem="CreatedBy" Index="1" RelativeSize="94.75218658892128" IsNewNode="True" />
+                </LayoutGroup>
+                <LayoutGroup Id="Autofb41f0f2-ceb2-4efa-b49e-72d5866ef584" ShowCaption="False" Caption="" Index="1" RelativeSize="50.05599104143337" IsNewNode="True">
+                  <LayoutItem Id="ModifiedDate" ViewItem="ModifiedDate" Index="0" RelativeSize="5.247813411078718" IsNewNode="True" />
+                  <LayoutItem Id="ModifiedBy" ViewItem="ModifiedBy" Index="1" RelativeSize="94.75218658892128" IsNewNode="True" />
+                </LayoutGroup>
+              </LayoutGroup>
+              <LayoutItem Id="CreatedBy" Removed="True" />
+              <LayoutItem Id="CreatedDate" Removed="True" />
+              <LayoutItem Id="ModifiedBy" Removed="True" />
+              <LayoutItem Id="ModifiedDate" Removed="True" />
+            </LayoutGroup>
+          </LayoutGroup>
+        </LayoutGroup>
+      </Layout>
+    </DetailView>
+  </Views>
 </Application>

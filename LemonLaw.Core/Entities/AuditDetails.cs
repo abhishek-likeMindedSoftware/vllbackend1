@@ -117,9 +117,9 @@ namespace LemonLaw.Core.Entities
         // ── Soft delete ───────────────────────────────────────────────────────
 
         private bool _isDeleted;
-        [Browsable(false)]
-        [VisibleInListView(false)]
-        [VisibleInDetailView(false)]
+        [XafDisplayName("Is Deleted")]
+        [ReadOnly(true)]
+        [ModelDefault("AllowEdit", "False")]
         public virtual bool IsDeleted
         {
             get => _isDeleted;

@@ -2,6 +2,7 @@
 using DevExpress.ExpressApp.Updating;
 using DevExpress.Persistent.Base;
 using LemonLaw.Core.Entities;
+using LemonLaw.Core.Entities.Faq;
 using System.ComponentModel;
 using AppEntity = LemonLaw.Core.Entities.Application;
 
@@ -37,6 +38,8 @@ namespace LemonLaw.Module
             AdditionalExportedTypes.Add(typeof(DealerResponse));
             AdditionalExportedTypes.Add(typeof(Hearing));
             AdditionalExportedTypes.Add(typeof(Decision));
+            AdditionalExportedTypes.Add(typeof(FaqQuestion));
+            AdditionalExportedTypes.Add(typeof(FaqAnswer));
 
             // ── Required modules ──────────────────────────────────────────────
             RequiredModuleTypes.Add(typeof(DevExpress.ExpressApp.SystemModule.SystemModule));
@@ -74,6 +77,8 @@ namespace LemonLaw.Module
             application.TypesInfo.RegisterEntity(typeof(DealerResponse));
             application.TypesInfo.RegisterEntity(typeof(Hearing));
             application.TypesInfo.RegisterEntity(typeof(Decision));
+            application.TypesInfo.RegisterEntity(typeof(FaqQuestion));
+            application.TypesInfo.RegisterEntity(typeof(FaqAnswer));
         }
 
         public override void Setup(ApplicationModulesManager moduleManager)

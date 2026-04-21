@@ -4,6 +4,7 @@ using LemonLaw.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LemonLaw.Infrastructure.Migrations
 {
     [DbContext(typeof(LemonLawDbContext))]
-    partial class LemonLawDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260421090815_UpdatedEntitiesRelation")]
+    partial class UpdatedEntitiesRelation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1489,83 +1492,6 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.ToTable("Expenses");
                 });
 
-            modelBuilder.Entity("LemonLaw.Core.Entities.Faq.FaqAnswer", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("AnswerText")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("CreatedById")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("FaqQuestionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid?>("ModifiedById")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("ModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("State")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedById");
-
-                    b.HasIndex("FaqQuestionId");
-
-                    b.HasIndex("ModifiedById");
-
-                    b.ToTable("FaqAnswers");
-                });
-
-            modelBuilder.Entity("LemonLaw.Core.Entities.Faq.FaqQuestion", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("CreatedById")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid?>("ModifiedById")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("ModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("QuestionText")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("State")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedById");
-
-                    b.HasIndex("ModifiedById");
-
-                    b.ToTable("FaqQuestions");
-                });
-
             modelBuilder.Entity("LemonLaw.Core.Entities.Hearing", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2233,43 +2159,6 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Navigation("ModifiedBy");
                 });
 
-            modelBuilder.Entity("LemonLaw.Core.Entities.Faq.FaqAnswer", b =>
-                {
-                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedById");
-
-                    b.HasOne("LemonLaw.Core.Entities.Faq.FaqQuestion", "FaqQuestion")
-                        .WithMany("Answers")
-                        .HasForeignKey("FaqQuestionId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "ModifiedBy")
-                        .WithMany()
-                        .HasForeignKey("ModifiedById");
-
-                    b.Navigation("CreatedBy");
-
-                    b.Navigation("FaqQuestion");
-
-                    b.Navigation("ModifiedBy");
-                });
-
-            modelBuilder.Entity("LemonLaw.Core.Entities.Faq.FaqQuestion", b =>
-                {
-                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedById");
-
-                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "ModifiedBy")
-                        .WithMany()
-                        .HasForeignKey("ModifiedById");
-
-                    b.Navigation("CreatedBy");
-
-                    b.Navigation("ModifiedBy");
-                });
-
             modelBuilder.Entity("LemonLaw.Core.Entities.Hearing", b =>
                 {
                     b.HasOne("LemonLaw.Core.Entities.Application", "Application")
@@ -2415,11 +2304,6 @@ namespace LemonLaw.Infrastructure.Migrations
             modelBuilder.Entity("LemonLaw.Core.Entities.DealerOutreach", b =>
                 {
                     b.Navigation("Response");
-                });
-
-            modelBuilder.Entity("LemonLaw.Core.Entities.Faq.FaqQuestion", b =>
-                {
-                    b.Navigation("Answers");
                 });
 
             modelBuilder.Entity("LemonLaw.Core.Entities.ApplicationUser", b =>
