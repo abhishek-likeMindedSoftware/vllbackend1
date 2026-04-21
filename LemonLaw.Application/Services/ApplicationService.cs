@@ -124,7 +124,7 @@ public class ApplicationService(
             a.AddressLine1 = dto.AddressLine1;
             a.AddressLine2 = dto.AddressLine2;
             a.City = dto.City;
-            a.State = dto.State;
+            a.AddressState = dto.State;
             a.ZipCode = dto.ZipCode;
             a.GooglePlaceId = dto.PlaceId;
             a.PreferredContact = dto.PreferredContactMethod;
@@ -918,7 +918,7 @@ public class ApplicationService(
         AddressLine1 = a.AddressLine1,
         AddressLine2 = a.AddressLine2,
         City = a.City,
-        State = a.State,
+        State = a.AddressState,
         ZipCode = a.ZipCode,
         PreferredContact = a.PreferredContact.ToString()
     };

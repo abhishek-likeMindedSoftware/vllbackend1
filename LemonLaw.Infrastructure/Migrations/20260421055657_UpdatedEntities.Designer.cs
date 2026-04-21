@@ -4,6 +4,7 @@ using LemonLaw.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LemonLaw.Infrastructure.Migrations
 {
     [DbContext(typeof(LemonLawDbContext))]
-    partial class LemonLawDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260421055657_UpdatedEntities")]
+    partial class UpdatedEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -524,6 +527,10 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<string>("AddressLine2")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("AddressState")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
@@ -531,7 +538,10 @@ namespace LemonLaw.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("DeletedAt")
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("EmailAddress")
@@ -555,6 +565,12 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<string>("MiddleName")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("ModifiedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -567,9 +583,8 @@ namespace LemonLaw.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("State")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("State")
+                        .HasColumnType("int");
 
                     b.Property<string>("ZipCode")
                         .IsRequired()
@@ -579,6 +594,10 @@ namespace LemonLaw.Infrastructure.Migrations
 
                     b.HasIndex("ApplicationId")
                         .IsUnique();
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ModifiedById");
 
                     b.ToTable("Applicants");
                 });
@@ -613,7 +632,10 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<bool>("CertificationAccepted")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime?>("DeletedAt")
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("DesiredResolution")
@@ -626,6 +648,12 @@ namespace LemonLaw.Infrastructure.Migrations
                         .HasColumnType("bit");
 
                     b.Property<DateTime>("LastActivityAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ModifiedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("NarrativeStatement")
@@ -646,6 +674,9 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<DateTime?>("SignatureTimestamp")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("State")
+                        .HasColumnType("int");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -664,6 +695,10 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasIndex("CaseNumber")
                         .IsUnique();
 
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ModifiedById");
+
                     b.ToTable("Applications");
                 });
 
@@ -677,7 +712,10 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("DeletedAt")
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("DocumentType")
@@ -704,8 +742,17 @@ namespace LemonLaw.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("ModifiedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("StaffNotes")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("State")
+                        .HasColumnType("int");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -730,6 +777,10 @@ namespace LemonLaw.Infrastructure.Migrations
 
                     b.HasIndex("ApplicationId");
 
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ModifiedById");
+
                     b.ToTable("ApplicationDocuments");
                 });
 
@@ -743,17 +794,8 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("IsRevoked")
                         .HasColumnType("bit");
@@ -882,6 +924,9 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("CreatedByName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -890,7 +935,7 @@ namespace LemonLaw.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("DeletedAt")
+                    b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsDeleted")
@@ -899,13 +944,26 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<bool>("IsPinned")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("ModifiedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("NoteText")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("State")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ModifiedById");
 
                     b.ToTable("CaseNotes");
                 });
@@ -923,7 +981,10 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<string>("BodyPreview")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("DeletedAt")
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("DeliveryStatus")
@@ -939,6 +1000,12 @@ namespace LemonLaw.Infrastructure.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<Guid?>("ModifiedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("RecipientEmail")
                         .IsRequired()
@@ -957,6 +1024,9 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<string>("SentByStaffId")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("State")
+                        .HasColumnType("int");
+
                     b.Property<string>("Subject")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -967,6 +1037,10 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ModifiedById");
 
                     b.ToTable("Correspondences");
                 });
@@ -986,7 +1060,10 @@ namespace LemonLaw.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("DeletedAt")
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
@@ -1005,6 +1082,15 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<string>("MergeFields")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("ModifiedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("State")
+                        .HasColumnType("int");
+
                     b.Property<string>("Subject")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1018,6 +1104,10 @@ namespace LemonLaw.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ModifiedById");
 
                     b.HasIndex("TemplateCode")
                         .IsUnique();
@@ -1035,6 +1125,12 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("DealerEmail")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1045,9 +1141,6 @@ namespace LemonLaw.Infrastructure.Migrations
 
                     b.Property<string>("DealerPhone")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("DeliveryStatus")
                         .IsRequired()
@@ -1071,12 +1164,21 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("ModifiedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("OutreachType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateOnly>("ResponseDeadline")
                         .HasColumnType("date");
+
+                    b.Property<Guid?>("ResponseId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("SendGridMessageId")
                         .HasColumnType("nvarchar(max)");
@@ -1087,6 +1189,9 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<string>("SentByStaffId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("State")
+                        .HasColumnType("int");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1110,6 +1215,10 @@ namespace LemonLaw.Infrastructure.Migrations
 
                     b.HasIndex("ApplicationId");
 
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ModifiedById");
+
                     b.ToTable("DealerOutreaches");
                 });
 
@@ -1130,15 +1239,24 @@ namespace LemonLaw.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("DealerPosition")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<Guid?>("ModifiedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("OutreachId")
                         .HasColumnType("uniqueidentifier");
@@ -1170,6 +1288,9 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<decimal?>("SettlementOffer")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("State")
+                        .HasColumnType("int");
+
                     b.Property<string>("SubmissionIpAddress")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1180,6 +1301,10 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ModifiedById");
 
                     b.HasIndex("OutreachId")
                         .IsUnique();
@@ -1203,6 +1328,12 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<bool>("ConsumerNotified")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("DealerNotified")
                         .HasColumnType("bit");
 
@@ -1220,19 +1351,29 @@ namespace LemonLaw.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("ModifiedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<decimal?>("RefundAmount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("State")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId")
                         .IsUnique();
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ModifiedById");
 
                     b.ToTable("Decisions");
                 });
@@ -1247,6 +1388,12 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("DefectCategory")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1254,9 +1401,6 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<string>("DefectDescription")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<DateOnly>("FirstOccurrenceDate")
                         .HasColumnType("date");
@@ -1267,12 +1411,25 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<bool>("IsOngoing")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("ModifiedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("State")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ModifiedById");
 
                     b.ToTable("Defects");
                 });
@@ -1290,7 +1447,10 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("DeletedAt")
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
@@ -1306,12 +1466,25 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("ModifiedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("ReceiptUploaded")
                         .HasColumnType("bit");
+
+                    b.Property<int>("State")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ModifiedById");
 
                     b.ToTable("Expenses");
                 });
@@ -1335,11 +1508,14 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<DateTime?>("ContinuedTo")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("DealerNoticesSent")
                         .HasColumnType("bit");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("HearingDate")
                         .HasColumnType("datetime2");
@@ -1354,6 +1530,12 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("ModifiedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Outcome")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1361,9 +1543,16 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<string>("OutcomeNotes")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("State")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ModifiedById");
 
                     b.ToTable("Hearings");
                 });
@@ -1378,6 +1567,12 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<int?>("DaysOutOfService")
                         .HasColumnType("int");
 
@@ -1385,14 +1580,17 @@ namespace LemonLaw.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<int?>("MileageAtRepair")
                         .HasColumnType("int");
+
+                    b.Property<Guid?>("ModifiedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateOnly>("RepairDate")
                         .HasColumnType("date");
@@ -1416,9 +1614,16 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
 
+                    b.Property<int>("State")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ModifiedById");
 
                     b.ToTable("RepairAttempts");
                 });
@@ -1432,6 +1637,12 @@ namespace LemonLaw.Infrastructure.Migrations
 
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("CurrentMileage")
                         .HasColumnType("int");
@@ -1468,9 +1679,6 @@ namespace LemonLaw.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -1487,11 +1695,20 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Property<int>("MileageAtPurchase")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("ModifiedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateOnly>("PurchaseDate")
                         .HasColumnType("date");
 
                     b.Property<decimal?>("PurchasePrice")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("State")
+                        .HasColumnType("int");
 
                     b.Property<string>("VIN")
                         .IsRequired()
@@ -1541,6 +1758,10 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasIndex("ApplicationId")
                         .IsUnique();
 
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ModifiedById");
+
                     b.HasIndex("VIN");
 
                     b.ToTable("Vehicles");
@@ -1568,7 +1789,7 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.HasDiscriminator().HasValue("PermissionPolicyRole");
                 });
 
-            modelBuilder.Entity("LemonLaw.Module.BusinessObjects.ApplicationUser", b =>
+            modelBuilder.Entity("LemonLaw.Core.Entities.ApplicationUser", b =>
                 {
                     b.HasBaseType("DevExpress.Persistent.BaseImpl.EF.PermissionPolicy.PermissionPolicyUser");
 
@@ -1676,7 +1897,34 @@ namespace LemonLaw.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "ModifiedBy")
+                        .WithMany()
+                        .HasForeignKey("ModifiedById");
+
                     b.Navigation("Application");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("ModifiedBy");
+                });
+
+            modelBuilder.Entity("LemonLaw.Core.Entities.Application", b =>
+                {
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "ModifiedBy")
+                        .WithMany()
+                        .HasForeignKey("ModifiedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("ModifiedBy");
                 });
 
             modelBuilder.Entity("LemonLaw.Core.Entities.ApplicationDocument", b =>
@@ -1687,7 +1935,19 @@ namespace LemonLaw.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "ModifiedBy")
+                        .WithMany()
+                        .HasForeignKey("ModifiedById");
+
                     b.Navigation("Application");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("ModifiedBy");
                 });
 
             modelBuilder.Entity("LemonLaw.Core.Entities.ApplicationToken", b =>
@@ -1703,7 +1963,7 @@ namespace LemonLaw.Infrastructure.Migrations
 
             modelBuilder.Entity("LemonLaw.Core.Entities.ApplicationUserLoginInfo", b =>
                 {
-                    b.HasOne("LemonLaw.Module.BusinessObjects.ApplicationUser", "User")
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "User")
                         .WithMany("UserLogins")
                         .HasForeignKey("UserForeignKey")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1731,7 +1991,19 @@ namespace LemonLaw.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "ModifiedBy")
+                        .WithMany()
+                        .HasForeignKey("ModifiedById");
+
                     b.Navigation("Application");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("ModifiedBy");
                 });
 
             modelBuilder.Entity("LemonLaw.Core.Entities.Correspondence", b =>
@@ -1742,7 +2014,34 @@ namespace LemonLaw.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "ModifiedBy")
+                        .WithMany()
+                        .HasForeignKey("ModifiedById");
+
                     b.Navigation("Application");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("ModifiedBy");
+                });
+
+            modelBuilder.Entity("LemonLaw.Core.Entities.CorrespondenceTemplate", b =>
+                {
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "ModifiedBy")
+                        .WithMany()
+                        .HasForeignKey("ModifiedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("ModifiedBy");
                 });
 
             modelBuilder.Entity("LemonLaw.Core.Entities.DealerOutreach", b =>
@@ -1753,7 +2052,19 @@ namespace LemonLaw.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "ModifiedBy")
+                        .WithMany()
+                        .HasForeignKey("ModifiedById");
+
                     b.Navigation("Application");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("ModifiedBy");
                 });
 
             modelBuilder.Entity("LemonLaw.Core.Entities.DealerResponse", b =>
@@ -1764,6 +2075,14 @@ namespace LemonLaw.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "ModifiedBy")
+                        .WithMany()
+                        .HasForeignKey("ModifiedById");
+
                     b.HasOne("LemonLaw.Core.Entities.DealerOutreach", "Outreach")
                         .WithOne("Response")
                         .HasForeignKey("LemonLaw.Core.Entities.DealerResponse", "OutreachId")
@@ -1771,6 +2090,10 @@ namespace LemonLaw.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Application");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("ModifiedBy");
 
                     b.Navigation("Outreach");
                 });
@@ -1783,7 +2106,19 @@ namespace LemonLaw.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "ModifiedBy")
+                        .WithMany()
+                        .HasForeignKey("ModifiedById");
+
                     b.Navigation("Application");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("ModifiedBy");
                 });
 
             modelBuilder.Entity("LemonLaw.Core.Entities.Defect", b =>
@@ -1794,7 +2129,19 @@ namespace LemonLaw.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "ModifiedBy")
+                        .WithMany()
+                        .HasForeignKey("ModifiedById");
+
                     b.Navigation("Application");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("ModifiedBy");
                 });
 
             modelBuilder.Entity("LemonLaw.Core.Entities.Expense", b =>
@@ -1805,7 +2152,19 @@ namespace LemonLaw.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "ModifiedBy")
+                        .WithMany()
+                        .HasForeignKey("ModifiedById");
+
                     b.Navigation("Application");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("ModifiedBy");
                 });
 
             modelBuilder.Entity("LemonLaw.Core.Entities.Hearing", b =>
@@ -1816,7 +2175,19 @@ namespace LemonLaw.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "ModifiedBy")
+                        .WithMany()
+                        .HasForeignKey("ModifiedById");
+
                     b.Navigation("Application");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("ModifiedBy");
                 });
 
             modelBuilder.Entity("LemonLaw.Core.Entities.RepairAttempt", b =>
@@ -1827,7 +2198,19 @@ namespace LemonLaw.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "ModifiedBy")
+                        .WithMany()
+                        .HasForeignKey("ModifiedById");
+
                     b.Navigation("Application");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("ModifiedBy");
                 });
 
             modelBuilder.Entity("LemonLaw.Core.Entities.Vehicle", b =>
@@ -1838,7 +2221,19 @@ namespace LemonLaw.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("LemonLaw.Core.Entities.ApplicationUser", "ModifiedBy")
+                        .WithMany()
+                        .HasForeignKey("ModifiedById");
+
                     b.Navigation("Application");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("ModifiedBy");
                 });
 
             modelBuilder.Entity("PermissionPolicyRolePermissionPolicyUser", b =>
@@ -1922,7 +2317,7 @@ namespace LemonLaw.Infrastructure.Migrations
                     b.Navigation("Response");
                 });
 
-            modelBuilder.Entity("LemonLaw.Module.BusinessObjects.ApplicationUser", b =>
+            modelBuilder.Entity("LemonLaw.Core.Entities.ApplicationUser", b =>
                 {
                     b.Navigation("UserLogins");
                 });
