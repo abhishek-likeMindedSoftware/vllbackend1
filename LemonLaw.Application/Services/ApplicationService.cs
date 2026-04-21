@@ -3,6 +3,7 @@ using LemonLaw.Application.Repositories;
 using LemonLaw.Core.Entities;
 using LemonLaw.Core.Enums;
 using LemonLaw.Shared.DTOs;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 using AppEntity = LemonLaw.Core.Entities.Application;
@@ -21,6 +22,8 @@ public class ApplicationService(
     IGenericRepository<Defect> defectRepository,
     IGenericRepository<RepairAttempt> repairRepository,
     IGenericRepository<Expense> expenseRepository,
+    IEmailService emailService,
+    IConfiguration configuration,
     ILogger<ApplicationService> logger) : IApplicationService
 {
     // ── Create Application ────────────────────────────────────────────────────
@@ -325,6 +328,67 @@ public class ApplicationService(
 
             applicationRepository.Update(application);
             await applicationRepository.SaveChangesAsync();
+
+            // Send confirmation email to consumer
+            try
+            {
+                var applicant = application.Applicant;
+                if (applicant != null && !string.IsNullOrWhiteSpace(applicant.EmailAddress))
+                {
+                    var portalBaseUrl = configuration["Cors:PortalOrigin"] ?? "http://localhost:5173";
+
+                    // Per spec §2.8: generate a fresh cleartext token, update the stored hash,
+                    // and embed the cleartext in the email link — it is never stored in plaintext.
+                    var freshToken = GenerateSecureToken();
+                    var freshHash = HashToken(freshToken);
+
+                    if (application.Token == null)
+                    {
+                        application.Token = new ApplicationToken
+                        {
+                            ApplicationId = applicationId,
+                            TokenType = TokenType.CONSUMER,
+                            TokenHash = freshHash,
+                            ExpiresAt = DateTime.UtcNow.AddYears(2)
+                        };
+                    }
+                    else
+                    {
+                        application.Token.TokenHash = freshHash;
+                        application.Token.ExpiresAt = DateTime.UtcNow.AddYears(2);
+                    }
+
+                    applicationRepository.Update(application);
+                    await applicationRepository.SaveChangesAsync();
+
+                    var statusLink = $"{portalBaseUrl}/status?applicationId={applicationId}&token={freshToken}";
+                    var applicantName = $"{applicant.FirstName} {applicant.LastName}".Trim();
+                    var appTypeFriendly = application.ApplicationType switch
+                    {
+                        ApplicationType.NEW_CAR => "New Car Lemon Law",
+                        ApplicationType.USED_CAR => "Used Car Warranty Law",
+                        ApplicationType.LEASED => "Leased Vehicle Arbitration",
+                        _ => application.ApplicationType.ToString()
+                    };
+
+                    await emailService.SendFromTemplateAsync(
+                        applicant.EmailAddress,
+                        applicantName,
+                        "CONSUMER_SUBMISSION_CONFIRMATION",
+                        new Dictionary<string, string>
+                        {
+                            ["consumerName"] = applicantName,
+                            ["applicationTypeFriendly"] = appTypeFriendly,
+                            ["caseNumber"] = application.CaseNumber,
+                            ["portalStatusLink"] = statusLink
+                        });
+                }
+            }
+            catch (Exception emailEx)
+            {
+                logger.LogError(emailEx, "Failed to send submission confirmation email for application {Id}", applicationId);
+                // Don't fail the submission if email fails
+            }
 
             return new CommonResponseDto<bool> { Success = true, Data = true, Message = "Application submitted." };
         }
