@@ -3,6 +3,7 @@ using DevExpress.ExpressApp.Editors;
 using DevExpress.ExpressApp.Model;
 using DevExpress.Persistent.Base;
 using LemonLaw.Core.Enums;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 
 namespace LemonLaw.Core.Entities;
@@ -163,39 +164,39 @@ public class Application : AuditDetails
 
     [XafDisplayName("Defects")]
     [DevExpress.ExpressApp.DC.Aggregated]
-    public virtual ICollection<Defect> Defects { get; set; } = new List<Defect>();
+    public virtual ICollection<Defect> Defects { get; set; } = new ObservableCollection<Defect>();
 
     [XafDisplayName("Repair Attempts")]
     [DevExpress.ExpressApp.DC.Aggregated]
-    public virtual ICollection<RepairAttempt> RepairAttempts { get; set; } = new List<RepairAttempt>();
+    public virtual ICollection<RepairAttempt> RepairAttempts { get; set; } = new ObservableCollection<RepairAttempt>();
 
     [XafDisplayName("Expenses")]
     [DevExpress.ExpressApp.DC.Aggregated]
-    public virtual ICollection<Expense> Expenses { get; set; } = new List<Expense>();
+    public virtual ICollection<Expense> Expenses { get; set; } = new ObservableCollection<Expense>();
 
     [XafDisplayName("Documents")]
     [DevExpress.ExpressApp.DC.Aggregated]
-    public virtual ICollection<ApplicationDocument> Documents { get; set; } = new List<ApplicationDocument>();
+    public virtual ICollection<ApplicationDocument> Documents { get; set; } = new ObservableCollection<ApplicationDocument>();
 
     [XafDisplayName("Case Timeline")]
     [DevExpress.ExpressApp.DC.Aggregated]
-    public virtual ICollection<CaseEvent> Events { get; set; } = new List<CaseEvent>();
+    public virtual ICollection<CaseEvent> Events { get; set; } = new ObservableCollection<CaseEvent>();
 
     [XafDisplayName("Internal Notes")]
     [DevExpress.ExpressApp.DC.Aggregated]
-    public virtual ICollection<CaseNote> Notes { get; set; } = new List<CaseNote>();
+    public virtual ICollection<CaseNote> Notes { get; set; } = new ObservableCollection<CaseNote>();
 
     [XafDisplayName("Correspondence")]
     [DevExpress.ExpressApp.DC.Aggregated]
-    public virtual ICollection<Correspondence> Correspondences { get; set; } = new List<Correspondence>();
+    public virtual ICollection<Correspondence> Correspondences { get; set; } = new ObservableCollection<Correspondence>();
 
     [XafDisplayName("Dealer Outreach")]
     [DevExpress.ExpressApp.DC.Aggregated]
-    public virtual ICollection<DealerOutreach> DealerOutreaches { get; set; } = new List<DealerOutreach>();
+    public virtual ICollection<DealerOutreach> DealerOutreaches { get; set; } = new ObservableCollection<DealerOutreach>();
 
     [XafDisplayName("Hearings")]
     [DevExpress.ExpressApp.DC.Aggregated]
-    public virtual ICollection<Hearing> Hearings { get; set; } = new List<Hearing>();
+    public virtual ICollection<Hearing> Hearings { get; set; } = new ObservableCollection<Hearing>();
 
     [XafDisplayName("Decision")]
     public virtual Decision? Decision { get; set; }
