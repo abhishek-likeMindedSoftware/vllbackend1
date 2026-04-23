@@ -70,8 +70,8 @@ public class Application : AuditDetails,
     private string _caseNumber = string.Empty;
 
     [XafDisplayName("Case Number")]
-    [ReadOnly(true)]
-    [ModelDefault("AllowEdit", "False")]
+    //[ReadOnly(true)]
+    //[ModelDefault("AllowEdit", "False")]
     public virtual string CaseNumber
     {
         get => _caseNumber;
