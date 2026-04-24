@@ -47,3 +47,20 @@ app {
 .ll-dot-green  { background:#16a34a; }
 .ll-dot-cyan   { background:#0891b2; }
 .ll-dot-gray   { background:#94a3b8; }
+
+/* ── Send Dealer Outreach action button ──────────────────────────────────── */
+button[data-action-name="Send Dealer Outreach"] {
+    background-color: #ff6f00 !important;
+    border-color: #ff6f00 !important;
+    color: #ffffff !important;
+}
+
+button[data-action-name="Send Dealer Outreach"]:hover {
+    background-color: #e65100 !important;
+    border-color: #e65100 !important;
+}
+
+/* Hide the empty icon span to remove the leading space */
+button[data-action-name="Send Dealer Outreach"] .xaf-toolbar-item-icon {
+    display: none !important;
+}

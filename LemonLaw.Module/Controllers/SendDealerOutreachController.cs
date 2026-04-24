@@ -24,7 +24,8 @@ namespace LemonLaw.Module.Controllers
             {
                 Caption = "Send Dealer Outreach",
                 ToolTip = "Send the initial outreach email to the dealer.",
-                ImageName = "Action_Send"
+                ImageName = "Action_Send",
+                Tag = "send-dealer-outreach-btn"
             };
             _sendOutreachAction.Execute += OnSendOutreachExecute;
         }
