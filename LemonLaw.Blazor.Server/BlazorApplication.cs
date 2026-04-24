@@ -16,7 +16,7 @@ namespace LemonLaw.Blazor.Server
     {
         public LemonLawBlazorApplication()
         {
-            ApplicationName = "LemonLaw";
+            ApplicationName = "OCABR Workbench";
             CheckCompatibilityType = DevExpress.ExpressApp.CheckCompatibilityType.DatabaseSchema;
             DatabaseVersionMismatch += LemonLawBlazorApplication_DatabaseVersionMismatch;
         }

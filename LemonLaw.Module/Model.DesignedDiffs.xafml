@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" ?>
-<Application Title="LemonLaw">
+<Application Title="OCABR Workbench">
   <BOModel>
     <Class Name="DevExpress.Persistent.BaseImpl.EF.PermissionPolicy.PermissionPolicyUser" Caption="Base User" />
   </BOModel>
