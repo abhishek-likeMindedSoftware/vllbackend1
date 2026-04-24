@@ -3,6 +3,11 @@
   <BOModel>
     <Class Name="DevExpress.Persistent.BaseImpl.EF.PermissionPolicy.PermissionPolicyUser" Caption="Base User" />
   </BOModel>
+  <NavigationItems>
+    <Items>
+      <Item Id="Default" Caption="Admin" />
+    </Items>
+  </NavigationItems>
   <Options>
     <LayoutManagerOptions RequiredFieldMark="*" />
   </Options>

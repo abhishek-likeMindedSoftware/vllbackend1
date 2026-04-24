@@ -1,0 +1,338 @@
+@using LemonLaw.Application.Interfaces
+@using LemonLaw.Application.Repositories
+@using LemonLaw.Core.Entities
+@using LemonLaw.Core.Enums
+@using Microsoft.Extensions.DependencyInjection
+@inject IServiceProvider ServiceProvider
+
+<PageTitle>Dashboard — OCABR Lemon Law Workbench</PageTitle>
+
+<div class="ll-dashboard">
+
+    <!-- Header -->
+    <div class="ll-dash-header">
+        <div>
+            <h1 class="ll-dash-title">Workbench Dashboard</h1>
+            <p class="ll-dash-subtitle">@DateTime.Now.ToString("dddd, MMMM d, yyyy") — OCABR Vehicle Lemon Law Program</p>
+        </div>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="ll-dash-loading">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <span>Loading dashboard…</span>
+        </div>
+    }
+    else
+    {
+        <!-- KPI Cards -->
+        <div class="ll-kpi-grid">
+            <div class="ll-kpi-card">
+                <div class="ll-kpi-icon" style="background:rgba(2,101,163,0.1);">
+                    <i class="fa-solid fa-folder-open" style="color:#0265a3;"></i>
+                </div>
+                <div class="ll-kpi-body">
+                    <p class="ll-kpi-label">Total Open Cases</p>
+                    <p class="ll-kpi-value">@_totalOpen</p>
+                    <p class="ll-kpi-sub">Active in the system</p>
+                </div>
+            </div>
+            <div class="ll-kpi-card">
+                <div class="ll-kpi-icon" style="background:rgba(234,179,8,0.1);">
+                    <i class="fa-solid fa-clock" style="color:#ca8a04;"></i>
+                </div>
+                <div class="ll-kpi-body">
+                    <p class="ll-kpi-label">Pending Review</p>
+                    <p class="ll-kpi-value">@_pendingReview</p>
+                    <p class="ll-kpi-sub">Awaiting staff action</p>
+                </div>
+            </div>
+            <div class="ll-kpi-card">
+                <div class="ll-kpi-icon" style="background:rgba(249,115,22,0.1);">
+                    <i class="fa-solid fa-triangle-exclamation" style="color:#ea580c;"></i>
+                </div>
+                <div class="ll-kpi-body">
+                    <p class="ll-kpi-label">Aging Alerts</p>
+                    <p class="ll-kpi-value">@_agingAlerts</p>
+                    <p class="ll-kpi-sub">Open &gt; 30 days</p>
+                </div>
+            </div>
+            <div class="ll-kpi-card">
+                <div class="ll-kpi-icon" style="background:rgba(34,197,94,0.1);">
+                    <i class="fa-solid fa-check-circle" style="color:#16a34a;"></i>
+                </div>
+                <div class="ll-kpi-body">
+                    <p class="ll-kpi-label">Submitted This Month</p>
+                    <p class="ll-kpi-value">@_submittedThisMonth</p>
+                    <p class="ll-kpi-sub">New applications</p>
+                </div>
+            </div>
+            <div class="ll-kpi-card">
+                <div class="ll-kpi-icon" style="background:rgba(139,92,246,0.1);">
+                    <i class="fa-solid fa-reply" style="color:#7c3aed;"></i>
+                </div>
+                <div class="ll-kpi-body">
+                    <p class="ll-kpi-label">Awaiting Dealer Response</p>
+                    <p class="ll-kpi-value">@_awaitingDealer</p>
+                    <p class="ll-kpi-sub">Outreach sent, no reply</p>
+                </div>
+            </div>
+            <div class="ll-kpi-card">
+                <div class="ll-kpi-icon" style="background:rgba(236,72,153,0.1);">
+                    <i class="fa-solid fa-gavel" style="color:#db2777;"></i>
+                </div>
+                <div class="ll-kpi-body">
+                    <p class="ll-kpi-label">Hearings Scheduled</p>
+                    <p class="ll-kpi-value">@_hearingsScheduled</p>
+                    <p class="ll-kpi-sub">Upcoming hearings</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Breakdown + Recent Activity -->
+        <div class="ll-dash-two-col">
+
+            <!-- Status Breakdown -->
+            <div class="ll-dash-card">
+                <h2 class="ll-dash-card-title">
+                    <i class="fa-solid fa-chart-bar"></i> Cases by Status
+                </h2>
+                <div class="ll-status-list">
+                    @foreach (var item in _statusBreakdown)
+                    {
+                        <div class="ll-status-row">
+                            <span class="ll-status-badge @GetStatusClass(item.Key)">@item.Key.Replace("_", " ")</span>
+                            <div class="ll-status-bar-wrap">
+                                <div class="ll-status-bar" style="width:@GetBarWidth(item.Value)%; background:@GetStatusColor(item.Key);"></div>
+                            </div>
+                            <span class="ll-status-count">@item.Value</span>
+                        </div>
+                    }
+                    @if (!_statusBreakdown.Any())
+                    {
+                        <p class="ll-empty">No open cases.</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="ll-dash-card">
+                <h2 class="ll-dash-card-title">
+                    <i class="fa-solid fa-bolt"></i> Recent Activity
+                </h2>
+                <div class="ll-activity-list">
+                    @foreach (var evt in _recentActivity)
+                    {
+                        <div class="ll-activity-row">
+                            <div class="ll-activity-dot @GetEventDotClass(evt.EventType)"></div>
+                            <div class="ll-activity-body">
+                                <p class="ll-activity-desc">@evt.Description</p>
+                                <p class="ll-activity-meta">
+                                    @evt.ActorDisplayName &nbsp;·&nbsp;
+                                    @evt.EventTimestamp.ToLocalTime().ToString("MMM d, h:mm tt")
+                                </p>
+                            </div>
+                        </div>
+                    }
+                    @if (!_recentActivity.Any())
+                    {
+                        <p class="ll-empty">No recent activity.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Application Type Breakdown -->
+        <div class="ll-dash-card" style="margin-top:20px;">
+            <h2 class="ll-dash-card-title">
+                <i class="fa-solid fa-car"></i> Open Cases by Application Type
+            </h2>
+            <div class="ll-type-grid">
+                <div class="ll-type-card" style="border-color:#0265a3;">
+                    <p class="ll-type-label">New Car Lemon Law</p>
+                    <p class="ll-type-value" style="color:#0265a3;">@_byType.GetValueOrDefault("NEW_CAR", 0)</p>
+                </div>
+                <div class="ll-type-card" style="border-color:#7c3aed;">
+                    <p class="ll-type-label">Used Car Warranty</p>
+                    <p class="ll-type-value" style="color:#7c3aed;">@_byType.GetValueOrDefault("USED_CAR", 0)</p>
+                </div>
+                <div class="ll-type-card" style="border-color:#db2777;">
+                    <p class="ll-type-label">Leased Vehicle</p>
+                    <p class="ll-type-value" style="color:#db2777;">@_byType.GetValueOrDefault("LEASED", 0)</p>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .ll-dashboard { padding: 24px 28px; font-family: 'Segoe UI', sans-serif; max-width: 1200px; }
+    .ll-dash-header { margin-bottom: 24px; }
+    .ll-dash-title { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0 0 4px; }
+    .ll-dash-subtitle { font-size: 0.875rem; color: #64748b; margin: 0; }
+    .ll-dash-loading { display: flex; align-items: center; gap: 10px; color: #64748b; padding: 48px 0; font-size: 1rem; }
+
+    /* KPI Grid */
+    .ll-kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+    .ll-kpi-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 20px; display: flex; align-items: flex-start; gap: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .ll-kpi-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .ll-kpi-body { flex: 1; }
+    .ll-kpi-label { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 4px; }
+    .ll-kpi-value { font-size: 1.75rem; font-weight: 800; color: #1e293b; margin: 0 0 2px; line-height: 1; }
+    .ll-kpi-sub { font-size: 0.75rem; color: #94a3b8; margin: 0; }
+
+    /* Two column layout */
+    .ll-dash-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .ll-dash-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .ll-dash-card-title { font-size: 0.9rem; font-weight: 700; color: #1e293b; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
+    .ll-dash-card-title i { color: #0265a3; }
+    .ll-empty { color: #94a3b8; font-size: 0.875rem; }
+
+    /* Status breakdown */
+    .ll-status-list { display: flex; flex-direction: column; gap: 10px; }
+    .ll-status-row { display: flex; align-items: center; gap: 10px; }
+    .ll-status-badge { font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; white-space: nowrap; min-width: 130px; text-align: center; }
+    .ll-status-bar-wrap { flex: 1; background: #f1f5f9; border-radius: 4px; height: 8px; overflow: hidden; }
+    .ll-status-bar { height: 100%; border-radius: 4px; transition: width 0.4s; }
+    .ll-status-count { font-size: 0.875rem; font-weight: 700; color: #1e293b; min-width: 28px; text-align: right; }
+
+    /* Activity feed */
+    .ll-activity-list { display: flex; flex-direction: column; gap: 0; }
+    .ll-activity-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+    .ll-activity-row:last-child { border-bottom: none; }
+    .ll-activity-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+    .ll-activity-body { flex: 1; }
+    .ll-activity-desc { font-size: 0.8rem; color: #334155; margin: 0 0 2px; line-height: 1.4; }
+    .ll-activity-meta { font-size: 0.72rem; color: #94a3b8; margin: 0; }
+
+    /* Type cards */
+    .ll-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .ll-type-card { border: 2px solid; border-radius: 10px; padding: 16px 20px; text-align: center; }
+    .ll-type-label { font-size: 0.8rem; font-weight: 600; color: #64748b; margin: 0 0 8px; }
+    .ll-type-value { font-size: 2rem; font-weight: 800; margin: 0; }
+
+    @@media (max-width: 900px) {
+        .ll-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+        .ll-dash-two-col { grid-template-columns: 1fr; }
+        .ll-type-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+@code {
+    private bool _loading = true;
+
+    private int _totalOpen;
+    private int _pendingReview;
+    private int _agingAlerts;
+    private int _submittedThisMonth;
+    private int _awaitingDealer;
+    private int _hearingsScheduled;
+
+    private Dictionary<string, int> _statusBreakdown = new();
+    private Dictionary<string, int> _byType = new();
+    private List<CaseEvent> _recentActivity = new();
+
+    private static readonly ApplicationStatus[] ClosedStatuses =
+        { ApplicationStatus.CLOSED, ApplicationStatus.WITHDRAWN };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var appRepo = scope.ServiceProvider
+                .GetRequiredService<IApplicationRepository>();
+            var eventRepo = scope.ServiceProvider
+                .GetRequiredService<IGenericRepository<CaseEvent>>();
+            var hearingRepo = scope.ServiceProvider
+                .GetRequiredService<IGenericRepository<Hearing>>();
+
+            var allApps = (await appRepo.GetAllAsync()).ToList();
+            var openApps = allApps.Where(a => !ClosedStatuses.Contains(a.Status)).ToList();
+            var today = DateTime.UtcNow;
+
+            _totalOpen = openApps.Count;
+            _pendingReview = openApps.Count(a => a.Status == ApplicationStatus.SUBMITTED
+                                              || a.Status == ApplicationStatus.INCOMPLETE);
+            _agingAlerts = openApps.Count(a => (today - a.SubmittedAt).TotalDays > 30);
+            _submittedThisMonth = allApps.Count(a =>
+                a.SubmittedAt.Year == today.Year && a.SubmittedAt.Month == today.Month);
+            _awaitingDealer = openApps.Count(a => a.Status == ApplicationStatus.ACCEPTED);
+            _hearingsScheduled = openApps.Count(a => a.Status == ApplicationStatus.HEARING_SCHEDULED);
+
+            // Status breakdown (open only)
+            _statusBreakdown = openApps
+                .GroupBy(a => a.Status.ToString())
+                .OrderByDescending(g => g.Count())
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            // Application type breakdown (open only)
+            _byType = openApps
+                .GroupBy(a => a.ApplicationType.ToString())
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            // Recent activity — last 10 events across all cases
+            var allEvents = await eventRepo.GetAllAsync();
+            _recentActivity = allEvents
+                .OrderByDescending(e => e.EventTimestamp)
+                .Take(10)
+                .ToList();
+        }
+        catch
+        {
+            // Dashboard is non-critical — show empty state on error
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private int GetBarWidth(int value)
+    {
+        if (!_statusBreakdown.Any()) return 0;
+        var max = _statusBreakdown.Values.Max();
+        return max == 0 ? 0 : (int)Math.Round((double)value / max * 100);
+    }
+
+    private string GetStatusColor(string status) => status switch
+    {
+        "SUBMITTED" => "#0265a3",
+        "INCOMPLETE" => "#ca8a04",
+        "ACCEPTED" => "#7c3aed",
+        "DEALER_RESPONDED" => "#0891b2",
+        "HEARING_SCHEDULED" => "#db2777",
+        "HEARING_COMPLETE" => "#ea580c",
+        "DECISION_ISSUED" => "#16a34a",
+        _ => "#94a3b8"
+    };
+
+    private string GetStatusClass(string status) => status switch
+    {
+        "SUBMITTED" => "ll-badge-blue",
+        "INCOMPLETE" => "ll-badge-amber",
+        "ACCEPTED" => "ll-badge-purple",
+        "DEALER_RESPONDED" => "ll-badge-cyan",
+        "HEARING_SCHEDULED" => "ll-badge-pink",
+        "HEARING_COMPLETE" => "ll-badge-orange",
+        "DECISION_ISSUED" => "ll-badge-green",
+        _ => "ll-badge-gray"
+    };
+
+    private string GetEventDotClass(CaseEventType type) => type switch
+    {
+        CaseEventType.STATUS_CHANGE => "ll-dot-blue",
+        CaseEventType.DEALER_RESPONDED => "ll-dot-purple",
+        CaseEventType.HEARING_SCHEDULED => "ll-dot-pink",
+        CaseEventType.DECISION_ISSUED => "ll-dot-green",
+        CaseEventType.DOCUMENT_UPLOADED => "ll-dot-cyan",
+        CaseEventType.NOTE_ADDED => "ll-dot-gray",
+        _ => "ll-dot-gray"
+    };
+}
