@@ -29,3 +29,21 @@ app {
     height: 100%;
     z-index: 100001;
 }
+
+/* ── Dashboard badge colours ─────────────────────────────────────────────── */
+.ll-badge-blue   { background:#dbeafe; color:#1d4ed8; }
+.ll-badge-amber  { background:#fef9c3; color:#92400e; }
+.ll-badge-purple { background:#ede9fe; color:#6d28d9; }
+.ll-badge-cyan   { background:#cffafe; color:#0e7490; }
+.ll-badge-pink   { background:#fce7f3; color:#9d174d; }
+.ll-badge-orange { background:#ffedd5; color:#9a3412; }
+.ll-badge-green  { background:#dcfce7; color:#166534; }
+.ll-badge-gray   { background:#f1f5f9; color:#475569; }
+
+/* ── Dashboard activity dot colours ─────────────────────────────────────── */
+.ll-dot-blue   { background:#0265a3; }
+.ll-dot-purple { background:#7c3aed; }
+.ll-dot-pink   { background:#db2777; }
+.ll-dot-green  { background:#16a34a; }
+.ll-dot-cyan   { background:#0891b2; }
+.ll-dot-gray   { background:#94a3b8; }

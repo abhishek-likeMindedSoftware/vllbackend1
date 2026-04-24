@@ -40,6 +40,8 @@ namespace LemonLaw.Module
             AdditionalExportedTypes.Add(typeof(Decision));
             AdditionalExportedTypes.Add(typeof(FaqQuestion));
             AdditionalExportedTypes.Add(typeof(FaqAnswer));
+            // Non-persistent dashboard host entity
+            AdditionalExportedTypes.Add(typeof(AdminDashboard));
 
             // ── Required modules ──────────────────────────────────────────────
             RequiredModuleTypes.Add(typeof(DevExpress.ExpressApp.SystemModule.SystemModule));

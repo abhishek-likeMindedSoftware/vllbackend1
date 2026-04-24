@@ -9,8 +9,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LemonLaw.Core.Entities.Faq
 {
-    [DefaultClassOptions]
-    //[NavigationItem("FAQ")]
+    [DefaultProperty(nameof(AnswerText))]
+    // No [DefaultClassOptions] — answers are child records of FaqQuestion,
+    // not a standalone navigation item. Access them via the FAQ question detail view.
     [XafDisplayName("Answer")]
     public class FaqAnswer : AuditDetails, INotifyPropertyChanged, IObjectSpaceLink
     {

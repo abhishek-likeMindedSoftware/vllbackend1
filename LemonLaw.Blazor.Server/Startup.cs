@@ -122,6 +122,28 @@ namespace LemonLaw.Blazor.Server
                             });
                     })
                     .AddNonPersistent();
+
+                // ── Non-persistent object resolution ─────────────────────────
+                // Required for [DomainComponent] entities like AdminDashboard.
+                // Without this, XAF cannot find the object when opening the
+                // AdminDashboard_DetailView and shows a blank/error view.
+                builder.ObjectSpaceProviders.Events.OnObjectSpaceCreated = context =>
+                {
+                    if (context.ObjectSpace is NonPersistentObjectSpace npOS)
+                    {
+                        npOS.ObjectByKeyGetting += (s, e) =>
+                        {
+                            if (e.ObjectType == typeof(AdminDashboard)
+                                && s is NonPersistentObjectSpace osForDashboard)
+                            {
+                                var obj = osForDashboard.CreateObject<AdminDashboard>();
+                                e.Object = obj;
+                                // Mark as unmodified so XAF doesn't prompt to save
+                                npOS.RemoveFromModifiedObjects(obj);
+                            }
+                        };
+                    }
+                };
                 builder.Security
                     .UseIntegratedMode(options =>
                     {
