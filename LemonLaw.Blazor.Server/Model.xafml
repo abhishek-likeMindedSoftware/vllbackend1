@@ -1,6 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Application>
-  <NavigationItems NavigationStyle="Accordion" />
+  <NavigationItems NavigationStyle="Accordion">
+    <Items>
+      <Item Id="Administration" Visible="False" />
+      <Item Id="Case Management" ImageName="BO_Document" />
+      <Item Id="Dealer Portal Activity" ImageName="BO_StateMachine" />
+      <Item Id="Default" ImageName="BO_Role" />
+      <Item Id="Hearings" ImageName="State_Priority_Normal" />
+      <Item Id="Reports" ImageName="BO_Report" />
+      <Item Id="Utility" ImageName="LayoutCustomization_Item" />
+    </Items>
+  </NavigationItems>
   <Options UIType="TabbedMDI" FormStyle="Ribbon" RestoreTabbedMdiLayout="True" ShowTabImage="True" VirtualScrollingEnabled="True" />
   <SchemaModules>
     <SchemaModule Name="SystemModule" Version="25.2.6.0" IsNewNode="True" />
@@ -21,10 +31,6 @@
                   <LayoutItem Id="ModifiedBy" ViewItem="ModifiedBy" Index="1" RelativeSize="94.75218658892128" IsNewNode="True" />
                 </LayoutGroup>
               </LayoutGroup>
-              <LayoutItem Id="CreatedBy" Removed="True" />
-              <LayoutItem Id="CreatedDate" Removed="True" />
-              <LayoutItem Id="ModifiedBy" Removed="True" />
-              <LayoutItem Id="ModifiedDate" Removed="True" />
             </LayoutGroup>
           </LayoutGroup>
         </LayoutGroup>

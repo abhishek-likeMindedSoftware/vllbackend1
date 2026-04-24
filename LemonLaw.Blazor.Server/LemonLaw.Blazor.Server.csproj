@@ -34,4 +34,9 @@
     <ProjectReference Include="..\LemonLaw.Module\LemonLaw.Module.csproj" />
     <ProjectReference Include="..\LemonLaw.Shared\LemonLaw.Shared.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="UnusableNodes.xml">
+      <DependentUpon>Model.xafml</DependentUpon>
+    </None>
+  </ItemGroup>
 </Project>
