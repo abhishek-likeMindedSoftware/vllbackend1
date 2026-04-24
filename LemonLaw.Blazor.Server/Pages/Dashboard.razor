@@ -24,6 +24,12 @@
             <span>Loading dashboard…</span>
         </div>
     }
+    else if (_loadError != null)
+    {
+        <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:16px 20px;color:#991b1b;margin-bottom:24px;">
+            <strong>Dashboard data error:</strong> @_loadError
+        </div>
+    }
     else
     {
         <!-- KPI Cards -->
@@ -90,6 +96,27 @@
             </div>
         </div>
 
+        <!-- Application Type Breakdown — above the two-column row -->
+        <div class="ll-dash-card" style="margin-bottom:20px;">
+            <h2 class="ll-dash-card-title">
+                <i class="fa-solid fa-car"></i> Open Cases by Application Type
+            </h2>
+            <div class="ll-type-grid">
+                <div class="ll-type-card" style="border-color:#0265a3;">
+                    <p class="ll-type-label">New Car Lemon Law</p>
+                    <p class="ll-type-value" style="color:#0265a3;">@_byType.GetValueOrDefault("NEW_CAR", 0)</p>
+                </div>
+                <div class="ll-type-card" style="border-color:#7c3aed;">
+                    <p class="ll-type-label">Used Car Warranty</p>
+                    <p class="ll-type-value" style="color:#7c3aed;">@_byType.GetValueOrDefault("USED_CAR", 0)</p>
+                </div>
+                <div class="ll-type-card" style="border-color:#db2777;">
+                    <p class="ll-type-label">Leased Vehicle</p>
+                    <p class="ll-type-value" style="color:#db2777;">@_byType.GetValueOrDefault("LEASED", 0)</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Status Breakdown + Recent Activity -->
         <div class="ll-dash-two-col">
 
@@ -116,12 +143,13 @@
                 </div>
             </div>
 
-            <!-- Recent Activity -->
+            <!-- Recent Activity — fixed height, scrollable, max 5 visible -->
             <div class="ll-dash-card">
                 <h2 class="ll-dash-card-title">
                     <i class="fa-solid fa-bolt"></i> Recent Activity
+                    <span style="margin-left:auto;font-size:0.7rem;font-weight:400;color:#94a3b8;">Last @_recentActivity.Count events</span>
                 </h2>
-                <div class="ll-activity-list">
+                <div class="ll-activity-list ll-activity-scroll">
                     @foreach (var evt in _recentActivity)
                     {
                         <div class="ll-activity-row">
@@ -139,27 +167,6 @@
                     {
                         <p class="ll-empty">No recent activity.</p>
                     }
-                </div>
-            </div>
-        </div>
-
-        <!-- Application Type Breakdown -->
-        <div class="ll-dash-card" style="margin-top:20px;">
-            <h2 class="ll-dash-card-title">
-                <i class="fa-solid fa-car"></i> Open Cases by Application Type
-            </h2>
-            <div class="ll-type-grid">
-                <div class="ll-type-card" style="border-color:#0265a3;">
-                    <p class="ll-type-label">New Car Lemon Law</p>
-                    <p class="ll-type-value" style="color:#0265a3;">@_byType.GetValueOrDefault("NEW_CAR", 0)</p>
-                </div>
-                <div class="ll-type-card" style="border-color:#7c3aed;">
-                    <p class="ll-type-label">Used Car Warranty</p>
-                    <p class="ll-type-value" style="color:#7c3aed;">@_byType.GetValueOrDefault("USED_CAR", 0)</p>
-                </div>
-                <div class="ll-type-card" style="border-color:#db2777;">
-                    <p class="ll-type-label">Leased Vehicle</p>
-                    <p class="ll-type-value" style="color:#db2777;">@_byType.GetValueOrDefault("LEASED", 0)</p>
                 </div>
             </div>
         </div>
@@ -182,12 +189,22 @@
     .ll-kpi-value { font-size: 1.75rem; font-weight: 800; color: #1e293b; margin: 0 0 2px; line-height: 1; }
     .ll-kpi-sub { font-size: 0.75rem; color: #94a3b8; margin: 0; }
 
-    /* Two column layout */
-    .ll-dash-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    /* Two column layout — equal height cards */
+    .ll-dash-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
     .ll-dash-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .ll-dash-card-title { font-size: 0.9rem; font-weight: 700; color: #1e293b; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
+    .ll-dash-two-col .ll-dash-card { height: 320px; display: flex; flex-direction: column; }
+    .ll-dash-card-title { font-size: 0.9rem; font-weight: 700; color: #1e293b; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
     .ll-dash-card-title i { color: #0265a3; }
     .ll-empty { color: #94a3b8; font-size: 0.875rem; }
+
+    /* Status list — fills remaining height */
+    .ll-status-list { display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto; }
+
+    /* Activity list — scrollable, fills remaining height */
+    .ll-activity-scroll { flex: 1; overflow-y: auto; padding-right: 4px; }
+    .ll-activity-scroll::-webkit-scrollbar { width: 4px; }
+    .ll-activity-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+    .ll-activity-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
     /* Status breakdown */
     .ll-status-list { display: flex; flex-direction: column; gap: 10px; }
@@ -221,6 +238,7 @@
 
 @code {
     private bool _loading = true;
+    private string? _loadError;
 
     private int _totalOpen;
     private int _pendingReview;
@@ -250,8 +268,6 @@
                 .GetRequiredService<IApplicationRepository>();
             var eventRepo = scope.ServiceProvider
                 .GetRequiredService<IGenericRepository<CaseEvent>>();
-            var hearingRepo = scope.ServiceProvider
-                .GetRequiredService<IGenericRepository<Hearing>>();
 
             var allApps = (await appRepo.GetAllAsync()).ToList();
             var openApps = allApps.Where(a => !ClosedStatuses.Contains(a.Status)).ToList();
@@ -266,27 +282,25 @@
             _awaitingDealer = openApps.Count(a => a.Status == ApplicationStatus.ACCEPTED);
             _hearingsScheduled = openApps.Count(a => a.Status == ApplicationStatus.HEARING_SCHEDULED);
 
-            // Status breakdown (open only)
             _statusBreakdown = openApps
                 .GroupBy(a => a.Status.ToString())
                 .OrderByDescending(g => g.Count())
                 .ToDictionary(g => g.Key, g => g.Count());
 
-            // Application type breakdown (open only)
             _byType = openApps
                 .GroupBy(a => a.ApplicationType.ToString())
                 .ToDictionary(g => g.Key, g => g.Count());
 
-            // Recent activity — last 10 events across all cases
             var allEvents = await eventRepo.GetAllAsync();
             _recentActivity = allEvents
                 .OrderByDescending(e => e.EventTimestamp)
-                .Take(10)
+                .Take(20)
                 .ToList();
         }
-        catch
+        catch (Exception ex)
         {
-            // Dashboard is non-critical — show empty state on error
+            // Surface the error so we can diagnose it
+            _loadError = ex.Message;
         }
         finally
         {
