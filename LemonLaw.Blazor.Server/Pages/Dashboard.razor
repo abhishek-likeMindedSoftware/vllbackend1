@@ -7,157 +7,158 @@
 
 <PageTitle>Dashboard — OCABR Lemon Law Workbench</PageTitle>
 
-<div class="ll-dashboard">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
-    <!-- Header -->
-    <div class="ll-dash-header">
+<div class="d-wrap">
+
+    <!-- Page header -->
+    <div class="d-header">
         <div>
-            <h1 class="ll-dash-title">Workbench Dashboard</h1>
-            <p class="ll-dash-subtitle">@DateTime.Now.ToString("dddd, MMMM d, yyyy") — OCABR Vehicle Lemon Law Program</p>
+            <h1 class="d-title">Workbench Overview</h1>
+            <p class="d-subtitle">@DateTime.Now.ToString("dddd, MMMM d, yyyy") &nbsp;·&nbsp; OCABR Vehicle Lemon Law Program</p>
         </div>
     </div>
 
     @if (_loading)
     {
-        <div class="ll-dash-loading">
-            <i class="fa-solid fa-spinner fa-spin"></i>
-            <span>Loading dashboard…</span>
+        <div class="d-loading">
+            <span class="d-spinner"></span>
+            <span>Loading…</span>
         </div>
     }
     else if (_loadError != null)
     {
-        <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:16px 20px;color:#991b1b;margin-bottom:24px;">
-            <strong>Dashboard data error:</strong> @_loadError
+        <div class="d-error">
+            <strong>Could not load dashboard data:</strong> @_loadError
         </div>
     }
     else
     {
-        <!-- KPI Cards -->
-        <div class="ll-kpi-grid">
-            <div class="ll-kpi-card">
-                <div class="ll-kpi-icon" style="background:rgba(2,101,163,0.1);">
-                    <i class="fa-solid fa-folder-open" style="color:#0265a3;"></i>
+        <!-- KPI row — 3 per row, 2 rows -->
+        <div class="d-kpi-row">
+            <div class="d-kpi d-kpi-orange">
+                <div class="d-kpi-icon-wrap" style="background:rgba(234,88,12,0.08);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                 </div>
-                <div class="ll-kpi-body">
-                    <p class="ll-kpi-label">Total Open Cases</p>
-                    <p class="ll-kpi-value">@_totalOpen</p>
-                    <p class="ll-kpi-sub">Active in the system</p>
-                </div>
-            </div>
-            <div class="ll-kpi-card">
-                <div class="ll-kpi-icon" style="background:rgba(234,179,8,0.1);">
-                    <i class="fa-solid fa-clock" style="color:#ca8a04;"></i>
-                </div>
-                <div class="ll-kpi-body">
-                    <p class="ll-kpi-label">Pending Review</p>
-                    <p class="ll-kpi-value">@_pendingReview</p>
-                    <p class="ll-kpi-sub">Awaiting staff action</p>
+                <div>
+                    <p class="d-kpi-label">Open Cases</p>
+                    <p class="d-kpi-num" style="color:#ea580c;">@_totalOpen</p>
+                    <p class="d-kpi-sub">Active in system</p>
                 </div>
             </div>
-            <div class="ll-kpi-card">
-                <div class="ll-kpi-icon" style="background:rgba(249,115,22,0.1);">
-                    <i class="fa-solid fa-triangle-exclamation" style="color:#ea580c;"></i>
+            <div class="d-kpi d-kpi-amber">
+                <div class="d-kpi-icon-wrap" style="background:rgba(217,119,6,0.08);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </div>
-                <div class="ll-kpi-body">
-                    <p class="ll-kpi-label">Aging Alerts</p>
-                    <p class="ll-kpi-value">@_agingAlerts</p>
-                    <p class="ll-kpi-sub">Open &gt; 30 days</p>
-                </div>
-            </div>
-            <div class="ll-kpi-card">
-                <div class="ll-kpi-icon" style="background:rgba(34,197,94,0.1);">
-                    <i class="fa-solid fa-check-circle" style="color:#16a34a;"></i>
-                </div>
-                <div class="ll-kpi-body">
-                    <p class="ll-kpi-label">Submitted This Month</p>
-                    <p class="ll-kpi-value">@_submittedThisMonth</p>
-                    <p class="ll-kpi-sub">New applications</p>
+                <div>
+                    <p class="d-kpi-label">Pending Review</p>
+                    <p class="d-kpi-num" style="color:#d97706;">@_pendingReview</p>
+                    <p class="d-kpi-sub">Awaiting staff action</p>
                 </div>
             </div>
-            <div class="ll-kpi-card">
-                <div class="ll-kpi-icon" style="background:rgba(139,92,246,0.1);">
-                    <i class="fa-solid fa-reply" style="color:#7c3aed;"></i>
+            <div class="d-kpi d-kpi-red">
+                <div class="d-kpi-icon-wrap" style="background:rgba(220,38,38,0.08);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 </div>
-                <div class="ll-kpi-body">
-                    <p class="ll-kpi-label">Awaiting Dealer Response</p>
-                    <p class="ll-kpi-value">@_awaitingDealer</p>
-                    <p class="ll-kpi-sub">Outreach sent, no reply</p>
-                </div>
-            </div>
-            <div class="ll-kpi-card">
-                <div class="ll-kpi-icon" style="background:rgba(236,72,153,0.1);">
-                    <i class="fa-solid fa-gavel" style="color:#db2777;"></i>
-                </div>
-                <div class="ll-kpi-body">
-                    <p class="ll-kpi-label">Hearings Scheduled</p>
-                    <p class="ll-kpi-value">@_hearingsScheduled</p>
-                    <p class="ll-kpi-sub">Upcoming hearings</p>
+                <div>
+                    <p class="d-kpi-label">Aging Alerts</p>
+                    <p class="d-kpi-num" style="color:#dc2626;">@_agingAlerts</p>
+                    <p class="d-kpi-sub">Open &gt; 30 days</p>
                 </div>
             </div>
-        </div>
-
-        <!-- Application Type Breakdown — above the two-column row -->
-        <div class="ll-dash-card" style="margin-bottom:20px;">
-            <h2 class="ll-dash-card-title">
-                <i class="fa-solid fa-car"></i> Open Cases by Application Type
-            </h2>
-            <div class="ll-type-grid">
-                <div class="ll-type-card" style="border-color:#0265a3;">
-                    <p class="ll-type-label">New Car Lemon Law</p>
-                    <p class="ll-type-value" style="color:#0265a3;">@_byType.GetValueOrDefault("NEW_CAR", 0)</p>
+            <div class="d-kpi d-kpi-green">
+                <div class="d-kpi-icon-wrap" style="background:rgba(22,163,74,0.08);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
-                <div class="ll-type-card" style="border-color:#7c3aed;">
-                    <p class="ll-type-label">Used Car Warranty</p>
-                    <p class="ll-type-value" style="color:#7c3aed;">@_byType.GetValueOrDefault("USED_CAR", 0)</p>
+                <div>
+                    <p class="d-kpi-label">Submitted This Month</p>
+                    <p class="d-kpi-num" style="color:#16a34a;">@_submittedThisMonth</p>
+                    <p class="d-kpi-sub">New applications</p>
                 </div>
-                <div class="ll-type-card" style="border-color:#db2777;">
-                    <p class="ll-type-label">Leased Vehicle</p>
-                    <p class="ll-type-value" style="color:#db2777;">@_byType.GetValueOrDefault("LEASED", 0)</p>
+            </div>
+            <div class="d-kpi d-kpi-blue">
+                <div class="d-kpi-icon-wrap" style="background:rgba(37,99,235,0.08);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <div>
+                    <p class="d-kpi-label">Awaiting Dealer</p>
+                    <p class="d-kpi-num" style="color:#2563eb;">@_awaitingDealer</p>
+                    <p class="d-kpi-sub">Outreach sent, no reply</p>
+                </div>
+            </div>
+            <div class="d-kpi d-kpi-purple">
+                <div class="d-kpi-icon-wrap" style="background:rgba(124,58,237,0.08);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <div>
+                    <p class="d-kpi-label">Hearings Scheduled</p>
+                    <p class="d-kpi-num" style="color:#7c3aed;">@_hearingsScheduled</p>
+                    <p class="d-kpi-sub">Upcoming</p>
                 </div>
             </div>
         </div>
 
-        <!-- Status Breakdown + Recent Activity -->
-        <div class="ll-dash-two-col">
+        <!-- Application type strip -->
+        <div class="d-type-strip">
+            <div class="d-type-item">
+                <span class="d-type-dot" style="background:#1d4ed8;"></span>
+                <span class="d-type-label">New Car Lemon Law</span>
+                <span class="d-type-count">@_byType.GetValueOrDefault("NEW_CAR", 0)</span>
+            </div>
+            <div class="d-type-divider"></div>
+            <div class="d-type-item">
+                <span class="d-type-dot" style="background:#6d28d9;"></span>
+                <span class="d-type-label">Used Car Warranty</span>
+                <span class="d-type-count">@_byType.GetValueOrDefault("USED_CAR", 0)</span>
+            </div>
+            <div class="d-type-divider"></div>
+            <div class="d-type-item">
+                <span class="d-type-dot" style="background:#be185d;"></span>
+                <span class="d-type-label">Leased Vehicle</span>
+                <span class="d-type-count">@_byType.GetValueOrDefault("LEASED", 0)</span>
+            </div>
+        </div>
 
-            <!-- Status Breakdown -->
-            <div class="ll-dash-card">
-                <h2 class="ll-dash-card-title">
-                    <i class="fa-solid fa-chart-bar"></i> Cases by Status
-                </h2>
-                <div class="ll-status-list">
+        <!-- Two-column: status + activity -->
+        <div class="d-two-col">
+
+            <!-- Cases by Status -->
+            <div class="d-card">
+                <p class="d-card-title">Cases by Status</p>
+                <div class="d-status-list">
                     @foreach (var item in _statusBreakdown)
                     {
-                        <div class="ll-status-row">
-                            <span class="ll-status-badge @GetStatusClass(item.Key)">@item.Key.Replace("_", " ")</span>
-                            <div class="ll-status-bar-wrap">
-                                <div class="ll-status-bar" style="width:@GetBarWidth(item.Value)%; background:@GetStatusColor(item.Key);"></div>
+                        <div class="d-status-row">
+                            <span class="d-status-label">@item.Key.Replace("_", " ")</span>
+                            <div class="d-bar-track">
+                                <div class="d-bar-fill" style="width:@GetBarWidth(item.Value)%; background:@GetStatusBarColor(item.Key);"></div>
                             </div>
-                            <span class="ll-status-count">@item.Value</span>
+                            <span class="d-status-count">@item.Value</span>
                         </div>
                     }
                     @if (!_statusBreakdown.Any())
                     {
-                        <p class="ll-empty">No open cases.</p>
+                        <p class="d-empty">No open cases.</p>
                     }
                 </div>
             </div>
 
-            <!-- Recent Activity — fixed height, scrollable, max 5 visible -->
-            <div class="ll-dash-card">
-                <h2 class="ll-dash-card-title">
-                    <i class="fa-solid fa-bolt"></i> Recent Activity
-                    <span style="margin-left:auto;font-size:0.7rem;font-weight:400;color:#94a3b8;">Last @_recentActivity.Count events</span>
-                </h2>
-                <div class="ll-activity-list ll-activity-scroll">
+            <!-- Recent Activity -->
+            <div class="d-card">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                    <p class="d-card-title" style="margin:0;">Recent Activity</p>
+                    <span class="d-activity-count">@_recentActivity.Count events</span>
+                </div>
+                <div class="d-activity-scroll">
                     @foreach (var evt in _recentActivity)
                     {
-                        <div class="ll-activity-row">
-                            <div class="ll-activity-dot @GetEventDotClass(evt.EventType)"></div>
-                            <div class="ll-activity-body">
-                                <p class="ll-activity-desc">@evt.Description</p>
-                                <p class="ll-activity-meta">
-                                    @evt.ActorDisplayName &nbsp;·&nbsp;
+                        <div class="d-activity-row">
+                            <span class="d-activity-dot @GetEventDotClass(evt.EventType)"></span>
+                            <div class="d-activity-body">
+                                <p class="d-activity-desc">@evt.Description</p>
+                                <p class="d-activity-meta">
+                                    @evt.ActorDisplayName
+                                    <span class="d-activity-sep">·</span>
                                     @evt.EventTimestamp.ToLocalTime().ToString("MMM d, h:mm tt")
                                 </p>
                             </div>
@@ -165,76 +166,242 @@
                     }
                     @if (!_recentActivity.Any())
                     {
-                        <p class="ll-empty">No recent activity.</p>
+                        <p class="d-empty">No recent activity.</p>
                     }
                 </div>
             </div>
+
         </div>
     }
 </div>
 
 <style>
-    .ll-dashboard { padding: 24px 28px; font-family: 'Segoe UI', sans-serif; max-width: 1200px; }
-    .ll-dash-header { margin-bottom: 24px; }
-    .ll-dash-title { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0 0 4px; }
-    .ll-dash-subtitle { font-size: 0.875rem; color: #64748b; margin: 0; }
-    .ll-dash-loading { display: flex; align-items: center; gap: 10px; color: #64748b; padding: 48px 0; font-size: 1rem; }
-
-    /* KPI Grid */
-    .ll-kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
-    .ll-kpi-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 20px; display: flex; align-items: flex-start; gap: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .ll-kpi-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-    .ll-kpi-body { flex: 1; }
-    .ll-kpi-label { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 4px; }
-    .ll-kpi-value { font-size: 1.75rem; font-weight: 800; color: #1e293b; margin: 0 0 2px; line-height: 1; }
-    .ll-kpi-sub { font-size: 0.75rem; color: #94a3b8; margin: 0; }
-
-    /* Two column layout — equal height cards */
-    .ll-dash-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
-    .ll-dash-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .ll-dash-two-col .ll-dash-card { height: 320px; display: flex; flex-direction: column; }
-    .ll-dash-card-title { font-size: 0.9rem; font-weight: 700; color: #1e293b; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-    .ll-dash-card-title i { color: #0265a3; }
-    .ll-empty { color: #94a3b8; font-size: 0.875rem; }
-
-    /* Status list — fills remaining height */
-    .ll-status-list { display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto; }
-
-    /* Activity list — scrollable, fills remaining height */
-    .ll-activity-scroll { flex: 1; overflow-y: auto; padding-right: 4px; }
-    .ll-activity-scroll::-webkit-scrollbar { width: 4px; }
-    .ll-activity-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-    .ll-activity-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-
-    /* Status breakdown */
-    .ll-status-list { display: flex; flex-direction: column; gap: 10px; }
-    .ll-status-row { display: flex; align-items: center; gap: 10px; }
-    .ll-status-badge { font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; white-space: nowrap; min-width: 130px; text-align: center; }
-    .ll-status-bar-wrap { flex: 1; background: #f1f5f9; border-radius: 4px; height: 8px; overflow: hidden; }
-    .ll-status-bar { height: 100%; border-radius: 4px; transition: width 0.4s; }
-    .ll-status-count { font-size: 0.875rem; font-weight: 700; color: #1e293b; min-width: 28px; text-align: right; }
-
-    /* Activity feed */
-    .ll-activity-list { display: flex; flex-direction: column; gap: 0; }
-    .ll-activity-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
-    .ll-activity-row:last-child { border-bottom: none; }
-    .ll-activity-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
-    .ll-activity-body { flex: 1; }
-    .ll-activity-desc { font-size: 0.8rem; color: #334155; margin: 0 0 2px; line-height: 1.4; }
-    .ll-activity-meta { font-size: 0.72rem; color: #94a3b8; margin: 0; }
-
-    /* Type cards */
-    .ll-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    .ll-type-card { border: 2px solid; border-radius: 10px; padding: 16px 20px; text-align: center; }
-    .ll-type-label { font-size: 0.8rem; font-weight: 600; color: #64748b; margin: 0 0 8px; }
-    .ll-type-value { font-size: 2rem; font-weight: 800; margin: 0; }
-
-    @@media (max-width: 900px) {
-        .ll-kpi-grid { grid-template-columns: repeat(2, 1fr); }
-        .ll-dash-two-col { grid-template-columns: 1fr; }
-        .ll-type-grid { grid-template-columns: 1fr; }
+    /* ── Font ──────────────────────────────────────────────────────────────── */
+    .d-wrap, .d-wrap * {
+        font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+        box-sizing: border-box;
     }
-</style>
+
+    /* ── Wrapper ───────────────────────────────────────────────────────────── */
+    .d-wrap {
+        padding: 28px 32px;
+        background: #ffffff;
+        min-height: 100%;
+    }
+
+    /* ── Header ────────────────────────────────────────────────────────────── */
+    .d-header { margin-bottom: 28px; }
+    .d-title {
+        font-size: 1.375rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 4px;
+        letter-spacing: -0.02em;
+    }
+    .d-subtitle {
+        font-size: 0.8125rem;
+        color: #4b5563;
+        margin: 0;
+        font-weight: 400;
+    }
+
+    /* ── Loading / Error ───────────────────────────────────────────────────── */
+    .d-loading {
+        display: flex; align-items: center; gap: 10px;
+        color: #64748b; padding: 48px 0; font-size: 0.875rem;
+    }
+    .d-spinner {
+        width: 16px; height: 16px;
+        border: 2px solid #e2e8f0;
+        border-top-color: #0f172a;
+        border-radius: 50%;
+        animation: d-spin 0.7s linear infinite;
+        flex-shrink: 0;
+    }
+    @@keyframes d-spin { to { transform: rotate(360deg); } }
+    .d-error {
+        background: #fef2f2; border: 1px solid #fecaca;
+        border-radius: 8px; padding: 14px 18px;
+        color: #991b1b; font-size: 0.875rem; margin-bottom: 24px;
+    }
+    .d-empty { color: #94a3b8; font-size: 0.8125rem; margin: 0; }
+
+    /* ── KPI Row — 3 per row, 2 rows ──────────────────────────────────────── */
+    .d-kpi-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 16px;
+    }
+    .d-kpi {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 18px 18px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        border-left-width: 3px;
+        transition: box-shadow 0.15s;
+    }
+    .d-kpi:hover { box-shadow: 0 4px 12px rgba(15,23,42,0.08); }
+    .d-kpi-orange { border-left-color: #ea580c; }
+    .d-kpi-amber  { border-left-color: #d97706; }
+    .d-kpi-red    { border-left-color: #dc2626; }
+    .d-kpi-green  { border-left-color: #16a34a; }
+    .d-kpi-blue   { border-left-color: #2563eb; }
+    .d-kpi-purple { border-left-color: #7c3aed; }
+    .d-kpi-icon-wrap {
+        width: 38px; height: 38px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .d-kpi-label {
+        font-size: 0.6875rem;
+        font-weight: 700;
+        color: #374151;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin: 0 0 4px;
+    }
+    .d-kpi-num {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0 0 3px;
+        line-height: 1;
+        letter-spacing: -0.03em;
+    }
+    .d-kpi-sub {
+        font-size: 0.6875rem;
+        color: #6b7280;
+        margin: 0;
+        font-weight: 500;
+    }
+
+    /* ── Application Type Strip ────────────────────────────────────────────── */
+    .d-type-strip {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        gap: 0;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+    }
+    .d-type-item {
+        display: flex; align-items: center; gap: 10px; flex: 1;
+    }
+    .d-type-dot {
+        width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+    .d-type-label {
+        font-size: 0.8125rem; color: #475569; font-weight: 500; flex: 1;
+    }
+    .d-type-count {
+        font-size: 1.125rem; font-weight: 700; color: #0f172a;
+        letter-spacing: -0.02em;
+    }
+    .d-type-divider {
+        width: 1px; height: 32px; background: #e2e8f0; margin: 0 24px;
+    }
+
+    /* ── Two-column ────────────────────────────────────────────────────────── */
+    .d-two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        align-items: start;
+    }
+    .d-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 20px 22px;
+        box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+        height: 340px;
+        display: flex;
+        flex-direction: column;
+    }
+    .d-card-title {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #0f172a;
+        margin: 0 0 16px;
+        letter-spacing: -0.01em;
+    }
+
+    /* ── Status bars ───────────────────────────────────────────────────────── */
+    .d-status-list {
+        display: flex; flex-direction: column; gap: 12px;
+        flex: 1; overflow-y: auto;
+    }
+    .d-status-row { display: flex; align-items: center; gap: 10px; }
+    .d-status-label {
+        font-size: 0.6875rem; font-weight: 600; color: #475569;
+        text-transform: uppercase; letter-spacing: 0.05em;
+        min-width: 140px; white-space: nowrap;
+    }
+    .d-bar-track {
+        flex: 1; height: 7px; background: #f1f5f9;
+        border-radius: 99px; overflow: hidden;
+    }
+    .d-bar-fill {
+        height: 100%; background: #ea580c;
+        border-radius: 99px; transition: width 0.5s ease;
+    }
+    .d-status-count {
+        font-size: 0.875rem; font-weight: 700; color: #0f172a;
+        min-width: 20px; text-align: right;
+    }
+
+    /* ── Activity feed ─────────────────────────────────────────────────────── */
+    .d-activity-count {
+        font-size: 0.6875rem; color: #94a3b8; font-weight: 500;
+    }
+    .d-activity-scroll {
+        flex: 1; overflow-y: auto; padding-right: 2px;
+    }
+    .d-activity-scroll::-webkit-scrollbar { width: 3px; }
+    .d-activity-scroll::-webkit-scrollbar-track { background: transparent; }
+    .d-activity-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
+    .d-activity-row {
+        display: flex; align-items: flex-start; gap: 10px;
+        padding: 9px 0;
+        border-bottom: 1px solid #f8fafc;
+    }
+    .d-activity-row:last-child { border-bottom: none; }
+    .d-activity-dot {
+        width: 7px; height: 7px; border-radius: 50%;
+        margin-top: 5px; flex-shrink: 0;
+    }
+    .d-dot-dark   { background: #ea580c; }
+    .d-dot-mid    { background: #2563eb; }
+    .d-dot-light  { background: #cbd5e1; }
+    .d-activity-body { flex: 1; }
+    .d-activity-desc {
+        font-size: 0.8rem; color: #1e293b; margin: 0 0 2px;
+        line-height: 1.45; font-weight: 500;
+    }
+    .d-activity-meta {
+        font-size: 0.6875rem; color: #94a3b8; margin: 0;
+        display: flex; align-items: center; gap: 4px;
+    }
+    .d-activity-sep { color: #cbd5e1; }
+
+    /* ── Responsive ────────────────────────────────────────────────────────── */
+    @@media (max-width: 1100px) {
+        .d-kpi-row { grid-template-columns: repeat(3, 1fr); }
+    }
+    @@media (max-width: 800px) {
+        .d-kpi-row { grid-template-columns: repeat(2, 1fr); }
+        .d-two-col { grid-template-columns: 1fr; }
+        .d-type-strip { flex-direction: column; align-items: flex-start; gap: 12px; }
+        .d-type-divider { width: 100%; height: 1px; margin: 0; }
+    }</style>
 
 @code {
     private bool _loading = true;
@@ -299,7 +466,6 @@
         }
         catch (Exception ex)
         {
-            // Surface the error so we can diagnose it
             _loadError = ex.Message;
         }
         finally
@@ -315,38 +481,25 @@
         return max == 0 ? 0 : (int)Math.Round((double)value / max * 100);
     }
 
-    private string GetStatusColor(string status) => status switch
+    private string GetStatusBarColor(string status) => status switch
     {
-        "SUBMITTED" => "#0265a3",
-        "INCOMPLETE" => "#ca8a04",
-        "ACCEPTED" => "#7c3aed",
-        "DEALER_RESPONDED" => "#0891b2",
-        "HEARING_SCHEDULED" => "#db2777",
-        "HEARING_COMPLETE" => "#ea580c",
-        "DECISION_ISSUED" => "#16a34a",
-        _ => "#94a3b8"
+        "SUBMITTED"        => "#ea580c",
+        "INCOMPLETE"       => "#d97706",
+        "ACCEPTED"         => "#2563eb",
+        "DEALER_RESPONDED" => "#7c3aed",
+        "HEARING_SCHEDULED"=> "#be185d",
+        "HEARING_COMPLETE" => "#0891b2",
+        "DECISION_ISSUED"  => "#16a34a",
+        _                  => "#94a3b8"
     };
 
-    private string GetStatusClass(string status) => status switch
-    {
-        "SUBMITTED" => "ll-badge-blue",
-        "INCOMPLETE" => "ll-badge-amber",
-        "ACCEPTED" => "ll-badge-purple",
-        "DEALER_RESPONDED" => "ll-badge-cyan",
-        "HEARING_SCHEDULED" => "ll-badge-pink",
-        "HEARING_COMPLETE" => "ll-badge-orange",
-        "DECISION_ISSUED" => "ll-badge-green",
-        _ => "ll-badge-gray"
-    };
-
-    private string GetEventDotClass(CaseEventType type) => type switch
-    {
-        CaseEventType.STATUS_CHANGE => "ll-dot-blue",
-        CaseEventType.DEALER_RESPONDED => "ll-dot-purple",
-        CaseEventType.HEARING_SCHEDULED => "ll-dot-pink",
-        CaseEventType.DECISION_ISSUED => "ll-dot-green",
-        CaseEventType.DOCUMENT_UPLOADED => "ll-dot-cyan",
-        CaseEventType.NOTE_ADDED => "ll-dot-gray",
-        _ => "ll-dot-gray"
+    private string GetEventDotClass(CaseEventType type) => type switch    {
+        CaseEventType.STATUS_CHANGE      => "d-dot-dark",
+        CaseEventType.DEALER_RESPONDED   => "d-dot-dark",
+        CaseEventType.HEARING_SCHEDULED  => "d-dot-mid",
+        CaseEventType.DECISION_ISSUED    => "d-dot-dark",
+        CaseEventType.DOCUMENT_UPLOADED  => "d-dot-mid",
+        CaseEventType.NOTE_ADDED         => "d-dot-light",
+        _                                => "d-dot-light"
     };
 }

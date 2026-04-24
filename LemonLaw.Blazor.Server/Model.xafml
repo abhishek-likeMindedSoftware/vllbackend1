@@ -31,6 +31,20 @@
                         PropertyEditorType="LemonLaw.Blazor.Server.Editors.DashboardPropertyEditor"
                         Caption="" IsNewNode="True" />
       </Items>
+      <!-- Hide all toolbar actions — dashboard is read-only, no save/delete needed -->
+      <Actions IsNewNode="True">
+        <ActionDesign IsNewNode="True">
+          <Actions IsNewNode="True">
+            <Action Id="Save" Active="False" IsNewNode="True" />
+            <Action Id="SaveAndClose" Active="False" IsNewNode="True" />
+            <Action Id="SaveAndNew" Active="False" IsNewNode="True" />
+            <Action Id="Delete" Active="False" IsNewNode="True" />
+            <Action Id="PreviousObject" Active="False" IsNewNode="True" />
+            <Action Id="NextObject" Active="False" IsNewNode="True" />
+            <Action Id="ResetViewSettings" Active="False" IsNewNode="True" />
+            <Action Id="Refresh" Active="False" IsNewNode="True" />          </Actions>
+        </ActionDesign>
+      </Actions>
       <Layout IsNewNode="True">
         <LayoutGroup Id="Main" IsNewNode="True">
           <LayoutGroup Id="SimpleEditors" RelativeSize="100" IsNewNode="True">
