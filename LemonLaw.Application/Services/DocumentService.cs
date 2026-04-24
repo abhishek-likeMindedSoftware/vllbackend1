@@ -10,6 +10,7 @@ namespace LemonLaw.Application.Services;
 public class DocumentService(
     IDocumentStorageService storageService,
     IGenericRepository<ApplicationDocument> documentRepository,
+    IGenericRepository<DealerOutreach> outreachRepository,
     IGenericRepository<CaseEvent> eventRepository,
     ILogger<DocumentService> logger) : IDocumentService
 {
@@ -118,6 +119,43 @@ public class DocumentService(
         {
             logger.LogError(ex, "Error deleting document {DocId}", documentId);
             return new CommonResponseDto<bool> { Success = false, Message = "Failed to delete document." };
+        }
+    }
+
+    /// <summary>
+    /// Uploads a document on behalf of a dealer, resolving the applicationId from the outreach record.
+    /// </summary>
+    public async Task<CommonResponseDto<DocumentUploadResultDto>> UploadDocumentForOutreachAsync(
+        Guid outreachId, string documentType, string fileName,
+        string mimeType, long fileSizeBytes, Stream fileStream)
+    {
+        try
+        {
+            var outreach = await outreachRepository.GetByIdAsync(outreachId);
+            if (outreach == null || outreach.ApplicationId == null)
+                return new CommonResponseDto<DocumentUploadResultDto>
+                {
+                    Success = false,
+                    Message = "Outreach record not found."
+                };
+
+            return await UploadDocumentAsync(
+                outreach.ApplicationId.Value,
+                documentType,
+                fileName,
+                mimeType,
+                fileSizeBytes,
+                fileStream,
+                "DEALER");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error uploading dealer document for outreach {OutreachId}", outreachId);
+            return new CommonResponseDto<DocumentUploadResultDto>
+            {
+                Success = false,
+                Message = "Failed to upload document."
+            };
         }
     }
 }

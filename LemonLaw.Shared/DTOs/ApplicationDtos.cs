@@ -421,6 +421,26 @@ public class VolumeReportItemDto
     public int Count { get; set; }
 }
 
+public class DealerResponseRateDto
+{
+    public int TotalOutreachSent { get; set; }
+    public int ResponsesWithin15Days { get; set; }
+    public double ResponseRatePercent { get; set; }
+}
+
+public class StaffWorkloadDto
+{
+    public string StaffId { get; set; } = string.Empty;
+    public string StaffName { get; set; } = string.Empty;
+    public int OpenCaseCount { get; set; }
+}
+
+public class DecisionSummaryDto
+{
+    public string DecisionType { get; set; } = string.Empty;
+    public int Count { get; set; }
+}
+
 // ── Case Event ────────────────────────────────────────────────────────────────
 
 public class CaseEventDto

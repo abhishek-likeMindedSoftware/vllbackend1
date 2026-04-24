@@ -110,4 +110,21 @@ public class ApplicationRepository(LemonLawAPIDbContext context)
             .Select(a => a.CaseNumber)
             .ToListAsync();
     }
+
+    public async Task<AppEntity?> GetByCaseNumberAsync(string caseNumber)
+    {
+        return await _context.Applications
+            .Include(a => a.Applicant)
+            .Include(a => a.Vehicle)
+            .Include(a => a.Token)
+            .Include(a => a.Correspondences.OrderByDescending(c => c.SentAt))
+            .Include(a => a.DealerOutreaches)
+            .Include(a => a.Hearings)
+            .Include(a => a.Decision)
+            .Include(a => a.Defects.OrderBy(d => d.SortOrder))
+            .Include(a => a.RepairAttempts.OrderBy(r => r.SortOrder))
+            .Include(a => a.Expenses)
+            .Include(a => a.Documents)
+            .FirstOrDefaultAsync(a => a.CaseNumber == caseNumber);
+    }
 }

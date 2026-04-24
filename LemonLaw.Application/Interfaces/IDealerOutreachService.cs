@@ -9,5 +9,6 @@ public interface IDealerOutreachService
     Task<CommonResponseDto<DealerCaseSummaryDto>> GetCaseSummaryForDealerAsync(Guid outreachId);
     Task<CommonResponseDto<bool>> SubmitDealerResponseAsync(
         Guid outreachId, DealerResponseSubmitDto dto, string ipAddress);
-               
+    Task<CommonResponseDto<List<DocumentListItemDto>>> GetDealerDocumentsAsync(Guid outreachId);
+    Task<bool> ValidateDealerTokenAsync(Guid outreachId, string token);
 }

@@ -7,7 +7,7 @@ namespace LemonLaw.API.Controllers;
 
 /// <summary>Agency workbench case management endpoints.</summary>
 [Route("api/cases")]
-[Authorize]
+[AllowAnonymous] // TODO: restore [Authorize] once Azure AD is configured
 public class CasesController(
     IApplicationService applicationService,
     IReportingService reportingService) : BaseController

@@ -37,4 +37,35 @@ public class ReportsController(IReportingService reportingService) : BaseControl
         var result = await reportingService.GetVolumeReportAsync(year);
         return Ok(result);
     }
+
+    /// <summary>Dealer response rate — % of outreach emails responded to within 15 days.</summary>
+    [HttpGet("dealer-response-rate")]
+    [ProducesResponseType(typeof(CommonResponseDto<DealerResponseRateDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> DealerResponseRate()
+    {
+        var result = await reportingService.GetDealerResponseRateAsync();
+        return Ok(result);
+    }
+
+    /// <summary>Staff workload — open cases per assigned staff member.</summary>
+    [HttpGet("staff-workload")]
+    [ProducesResponseType(typeof(CommonResponseDto<List<StaffWorkloadDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> StaffWorkload()
+    {
+        var result = await reportingService.GetStaffWorkloadAsync();
+        return Ok(result);
+    }
+
+    /// <summary>Decision summary — outcomes by type for a date range.</summary>
+    [HttpGet("decision-summary")]
+    [ProducesResponseType(typeof(CommonResponseDto<List<DecisionSummaryDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> DecisionSummary(
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null)
+    {
+        var fromDate = from ?? DateTime.UtcNow.AddYears(-1);
+        var toDate = to ?? DateTime.UtcNow;
+        var result = await reportingService.GetDecisionSummaryAsync(fromDate, toDate);
+        return Ok(result);
+    }
 }

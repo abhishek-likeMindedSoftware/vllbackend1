@@ -26,6 +26,8 @@ public interface IApplicationService
         Guid applicationId, FullSubmitDto dto, string ipAddress);
 
     Task<CommonResponseDto<PortalStatusDto>> GetPortalStatusAsync(Guid applicationId);
+    Task<CommonResponseDto<PortalStatusDto>> GetPortalStatusByCaseNumberAsync(string caseNumber);
+    Task<Guid?> ResolveApplicationIdByCaseNumberAsync(string caseNumber);
 
     Task<PagedResponseDto<List<CaseListItemDto>>> GetCaseListAsync(CaseListFilterDto filter);
 

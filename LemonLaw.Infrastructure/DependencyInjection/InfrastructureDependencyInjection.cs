@@ -25,7 +25,13 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
 
         services.AddScoped<IEmailService, SendGridEmailService>();
-        services.AddScoped<IDocumentStorageService, AzureBlobStorageService>();
+
+        // Use local file storage when AzureStorage:UseLocal = true (dev without Azurite)
+        var useLocal = configuration["AzureStorage:UseLocal"];
+        if (string.Equals(useLocal, "true", StringComparison.OrdinalIgnoreCase))
+            services.AddScoped<IDocumentStorageService, LocalFileStorageService>();
+        else
+            services.AddScoped<IDocumentStorageService, AzureBlobStorageService>();
 
         return services;
     }

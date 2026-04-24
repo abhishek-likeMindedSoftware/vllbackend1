@@ -222,6 +222,62 @@ public static class DatabaseSeeder
                 IsActive = true,
                 LastModifiedAt = DateTime.UtcNow,
                 LastModifiedByName = "System"
+            },
+            new()
+            {
+                TemplateCode = "CONSUMER_CASE_CLOSED",
+                TemplateName = "Consumer Case Closed",
+                Subject = "Your Lemon Law Case Has Been Closed — Case {{caseNumber}}",
+                BodyHtml = """
+                    <p>Dear {{consumerName}},</p>
+                    <p>Your Lemon Law case ({{caseNumber}}) has been closed.</p>
+                    <p>If you have questions about this decision, please contact OCABR.</p>
+                    <p><a href="{{portalStatusLink}}">View Case Details</a></p>
+                    <p>— OCABR Lemon Law Program</p>
+                    """,
+                BodyText = "Your Lemon Law case {{caseNumber}} has been closed. View details at: {{portalStatusLink}}",
+                MergeFields = "[\"consumerName\",\"caseNumber\",\"portalStatusLink\"]",
+                IsActive = true,
+                LastModifiedAt = DateTime.UtcNow,
+                LastModifiedByName = "System"
+            },
+            new()
+            {
+                TemplateCode = "CONSUMER_DOCUMENT_REJECTED",
+                TemplateName = "Consumer Document Rejected",
+                Subject = "Document Rejected — Lemon Law Case {{caseNumber}}",
+                BodyHtml = """
+                    <p>Dear {{consumerName}},</p>
+                    <p>A document you submitted for case {{caseNumber}} has been rejected.</p>
+                    <p><strong>Reason:</strong> {{rejectionReason}}</p>
+                    <p>Please log in to your portal to resubmit the document:</p>
+                    <p><a href="{{portalStatusLink}}">Access Your Application</a></p>
+                    <p>— OCABR Lemon Law Program</p>
+                    """,
+                BodyText = "A document for case {{caseNumber}} was rejected. Reason: {{rejectionReason}}. Resubmit at: {{portalStatusLink}}",
+                MergeFields = "[\"consumerName\",\"caseNumber\",\"rejectionReason\",\"portalStatusLink\"]",
+                IsActive = true,
+                LastModifiedAt = DateTime.UtcNow,
+                LastModifiedByName = "System"
+            },
+            new()
+            {
+                TemplateCode = "CONSUMER_DOCUMENT_REQUESTED",
+                TemplateName = "Consumer Document Requested",
+                Subject = "Document Requested — Lemon Law Case {{caseNumber}}",
+                BodyHtml = """
+                    <p>Dear {{consumerName}},</p>
+                    <p>OCABR is requesting an additional document for your case ({{caseNumber}}).</p>
+                    <p><strong>Document needed:</strong> {{documentDescription}}</p>
+                    <p>Please log in to your portal to upload the requested document:</p>
+                    <p><a href="{{portalStatusLink}}">Access Your Application</a></p>
+                    <p>— OCABR Lemon Law Program</p>
+                    """,
+                BodyText = "Document requested for case {{caseNumber}}: {{documentDescription}}. Upload at: {{portalStatusLink}}",
+                MergeFields = "[\"consumerName\",\"caseNumber\",\"documentDescription\",\"portalStatusLink\"]",
+                IsActive = true,
+                LastModifiedAt = DateTime.UtcNow,
+                LastModifiedByName = "System"
             }
         };
 

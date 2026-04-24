@@ -1,6 +1,9 @@
 @page "/dealer"
 @using LemonLaw.Blazor.Server.Models
+@using System.Net.Http.Json
 @inject NavigationManager Nav
+@inject IHttpClientFactory HttpClientFactory
+@inject ILogger<DealerPortal> Logger
 
 <PageTitle>Dealer Response Portal — Lemon Law</PageTitle>
 
@@ -20,7 +23,24 @@
     </div>
 
     <div class="dealer-content">
-        @if (!_tokenValidated)
+        @if (_loading)
+        {
+            <div style="text-align:center; padding:64px;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem; color:var(--theme-color);"></i>
+                <p style="margin-top:16px; color:#6b7280;">Loading case information…</p>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="dealer-card" style="max-width:560px; margin:0 auto; text-align:center; padding:48px 40px;">
+                <div class="dealer-icon-circle" style="background:rgba(220,53,69,0.1);">
+                    <i class="fa-solid fa-triangle-exclamation" style="color:#dc3545;"></i>
+                </div>
+                <h2 class="dealer-card-title" style="color:#dc3545; margin-top:20px;">Access Error</h2>
+                <p class="dealer-card-subtitle">@_errorMessage</p>
+            </div>
+        }
+        else if (!_tokenValidated)
         {
             <!-- Token validation / landing -->
             <div class="dealer-card" style="max-width:560px; margin:0 auto; text-align:center; padding:48px 40px;">
@@ -32,13 +52,16 @@
                     You have received a Lemon Law outreach notice from OCABR.
                     Please review the consumer's application and submit your formal response.
                 </p>
-                <div class="dealer-info-box">
-                    <p><strong>Case:</strong> LL-2026-00142</p>
-                    <p><strong>Response Deadline:</strong> May 14, 2026</p>
-                    <p><strong>Consumer:</strong> Jane M. Smith</p>
-                    <p><strong>Vehicle:</strong> 2021 Honda Civic EX</p>
-                </div>
-                <button class="dealer-btn-primary" @onclick="ValidateToken">
+                @if (_caseSummary != null)
+                {
+                    <div class="dealer-info-box">
+                        <p><strong>Case:</strong> @_caseSummary.CaseNumber</p>
+                        <p><strong>Response Deadline:</strong> @_caseSummary.ResponseDeadline.ToString("MMMM d, yyyy")</p>
+                        <p><strong>Consumer:</strong> @_caseSummary.ConsumerName</p>
+                        <p><strong>Vehicle:</strong> @_caseSummary.VehicleYMM</p>
+                    </div>
+                }
+                <button class="dealer-btn-primary" @onclick="ProceedToForm">
                     <i class="fa-solid fa-arrow-right"></i> Access Case &amp; Respond
                 </button>
             </div>
@@ -52,40 +75,52 @@
                         <i class="fa-solid fa-file-lines"></i>
                         <h2>Case Summary</h2>
                     </div>
-                    <div class="dealer-summary-grid">
-                        <div class="dealer-summary-item">
-                            <span class="dealer-label">Case Number</span>
-                            <strong class="dealer-value theme-value">LL-2026-00142</strong>
+                    @if (_caseSummary != null)
+                    {
+                        <div class="dealer-summary-grid">
+                            <div class="dealer-summary-item">
+                                <span class="dealer-label">Case Number</span>
+                                <strong class="dealer-value theme-value">@_caseSummary.CaseNumber</strong>
+                            </div>
+                            <div class="dealer-summary-item">
+                                <span class="dealer-label">Consumer</span>
+                                <strong class="dealer-value">@_caseSummary.ConsumerName</strong>
+                            </div>
+                            <div class="dealer-summary-item">
+                                <span class="dealer-label">Vehicle</span>
+                                <strong class="dealer-value">@_caseSummary.VehicleYMM</strong>
+                            </div>
+                            <div class="dealer-summary-item">
+                                <span class="dealer-label">VIN</span>
+                                <strong class="dealer-value" style="font-family:monospace;">@_caseSummary.VIN</strong>
+                            </div>
+                            <div class="dealer-summary-item">
+                                <span class="dealer-label">Response Deadline</span>
+                                <strong class="dealer-value" style="color:#dc3545;">@_caseSummary.ResponseDeadline.ToString("MMMM d, yyyy")</strong>
+                            </div>
                         </div>
-                        <div class="dealer-summary-item">
-                            <span class="dealer-label">Application Type</span>
-                            <strong class="dealer-value">New Car Lemon Law</strong>
-                        </div>
-                        <div class="dealer-summary-item">
-                            <span class="dealer-label">Consumer</span>
-                            <strong class="dealer-value">Jane M. Smith</strong>
-                        </div>
-                        <div class="dealer-summary-item">
-                            <span class="dealer-label">Vehicle</span>
-                            <strong class="dealer-value">2021 Honda Civic EX</strong>
-                        </div>
-                        <div class="dealer-summary-item">
-                            <span class="dealer-label">VIN</span>
-                            <strong class="dealer-value" style="font-family:monospace;">1HGBH41JXMN109186</strong>
-                        </div>
-                        <div class="dealer-summary-item">
-                            <span class="dealer-label">Response Deadline</span>
-                            <strong class="dealer-value" style="color:#dc3545;">May 14, 2026</strong>
-                        </div>
-                    </div>
-                    <div style="margin-top:20px; padding:16px; background:#f9fafb; border-radius:8px; border-left:4px solid var(--theme-color);">
-                        <p class="dealer-label" style="margin-bottom:6px;">Consumer's Statement</p>
-                        <p style="font-size:0.9rem; line-height:1.7; color:#374151; margin:0;">
-                            "The engine began stalling intermittently at highway speeds approximately 3 months after purchase.
-                            Despite three repair attempts at the selling dealer, the issue persists. The vehicle has been out of
-                            service for a total of 22 days. The defect substantially impairs the safety and use of the vehicle."
-                        </p>
-                    </div>
+                        @if (!string.IsNullOrWhiteSpace(_caseSummary.NarrativeStatement))
+                        {
+                            <div style="margin-top:20px; padding:16px; background:#f9fafb; border-radius:8px; border-left:4px solid var(--theme-color);">
+                                <p class="dealer-label" style="margin-bottom:6px;">Consumer's Statement</p>
+                                <p style="font-size:0.9rem; line-height:1.7; color:#374151; margin:0;">
+                                    "@_caseSummary.NarrativeStatement"
+                                </p>
+                            </div>
+                        }
+                        @if (_caseSummary.Defects?.Count > 0)
+                        {
+                            <div style="margin-top:16px;">
+                                <p class="dealer-label" style="margin-bottom:8px;">Reported Defects</p>
+                                @foreach (var defect in _caseSummary.Defects)
+                                {
+                                    <div style="padding:8px 12px; background:#f9fafb; border-radius:6px; margin-bottom:6px; font-size:0.875rem;">
+                                        <strong>@defect.DefectCategory.ToString().Replace("_", " ")</strong> — @defect.DefectDescription
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
                 </div>
 
                 <!-- Response form -->
@@ -157,7 +192,8 @@
                     <!-- Certification -->
                     <div style="margin-top:24px; padding:20px; background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb;">
                         <label style="display:flex; align-items:flex-start; gap:12px; cursor:pointer;">
-                            <input type="checkbox" @bind="_response.CertificationAccepted" style="margin-top:3px; width:18px; height:18px; accent-color:var(--theme-color); flex-shrink:0;" />
+                            <input type="checkbox" @bind="_response.CertificationAccepted"
+                                   style="margin-top:3px; width:18px; height:18px; accent-color:var(--theme-color); flex-shrink:0;" />
                             <span style="font-size:0.875rem; line-height:1.7; color:#374151;">
                                 I certify that the information provided in this response is accurate and complete to the best of my knowledge,
                                 and that I am authorized to submit this response on behalf of the dealership.
@@ -165,7 +201,8 @@
                         </label>
                         <div style="margin-top:16px; max-width:360px;">
                             <label class="dealer-form-label">Electronic Signature — Type your full name <span class="required">*</span></label>
-                            <input type="text" @bind="_response.CertifierFullName" class="dealer-input" placeholder="John Doe" style="font-style:italic; font-size:1.1rem;" />
+                            <input type="text" @bind="_response.CertifierFullName" class="dealer-input"
+                                   placeholder="John Doe" style="font-style:italic; font-size:1.1rem;" />
                         </div>
                     </div>
 
@@ -202,7 +239,7 @@
                 </div>
                 <h2 class="dealer-card-title" style="color:#388557; margin-top:20px;">Response Submitted</h2>
                 <p class="dealer-card-subtitle">
-                    Thank you. Your response to case <strong>LL-2026-00142</strong> has been received by OCABR.
+                    Thank you. Your response to case <strong>@(_caseSummary?.CaseNumber ?? "")</strong> has been received by OCABR.
                     A confirmation has been sent to <strong>@_response.ResponderEmail</strong>.
                 </p>
                 <div class="dealer-info-box">
@@ -221,16 +258,64 @@
 </div>
 
 @code {
+    private bool _loading = true;
     private bool _tokenValidated = false;
     private bool _submitted = false;
     private bool _submitting = false;
     private string _validationError = string.Empty;
+    private string _errorMessage = string.Empty;
+
+    private string? _outreachId;
+    private string? _token;
 
     private DealerResponseModel _response = new();
+    private DealerCaseSummaryModel? _caseSummary;
 
-    private void ValidateToken()
+    protected override async Task OnInitializedAsync()
     {
-        // Token validation will be wired to the real token service
+        // Parse query string: /dealer?outreachId=<guid>&token=<cleartext>
+        var uri = new Uri(Nav.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        _outreachId = query["outreachId"];
+        _token = query["token"];
+
+        if (string.IsNullOrWhiteSpace(_outreachId) || string.IsNullOrWhiteSpace(_token))
+        {
+            _errorMessage = "Invalid access link. Please use the link from your OCABR notification email.";
+            _loading = false;
+            return;
+        }
+
+        await LoadCaseSummaryAsync();
+        _loading = false;
+    }
+
+    private async Task LoadCaseSummaryAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("LemonLawApi");
+            var url = $"api/dealer-portal/case-summary?outreachId={_outreachId}&token={Uri.EscapeDataString(_token!)}";
+            var response = await client.GetFromJsonAsync<ApiResponse<DealerCaseSummaryModel>>(url);
+
+            if (response?.Success == true && response.Data != null)
+            {
+                _caseSummary = response.Data;
+            }
+            else
+            {
+                _errorMessage = response?.Message ?? "Unable to load case information. Your link may have expired.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading dealer case summary for outreach {Id}", _outreachId);
+            _errorMessage = "Unable to connect to the server. Please try again later.";
+        }
+    }
+
+    private void ProceedToForm()
+    {
         _tokenValidated = true;
     }
 
@@ -252,8 +337,73 @@
         { _validationError = "Electronic signature (full name) is required."; return; }
 
         _submitting = true;
-        await Task.Delay(1200);
-        _submitting = false;
-        _submitted = true;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("LemonLawApi");
+            var url = $"api/dealer-portal/response?outreachId={_outreachId}&token={Uri.EscapeDataString(_token!)}";
+
+            var payload = new
+            {
+                responderName = _response.ResponderName,
+                responderTitle = _response.ResponderTitle,
+                responderEmail = _response.ResponderEmail,
+                responderPhone = _response.ResponderPhone,
+                dealerPosition = _response.DealerPosition,
+                responseNarrative = _response.ResponseNarrative,
+                repairHistoryNotes = _response.RepairHistoryNotes,
+                settlementOffer = _response.SettlementOffer,
+                settlementDetails = _response.SettlementDetails,
+                certificationAccepted = _response.CertificationAccepted,
+                certifierFullName = _response.CertifierFullName
+            };
+
+            var httpResponse = await client.PostAsJsonAsync(url, payload);
+            var result = await httpResponse.Content.ReadFromJsonAsync<ApiResponse<bool>>();
+
+            if (result?.Success == true)
+            {
+                _submitted = true;
+            }
+            else
+            {
+                _validationError = result?.Message ?? "Submission failed. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error submitting dealer response for outreach {Id}", _outreachId);
+            _validationError = "Unable to submit response. Please check your connection and try again.";
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+
+    // ── Local models for JSON deserialization ─────────────────────────────────
+
+    private class ApiResponse<T>
+    {
+        public bool Success { get; set; }
+        public string? Message { get; set; }
+        public T? Data { get; set; }
+    }
+
+    private class DealerCaseSummaryModel
+    {
+        public string CaseNumber { get; set; } = string.Empty;
+        public string ConsumerName { get; set; } = string.Empty;
+        public string VehicleYMM { get; set; } = string.Empty;
+        public string VIN { get; set; } = string.Empty;
+        public DateOnly ResponseDeadline { get; set; }
+        public string NarrativeStatement { get; set; } = string.Empty;
+        public List<DefectItem> Defects { get; set; } = new();
+    }
+
+    private class DefectItem
+    {
+        public string DefectDescription { get; set; } = string.Empty;
+        public string DefectCategory { get; set; } = string.Empty;
     }
 }

@@ -11,4 +11,5 @@ public interface IApplicationRepository : IGenericRepository<AppEntity>
     Task<string> GenerateCaseNumberAsync();
     Task<bool> VinHasActiveApplicationAsync(string vin, Guid? excludeApplicationId = null);
     Task<List<string>> GetActiveApplicationCaseNumbersByVinAsync(string vin);
+    Task<AppEntity?> GetByCaseNumberAsync(string caseNumber);
 }

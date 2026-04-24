@@ -37,9 +37,6 @@ public class VerificationService(
             cache.Set(codeKey, code, TimeSpan.FromMinutes(15));
             cache.Set(attemptsKey, attempts + 1, TimeSpan.FromHours(1));
 
-            // TODO: Send via SendGrid — email service integration point
-            logger.LogInformation("Verification code for {Email}: {Code}", dto.EmailAddress, code);
-
             await emailService.SendAsync(
                 dto.EmailAddress, dto.EmailAddress,
                 "Your Lemon Law Application Verification Code",
@@ -77,9 +74,13 @@ public class VerificationService(
                 };
             }
 
+            // Mark as verified — replace the code entry with a verified flag so
+            // SubmitApplicationAsync can confirm verification without re-checking the code.
+            // The flag expires after 30 minutes to prevent stale sessions.
+            var verifiedKey = $"verified_{dto.EmailAddress}";
+            cache.Set(verifiedKey, true, TimeSpan.FromMinutes(30));
             cache.Remove(codeKey);
 
-            // Generate a short-lived pre-submission token
             var preSubToken = Convert.ToBase64String(Guid.NewGuid().ToByteArray());
 
             return new CommonResponseDto<VerificationResultDto>

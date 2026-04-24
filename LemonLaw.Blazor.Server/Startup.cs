@@ -47,6 +47,14 @@ namespace LemonLaw.Blazor.Server
             services.AddInfrastructure(Configuration);
             services.AddControllers();
 
+            // ── HTTP client for dealer portal → API calls ─────────────────────
+            services.AddHttpClient("LemonLawApi", client =>
+            {
+                var apiBaseUrl = Configuration["LemonLawApi:BaseUrl"] ?? "https://localhost:7229/";
+                client.BaseAddress = new Uri(apiBaseUrl);
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+            });
+
             services.AddXaf(Configuration, builder =>
             {
                 builder.UseApplication<LemonLawBlazorApplication>();

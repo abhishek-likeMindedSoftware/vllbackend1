@@ -13,6 +13,8 @@ public class DealerOutreachService(
     IGenericRepository<DealerOutreach> outreachRepository,
     IGenericRepository<DealerResponse> responseRepository,
     IGenericRepository<CaseEvent> eventRepository,
+    IGenericRepository<Correspondence> correspondenceRepository,
+    IGenericRepository<ApplicationDocument> documentRepository,
     IEmailService emailService,
     IConfiguration configuration,
     ILogger<DealerOutreachService> logger) : IDealerOutreachService
@@ -60,9 +62,34 @@ public class DealerOutreachService(
                 new Dictionary<string, string>
                 {
                     ["caseNumber"] = application?.CaseNumber ?? "",
+                    ["consumerName"] = application?.Applicant != null
+                        ? $"{application.Applicant.FirstName} {application.Applicant.LastName}"
+                        : "",
+                    ["vehicleYMM"] = application?.Vehicle != null
+                        ? $"{application.Vehicle.VehicleYear} {application.Vehicle.VehicleMake} {application.Vehicle.VehicleModel}"
+                        : "",
+                    ["vin"] = application?.Vehicle?.VIN ?? "",
+                    ["dealerName"] = outreach.DealerName ?? "",
                     ["responseDeadline"] = outreach.ResponseDeadline.ToString("MMMM d, yyyy"),
-                    ["dealerPortalLink"] = portalLink
+                    ["dealerPortalLink"] = portalLink,
+                    ["ocabrContactName"] = "OCABR Lemon Law Program",
+                    ["ocabrContactPhone"] = "(617) 973-8787",
+                    ["ocabrContactEmail"] = "ocabr@mass.gov"
                 });
+
+            // Log correspondence record per spec §3.3.6
+            await correspondenceRepository.AddAsync(new Correspondence
+            {
+                ApplicationId = dto.ApplicationId,
+                Direction = CorrespondenceDirection.OUTBOUND,
+                RecipientType = CorrespondenceRecipientType.DEALER,
+                RecipientEmail = outreach.DealerEmail,
+                Subject = $"OCABR Lemon Law Notice — Response Required by {outreach.ResponseDeadline:MMMM d, yyyy}",
+                TemplateUsed = "DEALER_INITIAL_OUTREACH",
+                SentAt = DateTime.UtcNow,
+                SentByStaffId = staffId
+            });
+            await correspondenceRepository.SaveChangesAsync();
 
             logger.LogInformation("Dealer outreach created for application {Id}", dto.ApplicationId);
 
@@ -241,7 +268,28 @@ public class DealerOutreachService(
                 Description = $"Dealer submitted response. Position: {position}."
             });
 
+            // Log correspondence record
+            await correspondenceRepository.AddAsync(new Correspondence
+            {
+                ApplicationId = outreach.ApplicationId.Value,
+                Direction = CorrespondenceDirection.INBOUND,
+                RecipientType = CorrespondenceRecipientType.INTERNAL,
+                RecipientEmail = "ocabr@mass.gov",
+                Subject = $"Dealer Response Received",
+                SentAt = DateTime.UtcNow
+            });
+
             await responseRepository.SaveChangesAsync();
+
+            // Auto-transition application status to DEALER_RESPONDED per spec §3.4
+            var application = await applicationRepository.GetByIdAsync(outreach.ApplicationId.Value);
+            if (application != null && application.Status == ApplicationStatus.ACCEPTED)
+            {
+                application.Status = ApplicationStatus.DEALER_RESPONDED;
+                application.LastActivityAt = DateTime.UtcNow;
+                applicationRepository.Update(application);
+                await applicationRepository.SaveChangesAsync();
+            }
 
             return new CommonResponseDto<bool> { Success = true, Data = true };
         }
@@ -268,4 +316,67 @@ public class DealerOutreachService(
 
     private static CommonResponseDto<bool> Fail(string message) =>
         new() { Success = false, Message = message };
+
+    /// <summary>
+    /// Validates a dealer access token against the outreach record per spec §4.1 / §8.1.
+    /// </summary>
+    public async Task<bool> ValidateDealerTokenAsync(Guid outreachId, string token)
+    {
+        try
+        {
+            var tokenHash = HashToken(token);
+            var outreach = await outreachRepository.FindOneAsync(o =>
+                o.Id == outreachId &&
+                o.TokenHash == tokenHash &&
+                o.TokenExpiresAt > DateTime.UtcNow);
+            return outreach != null;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error validating dealer token for outreach {Id}", outreachId);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Returns documents flagged isVisible_Dealer = true for the dealer portal per spec §7.5.
+    /// </summary>
+    public async Task<CommonResponseDto<List<DocumentListItemDto>>> GetDealerDocumentsAsync(Guid outreachId)
+    {
+        try
+        {
+            var outreach = await outreachRepository.GetByIdAsync(outreachId);
+            if (outreach == null || outreach.ApplicationId == null)
+                return new CommonResponseDto<List<DocumentListItemDto>>
+                {
+                    Success = false,
+                    Message = "Outreach record not found."
+                };
+
+            var docs = await documentRepository.FindAsync(d =>
+                d.ApplicationId == outreach.ApplicationId.Value && d.IsVisible_Dealer);
+
+            var dtos = docs.OrderByDescending(d => d.UploadedAt).Select(d => new DocumentListItemDto
+            {
+                DocumentId = d.Id,
+                DocumentType = d.DocumentType.ToString(),
+                FileName = d.FileName,
+                FileSizeBytes = d.FileSizeBytes,
+                Status = d.Status.ToString(),
+                UploadedAt = d.UploadedAt,
+                UploadedByRole = d.UploadedByRole.ToString()
+            }).ToList();
+
+            return new CommonResponseDto<List<DocumentListItemDto>> { Success = true, Data = dtos };
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error getting dealer documents for outreach {Id}", outreachId);
+            return new CommonResponseDto<List<DocumentListItemDto>>
+            {
+                Success = false,
+                Message = "Failed to retrieve documents."
+            };
+        }
+    }
 }

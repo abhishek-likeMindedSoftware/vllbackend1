@@ -18,6 +18,9 @@ public static class ApplicationDependencyInjection
         services.AddScoped<IReportingService, ReportingService>();
         services.AddScoped<IDocumentService, DocumentService>();
 
+        // Background service for overdue dealer outreach detection (spec §4.4)
+        services.AddHostedService<OverdueOutreachBackgroundService>();
+
         return services;
     }
 }

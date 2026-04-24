@@ -3,6 +3,7 @@ using LemonLaw.Application.Repositories;
 using LemonLaw.Core.Entities;
 using LemonLaw.Core.Enums;
 using LemonLaw.Shared.DTOs;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -22,7 +23,9 @@ public class ApplicationService(
     IGenericRepository<Defect> defectRepository,
     IGenericRepository<RepairAttempt> repairRepository,
     IGenericRepository<Expense> expenseRepository,
+    IGenericRepository<Correspondence> correspondenceRepository,
     IEmailService emailService,
+    IMemoryCache cache,
     IConfiguration configuration,
     ILogger<ApplicationService> logger) : IApplicationService
 {
@@ -309,6 +312,20 @@ public class ApplicationService(
             if (application == null)
                 return Fail<bool>("Application not found.");
 
+            // Verify the email code against the in-memory cache (spec §2.7)
+            // ConfirmVerificationCodeAsync sets a "verified_{email}" flag when the code is confirmed.
+            // We check that flag here rather than re-checking the code (which was already consumed).
+            var applicantEmail = application.Applicant?.EmailAddress;
+            if (string.IsNullOrWhiteSpace(applicantEmail))
+                return Fail<bool>("Applicant email not found. Please complete Step 1 first.");
+
+            var verifiedKey = $"verified_{applicantEmail}";
+            if (!cache.TryGetValue(verifiedKey, out bool isVerified) || !isVerified)
+            {
+                return Fail<bool>("Email verification code is invalid or has expired. Please request a new code.");
+            }
+            cache.Remove(verifiedKey);
+
             application.CertificationAccepted = dto.CertificationAccepted;
             application.SignatureFullName = dto.SignatureFullName;
             application.SignatureTimestamp = DateTime.UtcNow;
@@ -361,7 +378,7 @@ public class ApplicationService(
                     applicationRepository.Update(application);
                     await applicationRepository.SaveChangesAsync();
 
-                    var statusLink = $"{portalBaseUrl}/status?applicationId={applicationId}&token={freshToken}";
+                    var statusLink = $"{portalBaseUrl}/status?caseNumber={Uri.EscapeDataString(application.CaseNumber)}&token={freshToken}";
                     var applicantName = $"{applicant.FirstName} {applicant.LastName}".Trim();
                     var appTypeFriendly = application.ApplicationType switch
                     {
@@ -382,6 +399,19 @@ public class ApplicationService(
                             ["caseNumber"] = application.CaseNumber,
                             ["portalStatusLink"] = statusLink
                         });
+
+                    // Log correspondence record per spec §3.3.6
+                    await correspondenceRepository.AddAsync(new Correspondence
+                    {
+                        ApplicationId = applicationId,
+                        Direction = CorrespondenceDirection.OUTBOUND,
+                        RecipientType = CorrespondenceRecipientType.CONSUMER,
+                        RecipientEmail = applicant.EmailAddress,
+                        Subject = $"Lemon Law Application Received — Case {application.CaseNumber}",
+                        TemplateUsed = "CONSUMER_SUBMISSION_CONFIRMATION",
+                        SentAt = DateTime.UtcNow
+                    });
+                    await correspondenceRepository.SaveChangesAsync();
                 }
             }
             catch (Exception emailEx)
@@ -437,27 +467,78 @@ public class ApplicationService(
             if (application == null)
                 return Fail<PortalStatusDto>("Application not found.");
 
-            var milestones = BuildMilestones(application);
-
-            return new CommonResponseDto<PortalStatusDto>
-            {
-                Success = true,
-                Data = new PortalStatusDto
-                {
-                    ApplicationId = application.Id,
-                    CaseNumber = application.CaseNumber,
-                    Status = application.Status.ToString(),
-                    ApplicationType = application.ApplicationType.ToString(),
-                    SubmittedAt = application.SubmittedAt,
-                    Milestones = milestones
-                }
-            };
+            return BuildPortalStatusDto(application);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error getting portal status for {Id}", applicationId);
             return Fail<PortalStatusDto>("Failed to retrieve status.");
         }
+    }
+
+    public async Task<CommonResponseDto<PortalStatusDto>> GetPortalStatusByCaseNumberAsync(string caseNumber)
+    {
+        try
+        {
+            var application = await applicationRepository.GetByCaseNumberAsync(caseNumber);
+            if (application == null)
+                return Fail<PortalStatusDto>("No application found with that case number. Please check and try again.");
+
+            return BuildPortalStatusDto(application);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error getting portal status for case number {CaseNumber}", caseNumber);
+            return Fail<PortalStatusDto>("Failed to retrieve status.");
+        }
+    }
+
+    public async Task<Guid?> ResolveApplicationIdByCaseNumberAsync(string caseNumber)
+    {
+        try
+        {
+            var application = await applicationRepository.GetByCaseNumberAsync(caseNumber);
+            return application?.Id;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error resolving applicationId for case number {CaseNumber}", caseNumber);
+            return null;
+        }
+    }
+
+    private CommonResponseDto<PortalStatusDto> BuildPortalStatusDto(AppEntity application)
+    {
+        var milestones = BuildMilestones(application);
+
+        var notifications = application.Correspondences
+            .Where(c => c.Direction == CorrespondenceDirection.OUTBOUND
+                     && c.RecipientType == CorrespondenceRecipientType.CONSUMER
+                     && c.SentAt.HasValue)
+            .OrderByDescending(c => c.SentAt)
+            .Select(c => new NotificationSummaryDto
+            {
+                Type = c.TemplateUsed ?? "NOTIFICATION",
+                Subject = c.Subject,
+                SentAt = c.SentAt!.Value,
+                DeliveryStatus = c.DeliveryStatus.ToString()
+            })
+            .ToList();
+
+        return new CommonResponseDto<PortalStatusDto>
+        {
+            Success = true,
+            Data = new PortalStatusDto
+            {
+                ApplicationId = application.Id,
+                CaseNumber = application.CaseNumber,
+                Status = application.Status.ToString(),
+                ApplicationType = application.ApplicationType.ToString(),
+                SubmittedAt = application.SubmittedAt,
+                Milestones = milestones,
+                Notifications = notifications
+            }
+        };
     }
 
     // ── Case List ─────────────────────────────────────────────────────────────
@@ -572,12 +653,18 @@ public class ApplicationService(
     {
         try
         {
-            var application = await applicationRepository.GetByIdAsync(applicationId);
+            var application = await applicationRepository.GetWithFullDetailsAsync(applicationId);
             if (application == null)
                 return Fail<bool>("Application not found.");
 
             if (!Enum.TryParse<ApplicationStatus>(dto.NewStatus, out var newStatus))
                 return Fail<bool>("Invalid status value.");
+
+            // Enforce transition matrix per spec §3.4
+            // ADMIN can force-close from any status
+            var isForceClose = newStatus == ApplicationStatus.CLOSED;
+            if (!isForceClose && !StatusTransitionValidator.IsTransitionAllowed(application.Status, newStatus))
+                return Fail<bool>(StatusTransitionValidator.GetTransitionError(application.Status, newStatus));
 
             var previousStatus = application.Status;
             application.Status = newStatus;
@@ -598,12 +685,78 @@ public class ApplicationService(
             applicationRepository.Update(application);
             await applicationRepository.SaveChangesAsync();
 
+            // Send consumer notifications per spec §5.1
+            await SendStatusChangeNotificationAsync(application, newStatus, dto.Reason);
+
             return new CommonResponseDto<bool> { Success = true, Data = true };
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error transitioning status for {Id}", applicationId);
             return Fail<bool>("Failed to transition status.");
+        }
+    }
+
+    private async Task SendStatusChangeNotificationAsync(
+        AppEntity application, ApplicationStatus newStatus, string? reason)
+    {
+        var applicant = application.Applicant;
+        if (applicant == null || string.IsNullOrWhiteSpace(applicant.EmailAddress)) return;
+
+        var portalBaseUrl = configuration["Portal:BaseUrl"] ?? configuration["Cors:PortalOrigin"] ?? "http://localhost:5173";
+        var token = application.Token?.TokenHash ?? string.Empty;
+        var statusLink = $"{portalBaseUrl}/status?caseNumber={Uri.EscapeDataString(application.CaseNumber)}&token={token}";
+        var consumerName = $"{applicant.FirstName} {applicant.LastName}".Trim();
+        var appTypeFriendly = application.ApplicationType switch
+        {
+            ApplicationType.NEW_CAR => "New Car Lemon Law",
+            ApplicationType.USED_CAR => "Used Car Warranty Law",
+            ApplicationType.LEASED => "Leased Vehicle Arbitration",
+            _ => application.ApplicationType.ToString()
+        };
+
+        try
+        {
+            string? templateCode = newStatus switch
+            {
+                ApplicationStatus.INCOMPLETE => "CONSUMER_APPLICATION_INCOMPLETE",
+                ApplicationStatus.ACCEPTED => "CONSUMER_APPLICATION_ACCEPTED",
+                ApplicationStatus.DECISION_ISSUED => "CONSUMER_DECISION_ISSUED",
+                ApplicationStatus.CLOSED => "CONSUMER_CASE_CLOSED",
+                _ => null
+            };
+
+            if (templateCode == null) return;
+
+            var mergeFields = new Dictionary<string, string>
+            {
+                ["consumerName"] = consumerName,
+                ["applicationTypeFriendly"] = appTypeFriendly,
+                ["caseNumber"] = application.CaseNumber,
+                ["portalStatusLink"] = statusLink,
+                ["missingDocumentsList"] = reason ?? "Please log in to your portal for details.",
+                ["decisionTypeFriendly"] = reason ?? "See portal for decision details."
+            };
+
+            await emailService.SendFromTemplateAsync(
+                applicant.EmailAddress, consumerName, templateCode, mergeFields);
+
+            // Log correspondence record
+            await correspondenceRepository.AddAsync(new Correspondence
+            {
+                ApplicationId = application.Id,
+                Direction = CorrespondenceDirection.OUTBOUND,
+                RecipientType = CorrespondenceRecipientType.CONSUMER,
+                RecipientEmail = applicant.EmailAddress,
+                Subject = $"Status Update — Case {application.CaseNumber}",
+                TemplateUsed = templateCode,
+                SentAt = DateTime.UtcNow
+            });
+            await correspondenceRepository.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to send status change notification for {Id}", application.Id);
         }
     }
 
@@ -752,6 +905,51 @@ public class ApplicationService(
 
             await hearingRepository.SaveChangesAsync();
 
+            // Send hearing notice to consumer per spec §5.1
+            var hearingApp = await applicationRepository.GetWithFullDetailsAsync(applicationId);
+            if (hearingApp?.Applicant != null && !string.IsNullOrWhiteSpace(hearingApp.Applicant.EmailAddress))
+            {
+                try
+                {
+                    var portalBaseUrl = configuration["Portal:BaseUrl"] ?? configuration["Cors:PortalOrigin"] ?? "http://localhost:5173";
+                    var statusLink = $"{portalBaseUrl}/status?caseNumber={Uri.EscapeDataString(hearingApp?.CaseNumber ?? string.Empty)}";
+                    var consumerName = $"{hearingApp.Applicant.FirstName} {hearingApp.Applicant.LastName}".Trim();
+                    var hearingDateStr = dto.HearingDate.ToString("MMMM d, yyyy");
+                    var hearingTimeStr = dto.HearingDate.ToString("h:mm tt") + " UTC";
+                    var hearingDetails = dto.HearingLocation ?? "Details will be provided separately.";
+
+                    await emailService.SendFromTemplateAsync(
+                        hearingApp.Applicant.EmailAddress, consumerName,
+                        "CONSUMER_HEARING_SCHEDULED",
+                        new Dictionary<string, string>
+                        {
+                            ["consumerName"] = consumerName,
+                            ["caseNumber"] = hearingApp.CaseNumber,
+                            ["hearingDate"] = hearingDateStr,
+                            ["hearingTime"] = hearingTimeStr,
+                            ["hearingFormat"] = dto.HearingFormat,
+                            ["hearingDetails"] = hearingDetails,
+                            ["portalStatusLink"] = statusLink
+                        });
+
+                    await correspondenceRepository.AddAsync(new Correspondence
+                    {
+                        ApplicationId = applicationId,
+                        Direction = CorrespondenceDirection.OUTBOUND,
+                        RecipientType = CorrespondenceRecipientType.CONSUMER,
+                        RecipientEmail = hearingApp.Applicant.EmailAddress,
+                        Subject = $"Hearing Scheduled — Case {hearingApp.CaseNumber}",
+                        TemplateUsed = "CONSUMER_HEARING_SCHEDULED",
+                        SentAt = DateTime.UtcNow
+                    });
+                    await correspondenceRepository.SaveChangesAsync();
+                }
+                catch (Exception emailEx)
+                {
+                    logger.LogError(emailEx, "Failed to send hearing notice for {Id}", applicationId);
+                }
+            }
+
             return new CommonResponseDto<HearingDto>
             {
                 Success = true,
@@ -834,6 +1032,55 @@ public class ApplicationService(
             });
 
             await decisionRepository.SaveChangesAsync();
+
+            // Send decision notification to consumer per spec §5.1
+            var decisionApp = await applicationRepository.GetWithFullDetailsAsync(applicationId);
+            if (decisionApp?.Applicant != null && !string.IsNullOrWhiteSpace(decisionApp.Applicant.EmailAddress))
+            {
+                try
+                {
+                    var portalBaseUrl = configuration["Portal:BaseUrl"] ?? configuration["Cors:PortalOrigin"] ?? "http://localhost:5173";
+                    var statusLink = $"{portalBaseUrl}/status?caseNumber={Uri.EscapeDataString(decisionApp?.CaseNumber ?? string.Empty)}";
+                    var consumerName = $"{decisionApp.Applicant.FirstName} {decisionApp.Applicant.LastName}".Trim();
+                    var decisionFriendly = decisionType switch
+                    {
+                        DecisionType.REFUND_ORDERED => "Refund Ordered",
+                        DecisionType.REPLACEMENT_ORDERED => "Replacement Vehicle Ordered",
+                        DecisionType.REIMBURSEMENT_ORDERED => "Reimbursement Ordered",
+                        DecisionType.CLAIM_DENIED => "Claim Denied",
+                        DecisionType.SETTLED_PRIOR => "Settled Prior to Hearing",
+                        DecisionType.WITHDRAWN => "Withdrawn",
+                        _ => decisionType.ToString()
+                    };
+
+                    await emailService.SendFromTemplateAsync(
+                        decisionApp.Applicant.EmailAddress, consumerName,
+                        "CONSUMER_DECISION_ISSUED",
+                        new Dictionary<string, string>
+                        {
+                            ["consumerName"] = consumerName,
+                            ["caseNumber"] = decisionApp.CaseNumber,
+                            ["decisionTypeFriendly"] = decisionFriendly,
+                            ["portalStatusLink"] = statusLink
+                        });
+
+                    await correspondenceRepository.AddAsync(new Correspondence
+                    {
+                        ApplicationId = applicationId,
+                        Direction = CorrespondenceDirection.OUTBOUND,
+                        RecipientType = CorrespondenceRecipientType.CONSUMER,
+                        RecipientEmail = decisionApp.Applicant.EmailAddress,
+                        Subject = $"Decision Issued — Case {decisionApp.CaseNumber}",
+                        TemplateUsed = "CONSUMER_DECISION_ISSUED",
+                        SentAt = DateTime.UtcNow
+                    });
+                    await correspondenceRepository.SaveChangesAsync();
+                }
+                catch (Exception emailEx)
+                {
+                    logger.LogError(emailEx, "Failed to send decision notification for {Id}", applicationId);
+                }
+            }
 
             return new CommonResponseDto<bool> { Success = true, Data = true };
         }
@@ -920,6 +1167,8 @@ public class ApplicationService(
             if (doc == null)
                 return Fail<bool>("Document not found.");
 
+            var previousStatus = doc.Status;
+
             if (Enum.TryParse<DocumentStatus>(dto.Status, out var status))
                 doc.Status = status;
 
@@ -931,6 +1180,56 @@ public class ApplicationService(
 
             documentRepository.Update(doc);
             await documentRepository.SaveChangesAsync();
+
+            // Log event and send consumer notification for REJECTED / REQUESTED
+            if (doc.ApplicationId.HasValue && (status == DocumentStatus.REJECTED || status == DocumentStatus.REQUESTED))
+            {
+                var application = await applicationRepository.GetWithFullDetailsAsync(doc.ApplicationId.Value);
+                var applicant = application?.Applicant;
+                if (applicant != null && !string.IsNullOrWhiteSpace(applicant.EmailAddress))
+                {
+                    try
+                    {
+                        var portalBaseUrl = configuration["Portal:BaseUrl"] ?? configuration["Cors:PortalOrigin"] ?? "http://localhost:5173";
+                        var statusLink = $"{portalBaseUrl}/status?caseNumber={Uri.EscapeDataString(application!.CaseNumber)}";
+                        var consumerName = $"{applicant.FirstName} {applicant.LastName}".Trim();
+
+                        var templateCode = status == DocumentStatus.REJECTED
+                            ? "CONSUMER_DOCUMENT_REJECTED"
+                            : "CONSUMER_DOCUMENT_REQUESTED";
+
+                        await emailService.SendFromTemplateAsync(
+                            applicant.EmailAddress, consumerName, templateCode,
+                            new Dictionary<string, string>
+                            {
+                                ["consumerName"] = consumerName,
+                                ["caseNumber"] = application!.CaseNumber,
+                                ["rejectionReason"] = dto.StaffNotes ?? "Please contact OCABR for details.",
+                                ["documentDescription"] = dto.StaffNotes ?? "Please contact OCABR for details.",
+                                ["portalStatusLink"] = statusLink
+                            });
+
+                        await correspondenceRepository.AddAsync(new Correspondence
+                        {
+                            ApplicationId = doc.ApplicationId.Value,
+                            Direction = CorrespondenceDirection.OUTBOUND,
+                            RecipientType = CorrespondenceRecipientType.CONSUMER,
+                            RecipientEmail = applicant.EmailAddress,
+                            Subject = status == DocumentStatus.REJECTED
+                                ? $"Document Rejected — Case {application.CaseNumber}"
+                                : $"Document Requested — Case {application.CaseNumber}",
+                            TemplateUsed = templateCode,
+                            SentAt = DateTime.UtcNow,
+                            SentByStaffId = staffId
+                        });
+                        await correspondenceRepository.SaveChangesAsync();
+                    }
+                    catch (Exception emailEx)
+                    {
+                        logger.LogError(emailEx, "Failed to send document status notification for doc {DocId}", documentId);
+                    }
+                }
+            }
 
             return new CommonResponseDto<bool> { Success = true, Data = true };
         }
