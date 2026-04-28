@@ -55,11 +55,11 @@ namespace LemonLaw.Module.DatabaseUpdate
             }
 
             // If a user named 'Admin' doesn't exist in the database, create this user
-            if (userManager.FindUserByName<ApplicationUser>(ObjectSpace, "Admin") == null)
+            if (userManager.FindUserByName<ApplicationUser>(ObjectSpace, "Admin@vll.com") == null)
             {
                 // Set a password if the standard authentication type is used
-                string EmptyPassword = "";
-                _ = userManager.CreateUser<ApplicationUser>(ObjectSpace, "Admin", EmptyPassword, (user) =>
+                string password = "Admin@123";
+                _ = userManager.CreateUser<ApplicationUser>(ObjectSpace, "Admin@vll.com", password, (user) =>
                 {
                     // Add the Administrators role to the user
                     user.Roles.Add(adminRole);
