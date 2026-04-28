@@ -35,7 +35,7 @@ namespace LemonLaw.Module.DatabaseUpdate
             // https://docs.devexpress.com/eXpressAppFramework/119064/data-security-and-safety/security-system/authentication
 #if !RELEASE
             // If a role doesn't exist in the database, create this role
-            var defaultRole = CreateDefaultRole();
+            //var defaultRole = CreateDefaultRole();
             var adminRole = CreateAdminRole();
 
             ObjectSpace.CommitChanges(); //This line persists created object(s).
@@ -43,16 +43,16 @@ namespace LemonLaw.Module.DatabaseUpdate
             UserManager userManager = ObjectSpace.ServiceProvider.GetRequiredService<UserManager>();
 
             // If a user named 'User' doesn't exist in the database, create this user
-            if (userManager.FindUserByName<ApplicationUser>(ObjectSpace, "User") == null)
-            {
-                // Set a password if the standard authentication type is used
-                string EmptyPassword = "";
-                _ = userManager.CreateUser<ApplicationUser>(ObjectSpace, "User", EmptyPassword, (user) =>
-                {
-                    // Add the Users role to the user
-                    user.Roles.Add(defaultRole);
-                });
-            }
+            //if (userManager.FindUserByName<ApplicationUser>(ObjectSpace, "User") == null)
+            //{
+            //    // Set a password if the standard authentication type is used
+            //    string EmptyPassword = "";
+            //    _ = userManager.CreateUser<ApplicationUser>(ObjectSpace, "User", EmptyPassword, (user) =>
+            //    {
+            //        // Add the Users role to the user
+            //        user.Roles.Add(defaultRole);
+            //    });
+            //}
 
             // If a user named 'Admin' doesn't exist in the database, create this user
             if (userManager.FindUserByName<ApplicationUser>(ObjectSpace, "Admin@vll.com") == null)
@@ -100,28 +100,28 @@ namespace LemonLaw.Module.DatabaseUpdate
             }
             return adminRole;
         }
-        PermissionPolicyRole CreateDefaultRole()
-        {
-            PermissionPolicyRole defaultRole = ObjectSpace.FirstOrDefault<PermissionPolicyRole>(role => role.Name == "Default");
-            if (defaultRole == null)
-            {
-                defaultRole = ObjectSpace.CreateObject<PermissionPolicyRole>();
-                defaultRole.Name = "Default";
+        //PermissionPolicyRole CreateDefaultRole()
+        //{
+        //    PermissionPolicyRole defaultRole = ObjectSpace.FirstOrDefault<PermissionPolicyRole>(role => role.Name == "Default");
+        //    if (defaultRole == null)
+        //    {
+        //        defaultRole = ObjectSpace.CreateObject<PermissionPolicyRole>();
+        //        defaultRole.Name = "Default";
 
-                defaultRole.AddObjectPermissionFromLambda<ApplicationUser>(SecurityOperations.Read, cm => cm.ID == (Guid)CurrentUserIdOperator.CurrentUserId(), SecurityPermissionState.Allow);
-                defaultRole.AddNavigationPermission(@"Application/NavigationItems/Items/Default/Items/MyDetails", SecurityPermissionState.Allow);
-                defaultRole.AddMemberPermissionFromLambda<ApplicationUser>(SecurityOperations.Write, "ChangePasswordOnFirstLogon", cm => cm.ID == (Guid)CurrentUserIdOperator.CurrentUserId(), SecurityPermissionState.Allow);
-                defaultRole.AddMemberPermissionFromLambda<ApplicationUser>(SecurityOperations.Write, "StoredPassword", cm => cm.ID == (Guid)CurrentUserIdOperator.CurrentUserId(), SecurityPermissionState.Allow);
-                defaultRole.AddTypePermissionsRecursively<PermissionPolicyRole>(SecurityOperations.Read, SecurityPermissionState.Deny);
-                defaultRole.AddObjectPermission<ModelDifference>(SecurityOperations.ReadWriteAccess, "UserId = ToStr(CurrentUserId())", SecurityPermissionState.Allow);
-                defaultRole.AddObjectPermission<ModelDifferenceAspect>(SecurityOperations.ReadWriteAccess, "Owner.UserId = ToStr(CurrentUserId())", SecurityPermissionState.Allow);
-                defaultRole.AddTypePermissionsRecursively<ModelDifference>(SecurityOperations.Create, SecurityPermissionState.Allow);
-                defaultRole.AddTypePermissionsRecursively<ModelDifferenceAspect>(SecurityOperations.Create, SecurityPermissionState.Allow);
-                defaultRole.AddTypePermission<AuditDataItemPersistent>(SecurityOperations.Read, SecurityPermissionState.Deny);
-                defaultRole.AddObjectPermissionFromLambda<AuditDataItemPersistent>(SecurityOperations.Read, a => a.UserObject.Key == CurrentUserIdOperator.CurrentUserId().ToString(), SecurityPermissionState.Allow);
-                defaultRole.AddTypePermission<AuditEFCoreWeakReference>(SecurityOperations.Read, SecurityPermissionState.Allow);
-            }
-            return defaultRole;
-        }
+        //        defaultRole.AddObjectPermissionFromLambda<ApplicationUser>(SecurityOperations.Read, cm => cm.ID == (Guid)CurrentUserIdOperator.CurrentUserId(), SecurityPermissionState.Allow);
+        //        defaultRole.AddNavigationPermission(@"Application/NavigationItems/Items/Default/Items/MyDetails", SecurityPermissionState.Allow);
+        //        defaultRole.AddMemberPermissionFromLambda<ApplicationUser>(SecurityOperations.Write, "ChangePasswordOnFirstLogon", cm => cm.ID == (Guid)CurrentUserIdOperator.CurrentUserId(), SecurityPermissionState.Allow);
+        //        defaultRole.AddMemberPermissionFromLambda<ApplicationUser>(SecurityOperations.Write, "StoredPassword", cm => cm.ID == (Guid)CurrentUserIdOperator.CurrentUserId(), SecurityPermissionState.Allow);
+        //        defaultRole.AddTypePermissionsRecursively<PermissionPolicyRole>(SecurityOperations.Read, SecurityPermissionState.Deny);
+        //        defaultRole.AddObjectPermission<ModelDifference>(SecurityOperations.ReadWriteAccess, "UserId = ToStr(CurrentUserId())", SecurityPermissionState.Allow);
+        //        defaultRole.AddObjectPermission<ModelDifferenceAspect>(SecurityOperations.ReadWriteAccess, "Owner.UserId = ToStr(CurrentUserId())", SecurityPermissionState.Allow);
+        //        defaultRole.AddTypePermissionsRecursively<ModelDifference>(SecurityOperations.Create, SecurityPermissionState.Allow);
+        //        defaultRole.AddTypePermissionsRecursively<ModelDifferenceAspect>(SecurityOperations.Create, SecurityPermissionState.Allow);
+        //        defaultRole.AddTypePermission<AuditDataItemPersistent>(SecurityOperations.Read, SecurityPermissionState.Deny);
+        //        defaultRole.AddObjectPermissionFromLambda<AuditDataItemPersistent>(SecurityOperations.Read, a => a.UserObject.Key == CurrentUserIdOperator.CurrentUserId().ToString(), SecurityPermissionState.Allow);
+        //        defaultRole.AddTypePermission<AuditEFCoreWeakReference>(SecurityOperations.Read, SecurityPermissionState.Allow);
+        //    }
+        //    return defaultRole;
+        //}
     }
 }
