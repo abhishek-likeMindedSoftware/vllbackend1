@@ -704,8 +704,20 @@ public class ApplicationService(
         if (applicant == null || string.IsNullOrWhiteSpace(applicant.EmailAddress)) return;
 
         var portalBaseUrl = configuration["Portal:BaseUrl"] ?? configuration["Cors:PortalOrigin"] ?? "http://localhost:5173";
-        var token = application.Token?.TokenHash ?? string.Empty;
-        var statusLink = $"{portalBaseUrl}/status?caseNumber={Uri.EscapeDataString(application.CaseNumber)}&token={token}";
+
+        // Generate a fresh cleartext token and update the stored hash per spec §2.8.
+        // The hash is never sent — only the cleartext goes in the email link.
+        var freshToken = GenerateSecureToken();
+        var freshHash = HashToken(freshToken);
+        if (application.Token != null)
+        {
+            application.Token.TokenHash = freshHash;
+            application.Token.ExpiresAt = DateTime.UtcNow.AddYears(2);
+            applicationRepository.Update(application);
+            await applicationRepository.SaveChangesAsync();
+        }
+
+        var statusLink = $"{portalBaseUrl}/status?caseNumber={Uri.EscapeDataString(application.CaseNumber)}&token={freshToken}";
         var consumerName = $"{applicant.FirstName} {applicant.LastName}".Trim();
         var appTypeFriendly = application.ApplicationType switch
         {
@@ -905,6 +917,18 @@ public class ApplicationService(
 
             await hearingRepository.SaveChangesAsync();
 
+            // Auto-transition application status to HEARING_SCHEDULED per spec §3.4
+            var appForTransition = await applicationRepository.GetByIdAsync(applicationId);
+            if (appForTransition != null &&
+                (appForTransition.Status == ApplicationStatus.ACCEPTED ||
+                 appForTransition.Status == ApplicationStatus.DEALER_RESPONDED))
+            {
+                appForTransition.Status = ApplicationStatus.HEARING_SCHEDULED;
+                appForTransition.LastActivityAt = DateTime.UtcNow;
+                applicationRepository.Update(appForTransition);
+                await applicationRepository.SaveChangesAsync();
+            }
+
             // Send hearing notice to consumer per spec §5.1
             var hearingApp = await applicationRepository.GetWithFullDetailsAsync(applicationId);
             if (hearingApp?.Applicant != null && !string.IsNullOrWhiteSpace(hearingApp.Applicant.EmailAddress))
@@ -912,7 +936,17 @@ public class ApplicationService(
                 try
                 {
                     var portalBaseUrl = configuration["Portal:BaseUrl"] ?? configuration["Cors:PortalOrigin"] ?? "http://localhost:5173";
-                    var statusLink = $"{portalBaseUrl}/status?caseNumber={Uri.EscapeDataString(hearingApp?.CaseNumber ?? string.Empty)}";
+                    // Fresh token so the link in the hearing notice is valid
+                    var hearingToken = GenerateSecureToken();
+                    var hearingTokenHash = HashToken(hearingToken);
+                    if (hearingApp.Token != null)
+                    {
+                        hearingApp.Token.TokenHash = hearingTokenHash;
+                        hearingApp.Token.ExpiresAt = DateTime.UtcNow.AddYears(2);
+                        applicationRepository.Update(hearingApp);
+                        await applicationRepository.SaveChangesAsync();
+                    }
+                    var statusLink = $"{portalBaseUrl}/status?caseNumber={Uri.EscapeDataString(hearingApp.CaseNumber)}&token={hearingToken}";
                     var consumerName = $"{hearingApp.Applicant.FirstName} {hearingApp.Applicant.LastName}".Trim();
                     var hearingDateStr = dto.HearingDate.ToString("MMMM d, yyyy");
                     var hearingTimeStr = dto.HearingDate.ToString("h:mm tt") + " UTC";
@@ -989,6 +1023,32 @@ public class ApplicationService(
             hearingRepository.Update(hearing);
             await hearingRepository.SaveChangesAsync();
 
+            // Auto-transition application status to HEARING_COMPLETE per spec §3.4
+            // (only when outcome is a final outcome, not a continuation)
+            if (hearing.ApplicationId.HasValue && outcome != HearingOutcome.PENDING)
+            {
+                var appForTransition = await applicationRepository.GetByIdAsync(hearing.ApplicationId.Value);
+                if (appForTransition != null && appForTransition.Status == ApplicationStatus.HEARING_SCHEDULED)
+                {
+                    appForTransition.Status = ApplicationStatus.HEARING_COMPLETE;
+                    appForTransition.LastActivityAt = DateTime.UtcNow;
+                    applicationRepository.Update(appForTransition);
+                    await applicationRepository.SaveChangesAsync();
+
+                    await eventRepository.AddAsync(new CaseEvent
+                    {
+                        ApplicationId = hearing.ApplicationId.Value,
+                        EventType = CaseEventType.STATUS_CHANGE,
+                        ActorType = ActorType.STAFF,
+                        ActorDisplayName = "System",
+                        Description = $"Hearing outcome recorded: {outcome}. Status transitioned to HEARING_COMPLETE.",
+                        PreviousValue = ApplicationStatus.HEARING_SCHEDULED.ToString(),
+                        NewValue = ApplicationStatus.HEARING_COMPLETE.ToString()
+                    });
+                    await eventRepository.SaveChangesAsync();
+                }
+            }
+
             return new CommonResponseDto<bool> { Success = true, Data = true };
         }
         catch (Exception ex)
@@ -1033,6 +1093,16 @@ public class ApplicationService(
 
             await decisionRepository.SaveChangesAsync();
 
+            // Auto-transition application status to DECISION_ISSUED per spec §3.4
+            var appForTransition = await applicationRepository.GetByIdAsync(applicationId);
+            if (appForTransition != null && appForTransition.Status == ApplicationStatus.HEARING_COMPLETE)
+            {
+                appForTransition.Status = ApplicationStatus.DECISION_ISSUED;
+                appForTransition.LastActivityAt = DateTime.UtcNow;
+                applicationRepository.Update(appForTransition);
+                await applicationRepository.SaveChangesAsync();
+            }
+
             // Send decision notification to consumer per spec §5.1
             var decisionApp = await applicationRepository.GetWithFullDetailsAsync(applicationId);
             if (decisionApp?.Applicant != null && !string.IsNullOrWhiteSpace(decisionApp.Applicant.EmailAddress))
@@ -1040,7 +1110,17 @@ public class ApplicationService(
                 try
                 {
                     var portalBaseUrl = configuration["Portal:BaseUrl"] ?? configuration["Cors:PortalOrigin"] ?? "http://localhost:5173";
-                    var statusLink = $"{portalBaseUrl}/status?caseNumber={Uri.EscapeDataString(decisionApp?.CaseNumber ?? string.Empty)}";
+                    // Fresh token so the link in the decision notice is valid
+                    var decisionToken = GenerateSecureToken();
+                    var decisionTokenHash = HashToken(decisionToken);
+                    if (decisionApp.Token != null)
+                    {
+                        decisionApp.Token.TokenHash = decisionTokenHash;
+                        decisionApp.Token.ExpiresAt = DateTime.UtcNow.AddYears(2);
+                        applicationRepository.Update(decisionApp);
+                        await applicationRepository.SaveChangesAsync();
+                    }
+                    var statusLink = $"{portalBaseUrl}/status?caseNumber={Uri.EscapeDataString(decisionApp.CaseNumber)}&token={decisionToken}";
                     var consumerName = $"{decisionApp.Applicant.FirstName} {decisionApp.Applicant.LastName}".Trim();
                     var decisionFriendly = decisionType switch
                     {

@@ -225,6 +225,24 @@ public static class DatabaseSeeder
             },
             new()
             {
+                TemplateCode = "CONSUMER_DEALER_RESPONDED",
+                TemplateName = "Consumer — Dealer Response Received",
+                Subject = "Dealer Response Received — Lemon Law Case {{caseNumber}}",
+                BodyHtml = """
+                    <p>Dear {{consumerName}},</p>
+                    <p>The dealer has submitted a formal response to your Lemon Law case ({{caseNumber}}).</p>
+                    <p>OCABR staff will review the response and contact you with next steps. You can check your case status at any time using the link below:</p>
+                    <p><a href="{{portalStatusLink}}">View Application Status</a></p>
+                    <p>— OCABR Lemon Law Program</p>
+                    """,
+                BodyText = "The dealer has responded to your Lemon Law case {{caseNumber}}. View status at: {{portalStatusLink}}",
+                MergeFields = "[\"consumerName\",\"caseNumber\",\"portalStatusLink\"]",
+                IsActive = true,
+                LastModifiedAt = DateTime.UtcNow,
+                LastModifiedByName = "System"
+            },
+            new()
+            {
                 TemplateCode = "CONSUMER_CASE_CLOSED",
                 TemplateName = "Consumer Case Closed",
                 Subject = "Your Lemon Law Case Has Been Closed — Case {{caseNumber}}",

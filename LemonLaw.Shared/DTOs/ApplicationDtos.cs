@@ -361,6 +361,7 @@ public class CreateOutreachDto
 {
     public Guid ApplicationId { get; set; }
     public string DealerEmail { get; set; } = string.Empty;
+    public string DealerName { get; set; } = string.Empty;
     public string TemplateCode { get; set; } = string.Empty;
     public DateOnly ResponseDeadline { get; set; }
 }

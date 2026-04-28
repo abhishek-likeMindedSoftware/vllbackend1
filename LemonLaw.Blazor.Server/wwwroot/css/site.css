@@ -53,6 +53,8 @@ button[data-action-name="Send Dealer Outreach"] {
     background-color: #ff6f00 !important;
     border-color: #ff6f00 !important;
     color: #ffffff !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
 }
 
 button[data-action-name="Send Dealer Outreach"]:hover {
@@ -62,5 +64,21 @@ button[data-action-name="Send Dealer Outreach"]:hover {
 
 /* Hide the empty icon span to remove the leading space */
 button[data-action-name="Send Dealer Outreach"] .xaf-toolbar-item-icon {
+    display: none !important;
+}
+
+/* ── Follow-Up Actions dropdown button ───────────────────────────────────── */
+button[data-action-name="Follow-Up Actions"] {
+    background-color: #d97706 !important;
+    border-color: #d97706 !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+}
+button[data-action-name="Follow-Up Actions"]:hover {
+    background-color: #b45309 !important;
+    border-color: #b45309 !important;
+}
+button[data-action-name="Follow-Up Actions"] .xaf-toolbar-item-icon {
     display: none !important;
 }

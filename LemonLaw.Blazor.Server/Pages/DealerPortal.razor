@@ -120,6 +120,43 @@
                                 }
                             </div>
                         }
+                        @if (_caseSummary.RepairAttempts?.Count > 0)
+                        {
+                            <div style="margin-top:16px;">
+                                <p class="dealer-label" style="margin-bottom:8px;">Consumer's Repair History</p>
+                                @foreach (var repair in _caseSummary.RepairAttempts.OrderBy(r => r.SortOrder))
+                                {
+                                    <div style="padding:10px 14px; background:#f9fafb; border-radius:6px; margin-bottom:8px; font-size:0.875rem; border-left:3px solid #d1d5db;">
+                                        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px; margin-bottom:4px;">
+                                            <strong>@repair.RepairFacilityName</strong>
+                                            <span style="color:#6b7280;">@repair.RepairDate</span>
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(repair.RepairFacilityAddr))
+                                        {
+                                            <div style="color:#6b7280; font-size:0.8rem; margin-bottom:4px;">@repair.RepairFacilityAddr</div>
+                                        }
+                                        <div style="margin-bottom:4px;">@repair.DefectsAddressed</div>
+                                        <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.8rem; color:#6b7280;">
+                                            @if (repair.RoNumber != null)
+                                            {
+                                                <span>RO# @repair.RoNumber</span>
+                                            }
+                                            @if (repair.MileageAtRepair.HasValue)
+                                            {
+                                                <span>@repair.MileageAtRepair.Value.ToString("N0") mi</span>
+                                            }
+                                            @if (repair.DaysOutOfService.HasValue)
+                                            {
+                                                <span>@repair.DaysOutOfService days out of service</span>
+                                            }
+                                            <span style="color:@(repair.RepairSuccessful ? "#388557" : "#dc3545");">
+                                                @(repair.RepairSuccessful ? "✓ Resolved" : "✗ Not resolved")
+                                            </span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
                     }
                 </div>
 
@@ -399,11 +436,25 @@
         public DateOnly ResponseDeadline { get; set; }
         public string NarrativeStatement { get; set; } = string.Empty;
         public List<DefectItem> Defects { get; set; } = new();
+        public List<RepairAttemptItem> RepairAttempts { get; set; } = new();
     }
 
     private class DefectItem
     {
         public string DefectDescription { get; set; } = string.Empty;
         public string DefectCategory { get; set; } = string.Empty;
+    }
+
+    private class RepairAttemptItem
+    {
+        public string RepairDate { get; set; } = string.Empty;
+        public string RepairFacilityName { get; set; } = string.Empty;
+        public string? RepairFacilityAddr { get; set; }
+        public string? RoNumber { get; set; }
+        public int? MileageAtRepair { get; set; }
+        public string DefectsAddressed { get; set; } = string.Empty;
+        public bool RepairSuccessful { get; set; }
+        public int? DaysOutOfService { get; set; }
+        public int SortOrder { get; set; }
     }
 }
