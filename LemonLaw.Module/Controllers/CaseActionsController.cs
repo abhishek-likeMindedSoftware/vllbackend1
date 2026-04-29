@@ -5,6 +5,7 @@ using DevExpress.ExpressApp.Templates;
 using DevExpress.Persistent.Base;
 using LemonLaw.Core.Enums;
 using LemonLaw.Module.BusinessObjects;
+using System.ComponentModel;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -41,6 +42,8 @@ namespace LemonLaw.Module.Controllers
         private const string KEY_WITHDRAW          = "WithdrawCase";
 
         private SingleChoiceAction _caseActionsMenu;
+        private AppEntity? _trackedApplication;
+        private RefreshController? _refreshController;
 
         public CaseActionsController()
         {
@@ -60,17 +63,36 @@ namespace LemonLaw.Module.Controllers
         protected override void OnActivated()
         {
             base.OnActivated();
-            _caseActionsMenu.Active.SetItemValue("IsApplicationView",
-                View?.CurrentObject is AppEntity);
+            if (View != null)
+                View.CurrentObjectChanged += OnCurrentObjectChanged;
 
-            if (View?.CurrentObject is AppEntity)
-                RebuildMenuItems();
+            _refreshController = Frame.GetController<RefreshController>();
+            if (_refreshController != null)
+                _refreshController.RefreshAction.Executed += OnRefreshExecuted;
+
+            TrackCurrentApplication();
+            RebuildMenuItems();
         }
 
         protected override void OnViewChanging(View view)
         {
             base.OnViewChanging(view);
+            UntrackCurrentApplication();
             RebuildMenuItems();
+        }
+
+        protected override void OnDeactivated()
+        {
+            if (View != null)
+                View.CurrentObjectChanged -= OnCurrentObjectChanged;
+
+            if (_refreshController != null)
+                _refreshController.RefreshAction.Executed -= OnRefreshExecuted;
+
+            UntrackCurrentApplication();
+            _refreshController = null;
+
+            base.OnDeactivated();
         }
 
         /// <summary>
@@ -148,6 +170,45 @@ namespace LemonLaw.Module.Controllers
             _caseActionsMenu.Items.Add(item);
         }
 
+        private void OnCurrentObjectChanged(object? sender, EventArgs e)
+        {
+            TrackCurrentApplication();
+            RebuildMenuItems();
+        }
+
+        private void OnRefreshExecuted(object? sender, ActionBaseEventArgs e)
+        {
+            TrackCurrentApplication();
+            RebuildMenuItems();
+        }
+
+        private void TrackCurrentApplication()
+        {
+            var currentApp = View?.CurrentObject as AppEntity;
+            if (ReferenceEquals(_trackedApplication, currentApp))
+                return;
+
+            UntrackCurrentApplication();
+            _trackedApplication = currentApp;
+
+            if (_trackedApplication != null)
+                _trackedApplication.PropertyChanged += OnTrackedApplicationPropertyChanged;
+        }
+
+        private void UntrackCurrentApplication()
+        {
+            if (_trackedApplication != null)
+                _trackedApplication.PropertyChanged -= OnTrackedApplicationPropertyChanged;
+
+            _trackedApplication = null;
+        }
+
+        private void OnTrackedApplicationPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(e.PropertyName) || e.PropertyName == nameof(AppEntity.Status))
+                RebuildMenuItems();
+        }
+
         // ── Dispatch selected action ──────────────────────────────────────────
 
         private void OnCaseActionSelected(object sender, SingleChoiceActionExecuteEventArgs e)
@@ -220,17 +281,15 @@ namespace LemonLaw.Module.Controllers
 
         // ── Status Transition ─────────────────────────────────────────────────
 
-        private void ExecuteTransition(string newStatus, string? reason)
+        private async void ExecuteTransition(string newStatus, string? reason)
         {
             if (View?.CurrentObject is not AppEntity app) return;
 
             var applicationId = app.Id;
             var caseNumber = app.CaseNumber;
 
-            _ = Task.Run(async () =>
+            try
             {
-                try
-                {
                     using var client = CreateHttpClient();
                     var payload = new { newStatus, reason };
                     var response = await client.PutAsJsonAsync($"api/cases/{applicationId}/status", payload);
@@ -245,7 +304,7 @@ namespace LemonLaw.Module.Controllers
                             Application.ShowViewStrategy.ShowMessage(
                                 $"✓ Case {caseNumber} — status updated to {newStatus}.",
                                 InformationType.Success, 5000, InformationPosition.Top);
-                            Application.MainWindow?.GetController<RefreshController>()?.RefreshAction.DoExecute();
+                            RefreshCurrentView(newStatus);
                         }
                         else
                         {
@@ -257,17 +316,16 @@ namespace LemonLaw.Module.Controllers
                     {
                         Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
                     }
-                }
-                catch (Exception ex)
-                {
-                    Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
-                }
-            });
+            }
+            catch (Exception ex)
+            {
+                Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+            }
         }
 
         // ── Send Dealer Outreach ──────────────────────────────────────────────
 
-        private void ExecuteSendOutreach()
+        private async void ExecuteSendOutreach()
         {
             if (View?.CurrentObject is not AppEntity app) return;
 
@@ -313,10 +371,8 @@ namespace LemonLaw.Module.Controllers
                 $"Sending dealer outreach to {dealerEmail}…",
                 InformationType.Info, 2000, InformationPosition.Top);
 
-            _ = Task.Run(async () =>
+            try
             {
-                try
-                {
                     using var client = CreateHttpClient();
                     var payload = new
                     {
@@ -339,6 +395,7 @@ namespace LemonLaw.Module.Controllers
                             Application.ShowViewStrategy.ShowMessage(
                                 $"✓ Dealer outreach sent to {dealerEmail}. Deadline: {responseDeadline:MMMM d, yyyy}.",
                                 InformationType.Success, 6000, InformationPosition.Top);
+                            RefreshCurrentView();
                         }
                         else
                         {
@@ -350,12 +407,11 @@ namespace LemonLaw.Module.Controllers
                     {
                         Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
                     }
-                }
-                catch (Exception ex)
-                {
-                    Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
-                }
-            });
+            }
+            catch (Exception ex)
+            {
+                Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+            }
         }
 
         // ── Schedule Hearing ──────────────────────────────────────────────────
@@ -381,11 +437,11 @@ namespace LemonLaw.Module.Controllers
                 TargetWindow = TargetWindow.NewModalWindow,
             };
 
-            var dialogController = new DialogController();
+            var dialogController = Application.CreateController<DialogController>();
             dialogController.AcceptAction.Caption = "Schedule Hearing";
             dialogController.CancelAction.Caption = "Cancel";
 
-            dialogController.AcceptAction.Execute += (_, _) =>
+            dialogController.AcceptAction.Execute += async (_, _) =>
             {
                 // Validate: hearing date must be in the future
                 if (input.HearingDate <= DateTime.UtcNow)
@@ -405,10 +461,8 @@ namespace LemonLaw.Module.Controllers
                     $"Scheduling hearing for case {caseNumber}…",
                     InformationType.Info, 2000, InformationPosition.Top);
 
-                _ = Task.Run(async () =>
+                try
                 {
-                    try
-                    {
                         using var client = CreateHttpClient();
                         var payload = new
                         {
@@ -430,7 +484,7 @@ namespace LemonLaw.Module.Controllers
                                 Application.ShowViewStrategy.ShowMessage(
                                     $"✓ Hearing scheduled for {hearingDate:MMMM d, yyyy h:mm tt}. Consumer notified.",
                                     InformationType.Success, 6000, InformationPosition.Top);
-                                Application.MainWindow?.GetController<RefreshController>()?.RefreshAction.DoExecute();
+                                RefreshCurrentView(ApplicationStatus.HEARING_SCHEDULED.ToString());
                             }
                             else
                             {
@@ -442,12 +496,11 @@ namespace LemonLaw.Module.Controllers
                         {
                             Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
-                    }
-                });
+                }
+                catch (Exception ex)
+                {
+                    Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+                }
             };
 
             svp.Controllers.Add(dialogController);
@@ -456,7 +509,7 @@ namespace LemonLaw.Module.Controllers
 
         // ── Issue Decision ────────────────────────────────────────────────────
 
-        private void ExecuteIssueDecision()
+        private async void ExecuteIssueDecision()
         {
             if (View?.CurrentObject is not AppEntity app) return;
 
@@ -467,10 +520,8 @@ namespace LemonLaw.Module.Controllers
                 $"Issuing decision for case {caseNumber}…",
                 InformationType.Info, 2000, InformationPosition.Top);
 
-            _ = Task.Run(async () =>
+            try
             {
-                try
-                {
                     using var client = CreateHttpClient();
                     var payload = new
                     {
@@ -493,7 +544,7 @@ namespace LemonLaw.Module.Controllers
                             Application.ShowViewStrategy.ShowMessage(
                                 $"✓ Decision issued for case {caseNumber}. Consumer notified.",
                                 InformationType.Success, 6000, InformationPosition.Top);
-                            Application.MainWindow?.GetController<RefreshController>()?.RefreshAction.DoExecute();
+                            RefreshCurrentView(ApplicationStatus.DECISION_ISSUED.ToString());
                         }
                         else
                         {
@@ -505,12 +556,11 @@ namespace LemonLaw.Module.Controllers
                     {
                         Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
                     }
-                }
-                catch (Exception ex)
-                {
-                    Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
-                }
-            });
+            }
+            catch (Exception ex)
+            {
+                Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+            }
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────
@@ -522,6 +572,20 @@ namespace LemonLaw.Module.Controllers
                 ServerCertificateCustomValidationCallback = (_, _, _, _) => true
             };
             return new HttpClient(handler) { BaseAddress = new Uri(GetApiBaseUrl()) };
+        }
+
+        private void RefreshCurrentView(string? newStatus = null)
+        {
+            if (!string.IsNullOrWhiteSpace(newStatus)
+                && View?.CurrentObject is AppEntity app
+                && Enum.TryParse(newStatus, true, out ApplicationStatus parsedStatus))
+            {
+                app.Status = parsedStatus;
+                app.LastActivityAt = DateTime.UtcNow;
+            }
+
+            RebuildMenuItems();
+            Frame.GetController<RefreshController>()?.RefreshAction.DoExecute();
         }
 
         private string GetApiBaseUrl()
