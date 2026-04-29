@@ -14,11 +14,11 @@
                 @foreach (var item in _items.OrderByDescending(c => c.SentAt))
                 {
                     <tr>
-                        <td>@item.Direction</td>
+                        <td>@EnumHelper.GetDescription(item.Direction)</td>
                         <td>@item.RecipientType — @item.RecipientEmail</td>
                         <td>@item.Subject</td>
                         <td>@(item.SentAt?.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt") ?? "—")</td>
-                        <td><span class="ll-badge @GetDeliveryClass(item.DeliveryStatus)">@item.DeliveryStatus</span></td>
+                        <td><span class="ll-badge @GetDeliveryClass(item.DeliveryStatus)">@EnumHelper.GetDescription(item.DeliveryStatus)</span></td>
                     </tr>
                 }
             </tbody>

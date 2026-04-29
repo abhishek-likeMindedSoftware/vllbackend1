@@ -49,7 +49,7 @@
                 <div class="ll-fields ll-fields-3" style="margin-bottom:14px;">
                     <div>
                         <p class="ll-field-label">Application Type</p>
-                        <p class="ll-field-value">@_app.ApplicationType.ToString().Replace("_", " ")</p>
+                        <p class="ll-field-value">@EnumHelper.GetDescription(_app.ApplicationType)</p>
                     </div>
                     <div>
                         <p class="ll-field-label">Desired Resolution</p>

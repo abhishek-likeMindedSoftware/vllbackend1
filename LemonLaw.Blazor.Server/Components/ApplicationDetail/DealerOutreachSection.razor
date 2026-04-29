@@ -16,10 +16,10 @@
                     <tr>
                         <td>@item.DealerName</td>
                         <td>@item.DealerEmail</td>
-                        <td>@item.OutreachType</td>
+                        <td>@EnumHelper.GetDescription(item.OutreachType)</td>
                         <td>@(item.SentAt?.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt") ?? "—")</td>
                         <td>@item.ResponseDeadline.ToString("MM/dd/yyyy")</td>
-                        <td><span class="ll-badge @GetStatusClass(item.Status)">@item.Status</span></td>
+                        <td><span class="ll-badge @GetStatusClass(item.Status)">@EnumHelper.GetDescription(item.Status)</span></td>
                         <td>@(item.Response != null ? "Received" : "—")</td>
                     </tr>
                 }

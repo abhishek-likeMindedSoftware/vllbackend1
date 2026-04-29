@@ -19,11 +19,11 @@
                 {
                     <tr>
                         <td>@item.FileName</td>
-                        <td>@item.DocumentType</td>
-                        <td>@item.UploadedByRole</td>
+                        <td>@EnumHelper.GetDescription(item.DocumentType)</td>
+                        <td>@EnumHelper.GetDescription(item.UploadedByRole)</td>
                         <td>@item.UploadedAt.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt")</td>
-                        <td><span class="ll-badge @GetDocStatusClass(item.Status)">@item.Status.ToString().Replace("_"," ")</span></td>
-                        <td>@item.VirusScanResult</td>
+                        <td><span class="ll-badge @GetDocStatusClass(item.Status)">@EnumHelper.GetDescription(item.Status)</span></td>
+                        <td>@EnumHelper.GetDescription(item.VirusScanResult)</td>
                         <td><button class="ll-row-edit-btn" type="button" @onclick="() => OpenEdit(item)"><EditIcon Size="13" /></button></td>
                     </tr>
                 }

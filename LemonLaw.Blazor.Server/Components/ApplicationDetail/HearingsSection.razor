@@ -20,10 +20,10 @@
                 {
                     <tr>
                         <td>@item.HearingDate.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt")</td>
-                        <td>@item.HearingFormat</td>
+                        <td>@EnumHelper.GetDescription(item.HearingFormat)</td>
                         <td>@(item.HearingLocation ?? "—")</td>
                         <td>@(item.ArbitratorName ?? "—")</td>
-                        <td>@item.Outcome</td>
+                        <td>@EnumHelper.GetDescription(item.Outcome)</td>
                         <td><button class="ll-row-edit-btn" type="button" @onclick="() => OpenEdit(item)"><EditIcon Size="13" /></button></td>
                     </tr>
                 }

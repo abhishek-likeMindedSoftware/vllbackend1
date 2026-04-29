@@ -29,7 +29,7 @@
                 <div><p class="ll-field-label">Mileage at Purchase</p><p class="ll-field-value">@_vehicle.MileageAtPurchase.ToString("N0")</p></div>
                 <div><p class="ll-field-label">Current Mileage</p><p class="ll-field-value">@_vehicle.CurrentMileage.ToString("N0")</p></div>
                 <div><p class="ll-field-label">Manufacturer</p><p class="ll-field-value">@_vehicle.ManufacturerName</p></div>
-                <div><p class="ll-field-label">Warranty Type</p><p class="ll-field-value">@_vehicle.WarrantyType</p></div>
+                <div><p class="ll-field-label">Warranty Type</p><p class="ll-field-value">@EnumHelper.GetDescription(_vehicle.WarrantyType)</p></div>
                 <div><p class="ll-field-label">Warranty Start</p><p class="ll-field-value @(_vehicle.WarrantyStartDate == null ? "ll-field-empty" : "")">@(_vehicle.WarrantyStartDate?.ToString("MM/dd/yyyy") ?? "—")</p></div>
                 <div><p class="ll-field-label">Warranty Expiry</p><p class="ll-field-value @(_vehicle.WarrantyExpiryDate == null ? "ll-field-empty" : "")">@(_vehicle.WarrantyExpiryDate?.ToString("MM/dd/yyyy") ?? "—")</p></div>
             </div>

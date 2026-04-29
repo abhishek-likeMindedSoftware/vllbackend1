@@ -20,7 +20,7 @@
                 {
                     <tr>
                         <td>@item.DefectDescription</td>
-                        <td>@item.DefectCategory</td>
+                        <td>@EnumHelper.GetDescription(item.DefectCategory)</td>
                         <td>@item.FirstOccurrenceDate.ToString("MM/dd/yyyy")</td>
                         <td>@(item.IsOngoing ? "Yes" : "No")</td>
                         <td><button class="ll-row-edit-btn" type="button" @onclick="() => OpenEdit(item)"><EditIcon Size="13" /></button></td>

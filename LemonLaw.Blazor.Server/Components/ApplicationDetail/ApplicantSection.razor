@@ -23,7 +23,7 @@
                 <div><p class="ll-field-label">Last Name</p><p class="ll-field-value">@_applicant.LastName</p></div>
                 <div><p class="ll-field-label">Email</p><p class="ll-field-value">@_applicant.EmailAddress</p></div>
                 <div><p class="ll-field-label">Phone</p><p class="ll-field-value">@_applicant.PhoneNumber (@_applicant.PhoneType)</p></div>
-                <div><p class="ll-field-label">Preferred Contact</p><p class="ll-field-value">@_applicant.PreferredContact</p></div>
+                <div><p class="ll-field-label">Preferred Contact</p><p class="ll-field-value">@EnumHelper.GetDescription(_applicant.PreferredContact)</p></div>
                 <div><p class="ll-field-label">Address</p><p class="ll-field-value">@_applicant.AddressLine1@(_applicant.AddressLine2 != null ? ", " + _applicant.AddressLine2 : "")</p></div>
                 <div><p class="ll-field-label">City / State / ZIP</p><p class="ll-field-value">@_applicant.City, @_applicant.AddressState @_applicant.ZipCode</p></div>
             </div>

@@ -19,7 +19,7 @@
                 @foreach (var item in _items.OrderBy(e => e.ExpenseDate))
                 {
                     <tr>
-                        <td>@item.ExpenseType</td>
+                        <td>@EnumHelper.GetDescription(item.ExpenseType)</td>
                         <td>@(item.ExpenseDate?.ToString("MM/dd/yyyy") ?? "—")</td>
                         <td>@item.Amount.ToString("C")</td>
                         <td>@(item.Description ?? "—")</td>

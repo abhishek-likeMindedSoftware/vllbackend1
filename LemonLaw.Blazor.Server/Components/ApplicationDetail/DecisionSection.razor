@@ -20,7 +20,7 @@
         else
         {
             <div class="ll-fields ll-fields-3">
-                <div><p class="ll-field-label">Decision Type</p><p class="ll-field-value">@_decision.DecisionType.ToString().Replace("_"," ")</p></div>
+                <div><p class="ll-field-label">Decision Type</p><p class="ll-field-value">@EnumHelper.GetDescription(_decision.DecisionType)</p></div>
                 <div><p class="ll-field-label">Decision Date</p><p class="ll-field-value">@_decision.DecisionDate.ToString("MM/dd/yyyy")</p></div>
                 <div><p class="ll-field-label">Refund Amount</p><p class="ll-field-value @(_decision.RefundAmount == null ? "ll-field-empty" : "")">@(_decision.RefundAmount?.ToString("C") ?? "—")</p></div>
                 <div><p class="ll-field-label">Compliance Deadline</p><p class="ll-field-value @(_decision.ComplianceDeadline == null ? "ll-field-empty" : "")">@(_decision.ComplianceDeadline?.ToString("MM/dd/yyyy") ?? "—")</p></div>
