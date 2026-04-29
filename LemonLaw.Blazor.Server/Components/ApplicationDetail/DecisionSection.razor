@@ -39,7 +39,7 @@
                 <div class="ll-form-group">
                     <label class="ll-form-label">Decision Type *</label>
                     <select class="ll-select" @bind="_form.DecisionType">
-                        @foreach (var v in Enum.GetValues<DecisionType>()) { <option value="@v">@v.ToString().Replace("_"," ")</option> }
+                        @foreach (var v in Enum.GetValues<DecisionType>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
                     </select>
                 </div>
                 <div class="ll-form-group"><label class="ll-form-label">Decision Date *</label><input class="ll-input" type="date" @bind="_form.DecisionDate" /></div>

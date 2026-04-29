@@ -126,7 +126,7 @@
                 <div class="ll-form-group">
                     <label class="ll-form-label">Application Type</label>
                     <select class="ll-select" @bind="_appInfoForm.ApplicationType">
-                        @foreach (var v in Enum.GetValues<ApplicationType>()) { <option value="@v">@v.ToString().Replace("_", " ")</option> }
+                        @foreach (var v in Enum.GetValues<ApplicationType>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
                     </select>
                 </div>
             </div>
@@ -141,7 +141,7 @@
                     <label class="ll-form-label">Desired Resolution</label>
                     <select class="ll-select" @bind="_appInfoForm.DesiredResolution">
                         <option value="">— None —</option>
-                        @foreach (var v in Enum.GetValues<DesiredResolution>()) { <option value="@v">@v.ToString().Replace("_", " ")</option> }
+                        @foreach (var v in Enum.GetValues<DesiredResolution>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
                     </select>
                 </div>
             </div>
@@ -185,7 +185,7 @@
             <div class="ll-form-group">
                 <label class="ll-form-label">New Status</label>
                 <select class="ll-select" @bind="_newStatus">
-                    @foreach (var v in Enum.GetValues<ApplicationStatus>()) { <option value="@v">@v.ToString().Replace("_", " ")</option> }
+                    @foreach (var v in Enum.GetValues<ApplicationStatus>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
                 </select>
             </div>
         </div>

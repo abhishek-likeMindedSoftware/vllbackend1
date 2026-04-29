@@ -40,7 +40,7 @@
                 <div class="ll-form-group">
                     <label class="ll-form-label">Category</label>
                     <select class="ll-select" @bind="_form.DefectCategory">
-                        @foreach (var v in Enum.GetValues<DefectCategory>()) { <option value="@v">@v</option> }
+                        @foreach (var v in Enum.GetValues<DefectCategory>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
                     </select>
                 </div>
                 <div class="ll-form-group"><label class="ll-form-label">First Occurrence Date</label><input class="ll-input" type="date" @bind="_form.FirstOccurrenceDate" /></div>

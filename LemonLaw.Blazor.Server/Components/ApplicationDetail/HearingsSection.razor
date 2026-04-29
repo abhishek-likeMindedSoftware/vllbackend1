@@ -41,7 +41,7 @@
                 <div class="ll-form-group">
                     <label class="ll-form-label">Format</label>
                     <select class="ll-select" @bind="_form.HearingFormat">
-                        @foreach (var v in Enum.GetValues<HearingFormat>()) { <option value="@v">@v</option> }
+                        @foreach (var v in Enum.GetValues<HearingFormat>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
                     </select>
                 </div>
             </div>
@@ -55,7 +55,7 @@
                     <div class="ll-form-group">
                         <label class="ll-form-label">Outcome</label>
                         <select class="ll-select" @bind="_form.Outcome">
-                            @foreach (var v in Enum.GetValues<HearingOutcome>()) { <option value="@v">@v</option> }
+                            @foreach (var v in Enum.GetValues<HearingOutcome>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
                         </select>
                     </div>
                     <div class="ll-form-group"><label class="ll-form-label">Continued To</label><input class="ll-input" type="datetime-local" @bind="_form.ContinuedTo" /></div>

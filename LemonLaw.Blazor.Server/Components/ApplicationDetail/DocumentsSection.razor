@@ -41,13 +41,13 @@
                 <div class="ll-form-group">
                     <label class="ll-form-label">Status</label>
                     <select class="ll-select" @bind="_form.Status">
-                        @foreach (var v in Enum.GetValues<DocumentStatus>()) { <option value="@v">@v.ToString().Replace("_"," ")</option> }
+                        @foreach (var v in Enum.GetValues<DocumentStatus>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
                     </select>
                 </div>
                 <div class="ll-form-group">
                     <label class="ll-form-label">Document Type</label>
                     <select class="ll-select" @bind="_form.DocumentType">
-                        @foreach (var v in Enum.GetValues<DocumentType>()) { <option value="@v">@v.ToString().Replace("_"," ")</option> }
+                        @foreach (var v in Enum.GetValues<DocumentType>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
                     </select>
                 </div>
             </div>

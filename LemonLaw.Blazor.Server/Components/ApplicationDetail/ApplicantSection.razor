@@ -48,13 +48,13 @@
                 <div class="ll-form-group">
                     <label class="ll-form-label">Phone Type</label>
                     <select class="ll-select" @bind="_form.PhoneType">
-                        @foreach (var v in Enum.GetValues<PhoneType>()) { <option value="@v">@v</option> }
+                        @foreach (var v in Enum.GetValues<PhoneType>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
                     </select>
                 </div>
                 <div class="ll-form-group">
                     <label class="ll-form-label">Preferred Contact</label>
                     <select class="ll-select" @bind="_form.PreferredContact">
-                        @foreach (var v in Enum.GetValues<PreferredContactMethod>()) { <option value="@v">@v</option> }
+                        @foreach (var v in Enum.GetValues<PreferredContactMethod>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
                     </select>
                 </div>
             </div>
