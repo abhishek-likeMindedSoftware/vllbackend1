@@ -1,0 +1,341 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Core.Enums
+@using LemonLaw.Application.Interfaces
+@using LemonLaw.Application.Repositories
+@using LemonLaw.Shared.DTOs
+@using Microsoft.Extensions.DependencyInjection
+
+@inject IServiceProvider ServiceProvider
+
+<div class="ll-wrap">
+
+    @if (_loading)
+    {
+        <div class="ll-loading"><span class="ll-spinner"></span><span>Loading case…</span></div>
+    }
+    else if (_loadError != null)
+    {
+        <div class="ll-error-box">@_loadError</div>
+    }
+    else if (_app != null)
+    {
+        @* ── Case Header ──────────────────────────────────────────────────────── *@
+        <div class="ll-header">
+            <div class="ll-header-left">
+                <p class="ll-case-number">Case @_app.CaseNumber</p>
+                <div class="ll-meta-row">
+                    <span class="ll-badge ll-badge-@_app.Status.ToString().ToLower()">@_app.Status.ToString().Replace("_", " ")</span>
+                    <span class="ll-meta-item"><span class="ll-meta-label">Type:</span> @_app.ApplicationType.ToString().Replace("_", " ")</span>
+                    <span class="ll-meta-item"><span class="ll-meta-label">Submitted:</span> @_app.SubmittedAt.ToLocalTime().ToString("MM/dd/yyyy")</span>
+                    <span class="ll-meta-item"><span class="ll-meta-label">Last Activity:</span> @_app.LastActivityAt.ToLocalTime().ToString("MM/dd/yyyy")</span>
+                    @if (_app.AssignedToName != null)
+                    {
+                        <span class="ll-meta-item"><span class="ll-meta-label">Assigned To:</span> @_app.AssignedToName</span>
+                    }
+                </div>
+            </div>
+            <div class="ll-header-actions">
+                <button class="ll-btn ll-btn-ghost ll-btn-sm" type="button" @onclick="OpenStatusEdit">Change Status</button>
+            </div>
+        </div>
+
+        @* ── Application Information ───────────────────────────────────────────── *@
+        <div class="ll-card">
+            <div class="ll-card-head">
+                <p class="ll-card-title">Application Information</p>
+                <button class="ll-edit-btn" type="button" @onclick="OpenAppInfoEdit"><EditIcon /> Edit</button>
+            </div>
+            <div class="ll-card-body">
+                <div class="ll-fields ll-fields-3" style="margin-bottom:14px;">
+                    <div>
+                        <p class="ll-field-label">Application Type</p>
+                        <p class="ll-field-value">@_app.ApplicationType.ToString().Replace("_", " ")</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Desired Resolution</p>
+                        <p class="ll-field-value @(_app.DesiredResolution == null ? "ll-field-empty" : "")">@(_app.DesiredResolution?.ToString().Replace("_", " ") ?? "—")</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Prior Contact</p>
+                        <p class="ll-field-value">
+                            Dealer: @(_app.PriorContactDealer == true ? "Yes" : _app.PriorContactDealer == false ? "No" : "—")
+                            &nbsp;·&nbsp;
+                            Mfr: @(_app.PriorContactMfr == true ? "Yes" : _app.PriorContactMfr == false ? "No" : "—")
+                        </p>
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_app.NarrativeStatement))
+                {
+                    <p class="ll-field-label">Narrative Statement</p>
+                    <p style="font-size:.875rem;color:#1e293b;line-height:1.6;margin:4px 0 0;">@_app.NarrativeStatement</p>
+                }
+                else
+                {
+                    <p class="ll-field-empty">No narrative statement on file.</p>
+                }
+                @if (!string.IsNullOrWhiteSpace(_app.PriorContactNotes))
+                {
+                    <p class="ll-field-label" style="margin-top:12px;">Prior Contact Notes</p>
+                    <p style="font-size:.875rem;color:#1e293b;line-height:1.6;margin:4px 0 0;">@_app.PriorContactNotes</p>
+                }
+            </div>
+        </div>
+
+        @* ── 1:1 Sections ─────────────────────────────────────────────────────── *@
+        <ApplicantSection ApplicationId="_app.Id" InitialData="_app.Applicant" OnSaved="RefreshAsync" />
+        <VehicleSection ApplicationId="_app.Id" InitialData="_app.Vehicle" OnSaved="RefreshAsync" />
+        <DecisionSection ApplicationId="_app.Id" InitialData="_app.Decision" OnSaved="RefreshAsync" />
+
+        @* ── Tabbed 1:M Sections ──────────────────────────────────────────────── *@
+        <div class="ll-card" style="overflow:visible;">
+            <div class="ll-card-head" style="padding:0;border-bottom:1px solid #e2e8f0;background:#fafafa;">
+                <div class="ll-tabs">
+                    @foreach (var tab in _tabs)
+                    {
+                        <button type="button" class="ll-tab @(_activeTab == tab.Key ? "ll-tab-active" : "")" @onclick="() => _activeTab = tab.Key">
+                            @tab.Label
+                            @if (tab.Count > 0) { <span class="ll-tab-count">@tab.Count</span> }
+                        </button>
+                    }
+                </div>
+            </div>
+            <div style="overflow:visible;">
+                @switch (_activeTab)
+                {
+                    case "defects":        <DefectsSection ApplicationId="_app.Id" InitialData="_app.Defects" OnSaved="RefreshAsync" /> break;
+                    case "repairs":        <RepairAttemptsSection ApplicationId="_app.Id" InitialData="_app.RepairAttempts" OnSaved="RefreshAsync" /> break;
+                    case "expenses":       <ExpensesSection ApplicationId="_app.Id" InitialData="_app.Expenses" OnSaved="RefreshAsync" /> break;
+                    case "hearings":       <HearingsSection ApplicationId="_app.Id" InitialData="_app.Hearings" OnSaved="RefreshAsync" /> break;
+                    case "documents":      <DocumentsSection ApplicationId="_app.Id" InitialData="_app.Documents" OnSaved="RefreshAsync" /> break;
+                    case "correspondence": <CorrespondenceSection ApplicationId="_app.Id" InitialData="_app.Correspondences" /> break;
+                    case "outreach":       <DealerOutreachSection ApplicationId="_app.Id" InitialData="_app.DealerOutreaches" /> break;
+                    case "notes":          <NotesSection ApplicationId="_app.Id" InitialData="_app.Notes" OnSaved="RefreshAsync" /> break;
+                    case "timeline":       <CaseTimelineSection InitialData="_app.Events" /> break;
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@* ── App Info Edit Popup ──────────────────────────────────────────────────── *@
+<DxPopup @bind-Visible="_showAppInfoEdit" HeaderText="Edit Application Info" Width="600px" ShowFooter="true" CloseOnOutsideClick="false" Scrollable="true">
+    <BodyContentTemplate>
+        @if (_appInfoForm != null)
+        {
+            <div class="ll-form-row">
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Application Type</label>
+                    <select class="ll-select" @bind="_appInfoForm.ApplicationType">
+                        @foreach (var v in Enum.GetValues<ApplicationType>()) { <option value="@v">@v.ToString().Replace("_", " ")</option> }
+                    </select>
+                </div>
+            </div>
+            <div class="ll-form-row">
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Narrative Statement</label>
+                    <textarea class="ll-textarea" style="min-height:120px;" @bind="_appInfoForm.NarrativeStatement"></textarea>
+                </div>
+            </div>
+            <div class="ll-form-row">
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Desired Resolution</label>
+                    <select class="ll-select" @bind="_appInfoForm.DesiredResolution">
+                        <option value="">— None —</option>
+                        @foreach (var v in Enum.GetValues<DesiredResolution>()) { <option value="@v">@v.ToString().Replace("_", " ")</option> }
+                    </select>
+                </div>
+            </div>
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Prior Contact — Dealer</label>
+                    <select class="ll-select" @bind="_appInfoForm.PriorContactDealer">
+                        <option value="">— Unknown —</option>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Prior Contact — Manufacturer</label>
+                    <select class="ll-select" @bind="_appInfoForm.PriorContactMfr">
+                        <option value="">— Unknown —</option>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+            </div>
+            <div class="ll-form-row">
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Prior Contact Notes</label>
+                    <textarea class="ll-textarea" @bind="_appInfoForm.PriorContactNotes"></textarea>
+                </div>
+            </div>
+            @if (_appInfoError != null) { <div class="ll-alert ll-alert-error">@_appInfoError</div> }
+        }
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <button class="ll-btn ll-btn-ghost" type="button" @onclick="CloseAppInfoEdit" disabled="@_appInfoSaving">Cancel</button>
+        <button class="ll-btn ll-btn-primary" type="button" @onclick="SaveAppInfoAsync" disabled="@_appInfoSaving">@(_appInfoSaving ? "Saving…" : "Save")</button>
+    </FooterContentTemplate>
+</DxPopup>
+
+@* ── Status Change Popup ──────────────────────────────────────────────────── *@
+<DxPopup @bind-Visible="_showStatusEdit" HeaderText="Change Status" Width="420px" ShowFooter="true" CloseOnOutsideClick="false">
+    <BodyContentTemplate>
+        <div class="ll-form-row">
+            <div class="ll-form-group">
+                <label class="ll-form-label">New Status</label>
+                <select class="ll-select" @bind="_newStatus">
+                    @foreach (var v in Enum.GetValues<ApplicationStatus>()) { <option value="@v">@v.ToString().Replace("_", " ")</option> }
+                </select>
+            </div>
+        </div>
+        <div class="ll-form-row">
+            <div class="ll-form-group">
+                <label class="ll-form-label">Reason (optional)</label>
+                <textarea class="ll-textarea" @bind="_statusReason"></textarea>
+            </div>
+        </div>
+        @if (_statusError != null) { <div class="ll-alert ll-alert-error">@_statusError</div> }
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <button class="ll-btn ll-btn-ghost" type="button" @onclick="CloseStatusEdit" disabled="@_statusSaving">Cancel</button>
+        <button class="ll-btn ll-btn-primary" type="button" @onclick="SaveStatusAsync" disabled="@_statusSaving">@(_statusSaving ? "Saving…" : "Save")</button>
+    </FooterContentTemplate>
+</DxPopup>
+
+@code {
+    [Parameter] public Application? CurrentObject { get; set; }
+
+    private Application? _app;
+    private bool _loading = true;
+    private string? _loadError;
+    private string _activeTab = "defects";
+
+    private bool _showAppInfoEdit, _appInfoSaving;
+    private string? _appInfoError;
+    private AppInfoFormModel? _appInfoForm;
+
+    private bool _showStatusEdit, _statusSaving;
+    private ApplicationStatus _newStatus;
+    private string? _statusReason, _statusError;
+
+    private record TabDef(string Key, string Label, int Count);
+    private List<TabDef> _tabs = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (CurrentObject == null) { _loading = false; _loadError = "No application selected."; return; }
+        await LoadAsync(CurrentObject.Id);
+    }
+
+    private async Task LoadAsync(Guid id)
+    {
+        _loading = true; _loadError = null;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IApplicationRepository>();
+            _app = await repo.GetWithFullDetailsAsync(id);
+            if (_app == null) _loadError = "Application not found.";
+            else BuildTabs();
+        }
+        catch (Exception ex) { _loadError = ex.Message; }
+        finally { _loading = false; }
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (_app == null) return;
+        await LoadAsync(_app.Id);
+        StateHasChanged();
+    }
+
+    private void BuildTabs()
+    {
+        if (_app == null) return;
+        _tabs = new List<TabDef>
+        {
+            new("defects",       "Defects",         _app.Defects.Count),
+            new("repairs",       "Repair Attempts", _app.RepairAttempts.Count),
+            new("expenses",      "Expenses",        _app.Expenses.Count),
+            new("hearings",      "Hearings",        _app.Hearings.Count),
+            new("documents",     "Documents",       _app.Documents.Count),
+            new("correspondence","Correspondence",  _app.Correspondences.Count),
+            new("outreach",      "Dealer Outreach", _app.DealerOutreaches.Count),
+            new("notes",         "Notes",           _app.Notes.Count),
+            new("timeline",      "Timeline",        _app.Events.Count),
+        };
+    }
+
+    private void OpenAppInfoEdit() { if (_app == null) return; _appInfoForm = new(_app); _appInfoError = null; _showAppInfoEdit = true; }
+    private void CloseAppInfoEdit() { _showAppInfoEdit = false; _appInfoForm = null; }
+
+    private async Task SaveAppInfoAsync()
+    {
+        if (_appInfoForm == null || _app == null) return;
+        _appInfoSaving = true; _appInfoError = null;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IApplicationRepository>();
+            _appInfoForm.ApplyTo(_app);
+            _app.LastActivityAt = DateTime.UtcNow;
+            repo.Update(_app);
+            await repo.SaveChangesAsync();
+            _showAppInfoEdit = false;
+            await RefreshAsync();
+        }
+        catch (Exception ex) { _appInfoError = ex.Message; }
+        finally { _appInfoSaving = false; }
+    }
+
+    private void OpenStatusEdit() { if (_app == null) return; _newStatus = _app.Status; _statusReason = null; _statusError = null; _showStatusEdit = true; }
+    private void CloseStatusEdit() => _showStatusEdit = false;
+
+    private async Task SaveStatusAsync()
+    {
+        if (_app == null) return;
+        _statusSaving = true; _statusError = null;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var svc = scope.ServiceProvider.GetRequiredService<IApplicationService>();
+            var result = await svc.TransitionStatusAsync(_app.Id, new StatusTransitionDto { NewStatus = _newStatus.ToString(), Reason = _statusReason }, "staff", "Staff");
+            if (!result.Success) { _statusError = result.Message; return; }
+            _showStatusEdit = false;
+            await RefreshAsync();
+        }
+        catch (Exception ex) { _statusError = ex.Message; }
+        finally { _statusSaving = false; }
+    }
+
+    private class AppInfoFormModel
+    {
+        public ApplicationType ApplicationType { get; set; }
+        public string? NarrativeStatement { get; set; }
+        public string? DesiredResolution { get; set; }
+        public string? PriorContactDealer { get; set; }
+        public string? PriorContactMfr { get; set; }
+        public string? PriorContactNotes { get; set; }
+
+        public AppInfoFormModel() { }
+        public AppInfoFormModel(Application a)
+        {
+            ApplicationType = a.ApplicationType;
+            NarrativeStatement = a.NarrativeStatement;
+            DesiredResolution = a.DesiredResolution?.ToString();
+            PriorContactDealer = a.PriorContactDealer?.ToString().ToLower();
+            PriorContactMfr = a.PriorContactMfr?.ToString().ToLower();
+            PriorContactNotes = a.PriorContactNotes;
+        }
+        public void ApplyTo(Application a)
+        {
+            a.ApplicationType = ApplicationType;
+            a.NarrativeStatement = NarrativeStatement;
+            a.DesiredResolution = Enum.TryParse<LemonLaw.Core.Enums.DesiredResolution>(DesiredResolution, out var dr) ? dr : null;
+            a.PriorContactDealer = PriorContactDealer == "true" ? true : PriorContactDealer == "false" ? false : null;
+            a.PriorContactMfr = PriorContactMfr == "true" ? true : PriorContactMfr == "false" ? false : null;
+            a.PriorContactNotes = PriorContactNotes;
+        }
+    }
+}

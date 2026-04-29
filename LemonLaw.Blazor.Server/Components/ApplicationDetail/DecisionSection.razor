@@ -1,0 +1,115 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Core.Enums
+@using LemonLaw.Application.Repositories
+@using Microsoft.Extensions.DependencyInjection
+
+@inject IServiceProvider ServiceProvider
+
+<div class="ll-card">
+    <div class="ll-card-head">
+        <p class="ll-card-title">Decision</p>
+        <button class="ll-edit-btn" type="button" @onclick="OpenEdit">
+            @if (_decision == null) { <span>+ Issue Decision</span> } else { <EditIcon /> <span>Edit</span> }
+        </button>
+    </div>
+    <div class="ll-card-body">
+        @if (_decision == null)
+        {
+            <p class="ll-field-empty">No decision issued yet.</p>
+        }
+        else
+        {
+            <div class="ll-fields ll-fields-3">
+                <div><p class="ll-field-label">Decision Type</p><p class="ll-field-value">@_decision.DecisionType.ToString().Replace("_"," ")</p></div>
+                <div><p class="ll-field-label">Decision Date</p><p class="ll-field-value">@_decision.DecisionDate.ToString("MM/dd/yyyy")</p></div>
+                <div><p class="ll-field-label">Refund Amount</p><p class="ll-field-value @(_decision.RefundAmount == null ? "ll-field-empty" : "")">@(_decision.RefundAmount?.ToString("C") ?? "—")</p></div>
+                <div><p class="ll-field-label">Compliance Deadline</p><p class="ll-field-value @(_decision.ComplianceDeadline == null ? "ll-field-empty" : "")">@(_decision.ComplianceDeadline?.ToString("MM/dd/yyyy") ?? "—")</p></div>
+                <div><p class="ll-field-label">Consumer Notified</p><p class="ll-field-value">@(_decision.ConsumerNotified ? "Yes" : "No")</p></div>
+                <div><p class="ll-field-label">Dealer Notified</p><p class="ll-field-value">@(_decision.DealerNotified ? "Yes" : "No")</p></div>
+            </div>
+        }
+    </div>
+</div>
+
+<DxPopup @bind-Visible="_showEdit" HeaderText="@(_decision == null ? "Issue Decision" : "Edit Decision")" Width="560px" ShowFooter="true" CloseOnOutsideClick="false">
+    <BodyContentTemplate>
+        @if (_form != null)
+        {
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Decision Type *</label>
+                    <select class="ll-select" @bind="_form.DecisionType">
+                        @foreach (var v in Enum.GetValues<DecisionType>()) { <option value="@v">@v.ToString().Replace("_"," ")</option> }
+                    </select>
+                </div>
+                <div class="ll-form-group"><label class="ll-form-label">Decision Date *</label><input class="ll-input" type="date" @bind="_form.DecisionDate" /></div>
+            </div>
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group"><label class="ll-form-label">Refund Amount ($)</label><input class="ll-input" type="number" step="0.01" @bind="_form.RefundAmount" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">Compliance Deadline</label><input class="ll-input" type="date" @bind="_form.ComplianceDeadline" /></div>
+            </div>
+            <div class="ll-form-row ll-form-row-2" style="margin-top:4px;">
+                <div class="ll-checkbox-row">
+                    <input type="checkbox" id="dec-consumer" @bind="_form.ConsumerNotified" />
+                    <label for="dec-consumer">Consumer notified</label>
+                </div>
+                <div class="ll-checkbox-row">
+                    <input type="checkbox" id="dec-dealer" @bind="_form.DealerNotified" />
+                    <label for="dec-dealer">Dealer notified</label>
+                </div>
+            </div>
+            @if (_saveError != null) { <div class="ll-alert ll-alert-error" style="margin-top:10px;">@_saveError</div> }
+        }
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <button class="ll-btn ll-btn-ghost" type="button" @onclick="CloseEdit" disabled="@_saving">Cancel</button>
+        <button class="ll-btn ll-btn-primary" type="button" @onclick="SaveAsync" disabled="@_saving">@(_saving ? "Saving…" : "Save")</button>
+    </FooterContentTemplate>
+</DxPopup>
+
+@code {
+    [Parameter] public Guid ApplicationId { get; set; }
+    [Parameter] public Decision? InitialData { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private Decision? _decision;
+    private DecisionFormModel? _form;
+    private bool _showEdit, _saving;
+    private string? _saveError;
+
+    protected override void OnParametersSet() => _decision = InitialData;
+
+    private void OpenEdit() { _form = _decision != null ? new(_decision) : new(); _saveError = null; _showEdit = true; }
+    private void CloseEdit() { _showEdit = false; _form = null; }
+
+    private async Task SaveAsync()
+    {
+        if (_form == null) return;
+        _saving = true; _saveError = null;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IGenericRepository<Decision>>();
+            if (_decision == null) { _decision = new Decision { ApplicationId = ApplicationId }; _form.ApplyTo(_decision); await repo.AddAsync(_decision); await repo.SaveChangesAsync(); }
+            else { _form.ApplyTo(_decision); repo.Update(_decision); await repo.SaveChangesAsync(); }
+            _showEdit = false;
+            await OnSaved.InvokeAsync();
+        }
+        catch (Exception ex) { _saveError = ex.Message; }
+        finally { _saving = false; }
+    }
+
+    private class DecisionFormModel
+    {
+        public DecisionType DecisionType { get; set; }
+        public DateOnly DecisionDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+        public decimal? RefundAmount { get; set; }
+        public DateOnly? ComplianceDeadline { get; set; }
+        public bool ConsumerNotified { get; set; }
+        public bool DealerNotified { get; set; }
+
+        public DecisionFormModel() { }
+        public DecisionFormModel(Decision d) { DecisionType = d.DecisionType; DecisionDate = d.DecisionDate; RefundAmount = d.RefundAmount; ComplianceDeadline = d.ComplianceDeadline; ConsumerNotified = d.ConsumerNotified; DealerNotified = d.DealerNotified; }
+        public void ApplyTo(Decision d) { d.DecisionType = DecisionType; d.DecisionDate = DecisionDate; d.RefundAmount = RefundAmount; d.ComplianceDeadline = ComplianceDeadline; d.ConsumerNotified = ConsumerNotified; d.DealerNotified = DealerNotified; }
+    }
+}

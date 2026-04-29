@@ -1,0 +1,168 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Core.Enums
+@using LemonLaw.Application.Repositories
+@using Microsoft.Extensions.DependencyInjection
+
+@inject IServiceProvider ServiceProvider
+
+<div class="ll-card">
+    <div class="ll-card-head">
+        <p class="ll-card-title">Vehicle</p>
+        <button class="ll-edit-btn" type="button" @onclick="OpenEdit"><EditIcon /> Edit</button>
+    </div>
+    <div class="ll-card-body">
+        @if (_vehicle == null)
+        {
+            <p class="ll-field-empty">No vehicle information on file.</p>
+        }
+        else
+        {
+            <div class="ll-fields ll-fields-4">
+                <div><p class="ll-field-label">VIN</p><p class="ll-field-value">@_vehicle.VIN</p></div>
+                <div><p class="ll-field-label">Year</p><p class="ll-field-value">@_vehicle.VehicleYear</p></div>
+                <div><p class="ll-field-label">Make</p><p class="ll-field-value">@_vehicle.VehicleMake</p></div>
+                <div><p class="ll-field-label">Model</p><p class="ll-field-value">@_vehicle.VehicleModel</p></div>
+                <div><p class="ll-field-label">Color</p><p class="ll-field-value @(_vehicle.VehicleColor == null ? "ll-field-empty" : "")">@(_vehicle.VehicleColor ?? "—")</p></div>
+                <div><p class="ll-field-label">License Plate</p><p class="ll-field-value">@(_vehicle.LicensePlate ?? "—") @_vehicle.LicensePlateState</p></div>
+                <div><p class="ll-field-label">Purchase Date</p><p class="ll-field-value">@_vehicle.PurchaseDate.ToString("MM/dd/yyyy")</p></div>
+                <div><p class="ll-field-label">Purchase Price</p><p class="ll-field-value">@(_vehicle.PurchasePrice?.ToString("C") ?? "—")</p></div>
+                <div><p class="ll-field-label">Mileage at Purchase</p><p class="ll-field-value">@_vehicle.MileageAtPurchase.ToString("N0")</p></div>
+                <div><p class="ll-field-label">Current Mileage</p><p class="ll-field-value">@_vehicle.CurrentMileage.ToString("N0")</p></div>
+                <div><p class="ll-field-label">Manufacturer</p><p class="ll-field-value">@_vehicle.ManufacturerName</p></div>
+                <div><p class="ll-field-label">Warranty Type</p><p class="ll-field-value">@_vehicle.WarrantyType</p></div>
+                <div><p class="ll-field-label">Warranty Start</p><p class="ll-field-value @(_vehicle.WarrantyStartDate == null ? "ll-field-empty" : "")">@(_vehicle.WarrantyStartDate?.ToString("MM/dd/yyyy") ?? "—")</p></div>
+                <div><p class="ll-field-label">Warranty Expiry</p><p class="ll-field-value @(_vehicle.WarrantyExpiryDate == null ? "ll-field-empty" : "")">@(_vehicle.WarrantyExpiryDate?.ToString("MM/dd/yyyy") ?? "—")</p></div>
+            </div>
+            <hr style="border:none;border-top:1px solid #f1f5f9;margin:14px 0;" />
+            <div class="ll-fields ll-fields-3">
+                <div><p class="ll-field-label">Dealer Name</p><p class="ll-field-value">@_vehicle.DealerName</p></div>
+                <div><p class="ll-field-label">Dealer Phone</p><p class="ll-field-value @(_vehicle.DealerPhone == null ? "ll-field-empty" : "")">@(_vehicle.DealerPhone ?? "—")</p></div>
+                <div><p class="ll-field-label">Dealer Email</p><p class="ll-field-value @(_vehicle.DealerEmail == null ? "ll-field-empty" : "")">@(_vehicle.DealerEmail ?? "—")</p></div>
+                <div><p class="ll-field-label">Dealer Address</p><p class="ll-field-value">@_vehicle.DealerAddressLine1</p></div>
+                <div><p class="ll-field-label">Dealer City / State / ZIP</p><p class="ll-field-value">@_vehicle.DealerCity, @_vehicle.DealerState @_vehicle.DealerZip</p></div>
+            </div>
+        }
+    </div>
+</div>
+
+<DxPopup @bind-Visible="_showEdit" HeaderText="Edit Vehicle" Width="900px" ShowFooter="true" CloseOnOutsideClick="false" Scrollable="true">
+    <BodyContentTemplate>
+        @if (_form != null)
+        {
+            <div class="ll-form-row ll-form-row-3">
+                <div class="ll-form-group"><label class="ll-form-label">VIN</label><input class="ll-input" @bind="_form.VIN" maxlength="17" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">Year</label><input class="ll-input" type="number" @bind="_form.VehicleYear" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">Make</label><input class="ll-input" @bind="_form.VehicleMake" /></div>
+            </div>
+            <div class="ll-form-row ll-form-row-3">
+                <div class="ll-form-group"><label class="ll-form-label">Model</label><input class="ll-input" @bind="_form.VehicleModel" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">Color</label><input class="ll-input" @bind="_form.VehicleColor" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">License Plate</label><input class="ll-input" @bind="_form.LicensePlate" /></div>
+            </div>
+            <div class="ll-form-row ll-form-row-3">
+                <div class="ll-form-group"><label class="ll-form-label">Plate State</label><input class="ll-input" @bind="_form.LicensePlateState" maxlength="2" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">Purchase Date</label><input class="ll-input" type="date" @bind="_form.PurchaseDate" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">Purchase Price ($)</label><input class="ll-input" type="number" step="0.01" @bind="_form.PurchasePrice" /></div>
+            </div>
+            <div class="ll-form-row ll-form-row-3">
+                <div class="ll-form-group"><label class="ll-form-label">Mileage at Purchase</label><input class="ll-input" type="number" @bind="_form.MileageAtPurchase" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">Current Mileage</label><input class="ll-input" type="number" @bind="_form.CurrentMileage" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">Manufacturer</label><input class="ll-input" @bind="_form.ManufacturerName" /></div>
+            </div>
+            <div class="ll-form-row ll-form-row-3">
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Warranty Type</label>
+                    <select class="ll-select" @bind="_form.WarrantyType">
+                        @foreach (var v in Enum.GetValues<WarrantyType>()) { <option value="@v">@v</option> }
+                    </select>
+                </div>
+                <div class="ll-form-group"><label class="ll-form-label">Warranty Start</label><input class="ll-input" type="date" @bind="_form.WarrantyStartDate" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">Warranty Expiry</label><input class="ll-input" type="date" @bind="_form.WarrantyExpiryDate" /></div>
+            </div>
+            <hr style="border:none;border-top:1px solid #e2e8f0;margin:8px 0 12px;" />
+            <p class="ll-field-label" style="margin-bottom:10px;">Dealer Information</p>
+            <div class="ll-form-row ll-form-row-3">
+                <div class="ll-form-group"><label class="ll-form-label">Dealer Name</label><input class="ll-input" @bind="_form.DealerName" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">Dealer Phone</label><input class="ll-input" @bind="_form.DealerPhone" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">Dealer Email</label><input class="ll-input" type="email" @bind="_form.DealerEmail" /></div>
+            </div>
+            <div class="ll-form-row ll-form-row-3">
+                <div class="ll-form-group"><label class="ll-form-label">Address Line 1</label><input class="ll-input" @bind="_form.DealerAddressLine1" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">City</label><input class="ll-input" @bind="_form.DealerCity" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">State</label><input class="ll-input" @bind="_form.DealerState" maxlength="2" /></div>
+            </div>
+            <div class="ll-form-row ll-form-row-3">
+                <div class="ll-form-group"><label class="ll-form-label">ZIP</label><input class="ll-input" @bind="_form.DealerZip" /></div>
+            </div>
+            @if (_saveError != null) { <div class="ll-alert ll-alert-error">@_saveError</div> }
+        }
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <button class="ll-btn ll-btn-ghost" type="button" @onclick="CloseEdit" disabled="@_saving">Cancel</button>
+        <button class="ll-btn ll-btn-primary" type="button" @onclick="SaveAsync" disabled="@_saving">@(_saving ? "Saving…" : "Save")</button>
+    </FooterContentTemplate>
+</DxPopup>
+
+@code {
+    [Parameter] public Guid ApplicationId { get; set; }
+    [Parameter] public Vehicle? InitialData { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private Vehicle? _vehicle;
+    private VehicleFormModel? _form;
+    private bool _showEdit, _saving;
+    private string? _saveError;
+
+    protected override void OnParametersSet() => _vehicle = InitialData;
+
+    private void OpenEdit() { _form = _vehicle != null ? new(_vehicle) : new(); _saveError = null; _showEdit = true; }
+    private void CloseEdit() { _showEdit = false; _form = null; }
+
+    private async Task SaveAsync()
+    {
+        if (_form == null) return;
+        _saving = true; _saveError = null;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IGenericRepository<Vehicle>>();
+            if (_vehicle == null) { _vehicle = new Vehicle { ApplicationId = ApplicationId }; _form.ApplyTo(_vehicle); await repo.AddAsync(_vehicle); }
+            else { _form.ApplyTo(_vehicle); repo.Update(_vehicle); }
+            await repo.SaveChangesAsync();
+            _showEdit = false;
+            await OnSaved.InvokeAsync();
+        }
+        catch (Exception ex) { _saveError = ex.Message; }
+        finally { _saving = false; }
+    }
+
+    private class VehicleFormModel
+    {
+        public string VIN { get; set; } = string.Empty;
+        public short VehicleYear { get; set; }
+        public string VehicleMake { get; set; } = string.Empty;
+        public string VehicleModel { get; set; } = string.Empty;
+        public string? VehicleColor { get; set; }
+        public string? LicensePlate { get; set; }
+        public string? LicensePlateState { get; set; }
+        public DateOnly PurchaseDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+        public decimal? PurchasePrice { get; set; }
+        public int MileageAtPurchase { get; set; }
+        public int CurrentMileage { get; set; }
+        public string ManufacturerName { get; set; } = string.Empty;
+        public WarrantyType WarrantyType { get; set; }
+        public DateOnly? WarrantyStartDate { get; set; }
+        public DateOnly? WarrantyExpiryDate { get; set; }
+        public string DealerName { get; set; } = string.Empty;
+        public string DealerAddressLine1 { get; set; } = string.Empty;
+        public string? DealerPhone { get; set; }
+        public string? DealerEmail { get; set; }
+        public string DealerCity { get; set; } = string.Empty;
+        public string DealerState { get; set; } = string.Empty;
+        public string DealerZip { get; set; } = string.Empty;
+
+        public VehicleFormModel() { }
+        public VehicleFormModel(Vehicle v) { VIN = v.VIN; VehicleYear = v.VehicleYear; VehicleMake = v.VehicleMake; VehicleModel = v.VehicleModel; VehicleColor = v.VehicleColor; LicensePlate = v.LicensePlate; LicensePlateState = v.LicensePlateState; PurchaseDate = v.PurchaseDate; PurchasePrice = v.PurchasePrice; MileageAtPurchase = v.MileageAtPurchase; CurrentMileage = v.CurrentMileage; ManufacturerName = v.ManufacturerName; WarrantyType = v.WarrantyType; WarrantyStartDate = v.WarrantyStartDate; WarrantyExpiryDate = v.WarrantyExpiryDate; DealerName = v.DealerName; DealerAddressLine1 = v.DealerAddressLine1; DealerPhone = v.DealerPhone; DealerEmail = v.DealerEmail; DealerCity = v.DealerCity; DealerState = v.DealerState; DealerZip = v.DealerZip; }
+        public void ApplyTo(Vehicle v) { v.VIN = VIN; v.VehicleYear = VehicleYear; v.VehicleMake = VehicleMake; v.VehicleModel = VehicleModel; v.VehicleColor = VehicleColor; v.LicensePlate = LicensePlate; v.LicensePlateState = LicensePlateState; v.PurchaseDate = PurchaseDate; v.PurchasePrice = PurchasePrice; v.MileageAtPurchase = MileageAtPurchase; v.CurrentMileage = CurrentMileage; v.ManufacturerName = ManufacturerName; v.WarrantyType = WarrantyType; v.WarrantyStartDate = WarrantyStartDate; v.WarrantyExpiryDate = WarrantyExpiryDate; v.DealerName = DealerName; v.DealerAddressLine1 = DealerAddressLine1; v.DealerPhone = DealerPhone; v.DealerEmail = DealerEmail; v.DealerCity = DealerCity; v.DealerState = DealerState; v.DealerZip = DealerZip; }
+    }
+}

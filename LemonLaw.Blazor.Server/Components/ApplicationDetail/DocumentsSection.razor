@@ -1,0 +1,129 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Core.Enums
+@using LemonLaw.Application.Repositories
+@using Microsoft.Extensions.DependencyInjection
+
+@inject IServiceProvider ServiceProvider
+
+<div class="ll-card-head" style="border-top:1px solid #f1f5f9;">
+    <p class="ll-card-title">Documents (@_items.Count)</p>
+</div>
+<div style="padding:0;">
+    @if (!_items.Any()) { <p class="ll-table-empty">No documents on file.</p> }
+    else
+    {
+        <table class="ll-table">
+            <thead><tr><th>File Name</th><th>Type</th><th>Uploaded By</th><th>Uploaded At</th><th>Status</th><th>Virus Scan</th><th style="width:50px;"></th></tr></thead>
+            <tbody>
+                @foreach (var item in _items.OrderByDescending(d => d.UploadedAt))
+                {
+                    <tr>
+                        <td>@item.FileName</td>
+                        <td>@item.DocumentType</td>
+                        <td>@item.UploadedByRole</td>
+                        <td>@item.UploadedAt.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt")</td>
+                        <td><span class="ll-badge @GetDocStatusClass(item.Status)">@item.Status.ToString().Replace("_"," ")</span></td>
+                        <td>@item.VirusScanResult</td>
+                        <td><button class="ll-row-edit-btn" type="button" @onclick="() => OpenEdit(item)"><EditIcon Size="13" /></button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+<DxPopup @bind-Visible="_showEdit" HeaderText="Review Document" Width="560px" ShowFooter="true" CloseOnOutsideClick="false">
+    <BodyContentTemplate>
+        @if (_form != null)
+        {
+            <div class="ll-form-row"><div class="ll-form-group"><label class="ll-form-label">File Name</label><input class="ll-input" value="@_form.FileName" disabled /></div></div>
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Status</label>
+                    <select class="ll-select" @bind="_form.Status">
+                        @foreach (var v in Enum.GetValues<DocumentStatus>()) { <option value="@v">@v.ToString().Replace("_"," ")</option> }
+                    </select>
+                </div>
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Document Type</label>
+                    <select class="ll-select" @bind="_form.DocumentType">
+                        @foreach (var v in Enum.GetValues<DocumentType>()) { <option value="@v">@v.ToString().Replace("_"," ")</option> }
+                    </select>
+                </div>
+            </div>
+            <div class="ll-form-row"><div class="ll-form-group"><label class="ll-form-label">Staff Notes</label><textarea class="ll-textarea" @bind="_form.StaffNotes"></textarea></div></div>
+            <div class="ll-form-row ll-form-row-2" style="margin-top:4px;">
+                <div class="ll-checkbox-row">
+                    <input type="checkbox" id="doc-consumer-@_editId" @bind="_form.IsVisibleConsumer" />
+                    <label for="doc-consumer-@_editId">Visible to Consumer</label>
+                </div>
+                <div class="ll-checkbox-row">
+                    <input type="checkbox" id="doc-dealer-@_editId" @bind="_form.IsVisibleDealer" />
+                    <label for="doc-dealer-@_editId">Visible to Dealer</label>
+                </div>
+            </div>
+            @if (_saveError != null) { <div class="ll-alert ll-alert-error" style="margin-top:10px;">@_saveError</div> }
+        }
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <button class="ll-btn ll-btn-ghost" type="button" @onclick="CloseEdit" disabled="@_saving">Cancel</button>
+        <button class="ll-btn ll-btn-primary" type="button" @onclick="SaveAsync" disabled="@_saving">@(_saving ? "Saving…" : "Save")</button>
+    </FooterContentTemplate>
+</DxPopup>
+
+@code {
+    [Parameter] public Guid ApplicationId { get; set; }
+    [Parameter] public IEnumerable<ApplicationDocument>? InitialData { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private List<ApplicationDocument> _items = new();
+    private DocFormModel? _form;
+    private Guid? _editId;
+    private bool _showEdit, _saving;
+    private string? _saveError;
+
+    protected override void OnParametersSet() => _items = InitialData?.ToList() ?? new();
+
+    private void OpenEdit(ApplicationDocument d) { _editId = d.Id; _form = new(d); _saveError = null; _showEdit = true; }
+    private void CloseEdit() { _showEdit = false; _form = null; }
+
+    private async Task SaveAsync()
+    {
+        if (_form == null) return;
+        _saving = true; _saveError = null;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IGenericRepository<ApplicationDocument>>();
+            var e = _items.First(x => x.Id == _editId);
+            _form.ApplyTo(e); repo.Update(e); await repo.SaveChangesAsync();
+            _showEdit = false;
+            await OnSaved.InvokeAsync();
+        }
+        catch (Exception ex) { _saveError = ex.Message; }
+        finally { _saving = false; }
+    }
+
+    private string GetDocStatusClass(DocumentStatus s) => s switch
+    {
+        DocumentStatus.ACCEPTED       => "ll-badge-decision_issued",
+        DocumentStatus.REJECTED       => "ll-badge-incomplete",
+        DocumentStatus.PENDING_REVIEW => "ll-badge-submitted",
+        DocumentStatus.REQUESTED      => "ll-badge-accepted",
+        _ => ""
+    };
+
+    private class DocFormModel
+    {
+        public string FileName { get; set; } = string.Empty;
+        public DocumentStatus Status { get; set; }
+        public DocumentType DocumentType { get; set; }
+        public string? StaffNotes { get; set; }
+        public bool IsVisibleConsumer { get; set; }
+        public bool IsVisibleDealer { get; set; }
+
+        public DocFormModel() { }
+        public DocFormModel(ApplicationDocument d) { FileName = d.FileName; Status = d.Status; DocumentType = d.DocumentType; StaffNotes = d.StaffNotes; IsVisibleConsumer = d.IsVisible_Consumer; IsVisibleDealer = d.IsVisible_Dealer; }
+        public void ApplyTo(ApplicationDocument d) { d.Status = Status; d.DocumentType = DocumentType; d.StaffNotes = StaffNotes; d.IsVisible_Consumer = IsVisibleConsumer; d.IsVisible_Dealer = IsVisibleDealer; }
+    }
+}

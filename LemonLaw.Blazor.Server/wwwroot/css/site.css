@@ -56,13 +56,10 @@ button[data-action-name="Send Dealer Outreach"] {
     font-weight: 600 !important;
     border-radius: 6px !important;
 }
-
 button[data-action-name="Send Dealer Outreach"]:hover {
     background-color: #e65100 !important;
     border-color: #e65100 !important;
 }
-
-/* Hide the empty icon span to remove the leading space */
 button[data-action-name="Send Dealer Outreach"] .xaf-toolbar-item-icon {
     display: none !important;
 }

@@ -1,0 +1,45 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Core.Enums
+
+<div class="ll-card-head" style="border-top:1px solid #f1f5f9;">
+    <p class="ll-card-title">Correspondence (@_items.Count)</p>
+</div>
+<div style="padding:0;">
+    @if (!_items.Any()) { <p class="ll-table-empty">No correspondence on file.</p> }
+    else
+    {
+        <table class="ll-table">
+            <thead><tr><th>Direction</th><th>Recipient</th><th>Subject</th><th>Sent At</th><th>Delivery</th></tr></thead>
+            <tbody>
+                @foreach (var item in _items.OrderByDescending(c => c.SentAt))
+                {
+                    <tr>
+                        <td>@item.Direction</td>
+                        <td>@item.RecipientType — @item.RecipientEmail</td>
+                        <td>@item.Subject</td>
+                        <td>@(item.SentAt?.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt") ?? "—")</td>
+                        <td><span class="ll-badge @GetDeliveryClass(item.DeliveryStatus)">@item.DeliveryStatus</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid ApplicationId { get; set; }
+    [Parameter] public IEnumerable<Correspondence>? InitialData { get; set; }
+
+    private List<Correspondence> _items = new();
+
+    protected override void OnParametersSet() => _items = InitialData?.ToList() ?? new();
+
+    private string GetDeliveryClass(EmailDeliveryStatus s) => s switch
+    {
+        EmailDeliveryStatus.DELIVERED => "ll-badge-decision_issued",
+        EmailDeliveryStatus.OPENED    => "ll-badge-accepted",
+        EmailDeliveryStatus.BOUNCED   => "ll-badge-incomplete",
+        EmailDeliveryStatus.FAILED    => "ll-badge-incomplete",
+        _                             => "ll-badge-submitted"
+    };
+}

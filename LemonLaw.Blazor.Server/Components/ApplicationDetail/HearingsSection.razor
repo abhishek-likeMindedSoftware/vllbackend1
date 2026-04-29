@@ -1,0 +1,134 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Core.Enums
+@using LemonLaw.Application.Repositories
+@using Microsoft.Extensions.DependencyInjection
+
+@inject IServiceProvider ServiceProvider
+
+<div class="ll-card-head" style="border-top:1px solid #f1f5f9;">
+    <p class="ll-card-title">Hearings (@_items.Count)</p>
+    <button class="ll-btn ll-btn-ghost ll-btn-sm" type="button" @onclick="OpenNew">+ New</button>
+</div>
+<div style="padding:0;">
+    @if (!_items.Any()) { <p class="ll-table-empty">No hearings scheduled.</p> }
+    else
+    {
+        <table class="ll-table">
+            <thead><tr><th>Date</th><th>Format</th><th>Location / URL</th><th>Arbitrator</th><th>Outcome</th><th style="width:50px;"></th></tr></thead>
+            <tbody>
+                @foreach (var item in _items.OrderByDescending(h => h.HearingDate))
+                {
+                    <tr>
+                        <td>@item.HearingDate.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt")</td>
+                        <td>@item.HearingFormat</td>
+                        <td>@(item.HearingLocation ?? "—")</td>
+                        <td>@(item.ArbitratorName ?? "—")</td>
+                        <td>@item.Outcome</td>
+                        <td><button class="ll-row-edit-btn" type="button" @onclick="() => OpenEdit(item)"><EditIcon Size="13" /></button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+<DxPopup @bind-Visible="_showEdit" HeaderText="@(_editId == null ? "Schedule Hearing" : "Edit Hearing")" Width="700px" ShowFooter="true" CloseOnOutsideClick="false" Scrollable="true">
+    <BodyContentTemplate>
+        @if (_form != null)
+        {
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group"><label class="ll-form-label">Hearing Date &amp; Time *</label><input class="ll-input" type="datetime-local" @bind="_form.HearingDate" /></div>
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Format</label>
+                    <select class="ll-select" @bind="_form.HearingFormat">
+                        @foreach (var v in Enum.GetValues<HearingFormat>()) { <option value="@v">@v</option> }
+                    </select>
+                </div>
+            </div>
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group"><label class="ll-form-label">Location / URL</label><input class="ll-input" @bind="_form.HearingLocation" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">Arbitrator Name</label><input class="ll-input" @bind="_form.ArbitratorName" /></div>
+            </div>
+            @if (_editId != null)
+            {
+                <div class="ll-form-row ll-form-row-2">
+                    <div class="ll-form-group">
+                        <label class="ll-form-label">Outcome</label>
+                        <select class="ll-select" @bind="_form.Outcome">
+                            @foreach (var v in Enum.GetValues<HearingOutcome>()) { <option value="@v">@v</option> }
+                        </select>
+                    </div>
+                    <div class="ll-form-group"><label class="ll-form-label">Continued To</label><input class="ll-input" type="datetime-local" @bind="_form.ContinuedTo" /></div>
+                </div>
+                <div class="ll-form-row"><div class="ll-form-group"><label class="ll-form-label">Outcome Notes</label><textarea class="ll-textarea" @bind="_form.OutcomeNotes"></textarea></div></div>
+            }
+            <div class="ll-form-row ll-form-row-2" style="margin-top:4px;">
+                <div class="ll-checkbox-row">
+                    <input type="checkbox" id="hearing-consumer-@_editId" @bind="_form.ConsumerNoticesSent" />
+                    <label for="hearing-consumer-@_editId">Consumer notified</label>
+                </div>
+                <div class="ll-checkbox-row">
+                    <input type="checkbox" id="hearing-dealer-@_editId" @bind="_form.DealerNoticesSent" />
+                    <label for="hearing-dealer-@_editId">Dealer notified</label>
+                </div>
+            </div>
+            @if (_saveError != null) { <div class="ll-alert ll-alert-error" style="margin-top:10px;">@_saveError</div> }
+        }
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <button class="ll-btn ll-btn-ghost" type="button" @onclick="CloseEdit" disabled="@_saving">Cancel</button>
+        <button class="ll-btn ll-btn-primary" type="button" @onclick="SaveAsync" disabled="@_saving">@(_saving ? "Saving…" : "Save")</button>
+    </FooterContentTemplate>
+</DxPopup>
+
+@code {
+    [Parameter] public Guid ApplicationId { get; set; }
+    [Parameter] public IEnumerable<Hearing>? InitialData { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private List<Hearing> _items = new();
+    private HearingFormModel? _form;
+    private Guid? _editId;
+    private bool _showEdit, _saving;
+    private string? _saveError;
+
+    protected override void OnParametersSet() => _items = InitialData?.ToList() ?? new();
+
+    private void OpenNew() { _editId = null; _form = new(); _saveError = null; _showEdit = true; }
+    private void OpenEdit(Hearing h) { _editId = h.Id; _form = new(h); _saveError = null; _showEdit = true; }
+    private void CloseEdit() { _showEdit = false; _form = null; }
+
+    private async Task SaveAsync()
+    {
+        if (_form == null) return;
+        _saving = true; _saveError = null;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IGenericRepository<Hearing>>();
+            if (_editId == null) { var e = new Hearing { ApplicationId = ApplicationId }; _form.ApplyTo(e); await repo.AddAsync(e); await repo.SaveChangesAsync(); _items.Add(e); }
+            else { var e = _items.First(x => x.Id == _editId); _form.ApplyTo(e); repo.Update(e); await repo.SaveChangesAsync(); }
+            _showEdit = false;
+            await OnSaved.InvokeAsync();
+        }
+        catch (Exception ex) { _saveError = ex.Message; }
+        finally { _saving = false; }
+    }
+
+    private class HearingFormModel
+    {
+        public DateTime HearingDate { get; set; } = DateTime.Now;
+        public HearingFormat HearingFormat { get; set; }
+        public string? HearingLocation { get; set; }
+        public string? ArbitratorName { get; set; }
+        public HearingOutcome Outcome { get; set; } = HearingOutcome.PENDING;
+        public string? OutcomeNotes { get; set; }
+        public DateTime? ContinuedTo { get; set; }
+        public bool ConsumerNoticesSent { get; set; }
+        public bool DealerNoticesSent { get; set; }
+
+        public HearingFormModel() { }
+        public HearingFormModel(Hearing h) { HearingDate = h.HearingDate.ToLocalTime(); HearingFormat = h.HearingFormat; HearingLocation = h.HearingLocation; ArbitratorName = h.ArbitratorName; Outcome = h.Outcome; OutcomeNotes = h.OutcomeNotes; ContinuedTo = h.ContinuedTo?.ToLocalTime(); ConsumerNoticesSent = h.ConsumerNoticesSent; DealerNoticesSent = h.DealerNoticesSent; }
+        public void ApplyTo(Hearing h) { h.HearingDate = DateTime.SpecifyKind(HearingDate, DateTimeKind.Local).ToUniversalTime(); h.HearingFormat = HearingFormat; h.HearingLocation = HearingLocation; h.ArbitratorName = ArbitratorName; h.Outcome = Outcome; h.OutcomeNotes = OutcomeNotes; h.ContinuedTo = ContinuedTo.HasValue ? DateTime.SpecifyKind(ContinuedTo.Value, DateTimeKind.Local).ToUniversalTime() : null; h.ConsumerNoticesSent = ConsumerNoticesSent; h.DealerNoticesSent = DealerNoticesSent; }
+    }
+}

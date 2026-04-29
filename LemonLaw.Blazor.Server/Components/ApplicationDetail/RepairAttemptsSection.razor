@@ -1,0 +1,114 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Application.Repositories
+@using Microsoft.Extensions.DependencyInjection
+
+@inject IServiceProvider ServiceProvider
+
+<div class="ll-card-head" style="border-top:1px solid #f1f5f9;">
+    <p class="ll-card-title">Repair Attempts (@_items.Count)</p>
+    <button class="ll-btn ll-btn-ghost ll-btn-sm" type="button" @onclick="OpenNew">+ New</button>
+</div>
+<div style="padding:0;">
+    @if (!_items.Any()) { <p class="ll-table-empty">No repair attempts recorded.</p> }
+    else
+    {
+        <table class="ll-table">
+            <thead><tr><th>Date</th><th>Facility</th><th>Defects Addressed</th><th>RO #</th><th>Successful</th><th>Days OOS</th><th style="width:50px;"></th></tr></thead>
+            <tbody>
+                @foreach (var item in _items.OrderBy(r => r.RepairDate))
+                {
+                    <tr>
+                        <td>@item.RepairDate.ToString("MM/dd/yyyy")</td>
+                        <td>@item.RepairFacilityName</td>
+                        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@item.DefectsAddressed</td>
+                        <td>@(item.RoNumber ?? "—")</td>
+                        <td>@(item.RepairSuccessful ? "Yes" : "No")</td>
+                        <td>@(item.DaysOutOfService?.ToString() ?? "—")</td>
+                        <td><button class="ll-row-edit-btn" type="button" @onclick="() => OpenEdit(item)"><EditIcon Size="13" /></button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+<DxPopup @bind-Visible="_showEdit" HeaderText="@(_editId == null ? "New Repair Attempt" : "Edit Repair Attempt")" Width="700px" ShowFooter="true" CloseOnOutsideClick="false" Scrollable="true">
+    <BodyContentTemplate>
+        @if (_form != null)
+        {
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group"><label class="ll-form-label">Repair Date *</label><input class="ll-input" type="date" @bind="_form.RepairDate" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">Facility Name *</label><input class="ll-input" @bind="_form.RepairFacilityName" /></div>
+            </div>
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group"><label class="ll-form-label">Facility Address</label><input class="ll-input" @bind="_form.RepairFacilityAddr" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">RO Number</label><input class="ll-input" @bind="_form.RoNumber" /></div>
+            </div>
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group"><label class="ll-form-label">Mileage at Repair</label><input class="ll-input" type="number" @bind="_form.MileageAtRepair" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">Days Out of Service</label><input class="ll-input" type="number" @bind="_form.DaysOutOfService" /></div>
+            </div>
+            <div class="ll-form-row"><div class="ll-form-group"><label class="ll-form-label">Defects Addressed</label><textarea class="ll-textarea" @bind="_form.DefectsAddressed"></textarea></div></div>
+            <div class="ll-checkbox-row" style="margin-top:4px;">
+                <input type="checkbox" id="repair-success-@_editId" @bind="_form.RepairSuccessful" />
+                <label for="repair-success-@_editId">Repair was successful</label>
+            </div>
+            @if (_saveError != null) { <div class="ll-alert ll-alert-error" style="margin-top:10px;">@_saveError</div> }
+        }
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <button class="ll-btn ll-btn-ghost" type="button" @onclick="CloseEdit" disabled="@_saving">Cancel</button>
+        <button class="ll-btn ll-btn-primary" type="button" @onclick="SaveAsync" disabled="@_saving">@(_saving ? "Saving…" : "Save")</button>
+    </FooterContentTemplate>
+</DxPopup>
+
+@code {
+    [Parameter] public Guid ApplicationId { get; set; }
+    [Parameter] public IEnumerable<RepairAttempt>? InitialData { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private List<RepairAttempt> _items = new();
+    private RepairFormModel? _form;
+    private Guid? _editId;
+    private bool _showEdit, _saving;
+    private string? _saveError;
+
+    protected override void OnParametersSet() => _items = InitialData?.ToList() ?? new();
+
+    private void OpenNew() { _editId = null; _form = new(); _saveError = null; _showEdit = true; }
+    private void OpenEdit(RepairAttempt r) { _editId = r.Id; _form = new(r); _saveError = null; _showEdit = true; }
+    private void CloseEdit() { _showEdit = false; _form = null; }
+
+    private async Task SaveAsync()
+    {
+        if (_form == null) return;
+        _saving = true; _saveError = null;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IGenericRepository<RepairAttempt>>();
+            if (_editId == null) { var e = new RepairAttempt { ApplicationId = ApplicationId }; _form.ApplyTo(e); await repo.AddAsync(e); await repo.SaveChangesAsync(); _items.Add(e); }
+            else { var e = _items.First(x => x.Id == _editId); _form.ApplyTo(e); repo.Update(e); await repo.SaveChangesAsync(); }
+            _showEdit = false;
+            await OnSaved.InvokeAsync();
+        }
+        catch (Exception ex) { _saveError = ex.Message; }
+        finally { _saving = false; }
+    }
+
+    private class RepairFormModel
+    {
+        public DateOnly RepairDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+        public string RepairFacilityName { get; set; } = string.Empty;
+        public string? RepairFacilityAddr { get; set; }
+        public string? RoNumber { get; set; }
+        public int? MileageAtRepair { get; set; }
+        public string DefectsAddressed { get; set; } = string.Empty;
+        public bool RepairSuccessful { get; set; }
+        public int? DaysOutOfService { get; set; }
+
+        public RepairFormModel() { }
+        public RepairFormModel(RepairAttempt r) { RepairDate = r.RepairDate; RepairFacilityName = r.RepairFacilityName; RepairFacilityAddr = r.RepairFacilityAddr; RoNumber = r.RoNumber; MileageAtRepair = r.MileageAtRepair; DefectsAddressed = r.DefectsAddressed; RepairSuccessful = r.RepairSuccessful; DaysOutOfService = r.DaysOutOfService; }
+        public void ApplyTo(RepairAttempt r) { r.RepairDate = RepairDate; r.RepairFacilityName = RepairFacilityName; r.RepairFacilityAddr = RepairFacilityAddr; r.RoNumber = RoNumber; r.MileageAtRepair = MileageAtRepair; r.DefectsAddressed = DefectsAddressed; r.RepairSuccessful = RepairSuccessful; r.DaysOutOfService = DaysOutOfService; }
+    }
+}
