@@ -40,17 +40,19 @@ namespace LemonLaw.Module.Controllers
         private const string KEY_ISSUE_DECISION    = "IssueDecision";
         private const string KEY_CLOSE             = "CloseCase";
         private const string KEY_WITHDRAW          = "WithdrawCase";
+        private const string DEFAULT_CASE_ACTIONS_CAPTION = "Case Actions";
 
         private SingleChoiceAction _caseActionsMenu;
         private AppEntity? _trackedApplication;
         private RefreshController? _refreshController;
+        private int _busyOperationCount;
 
         public CaseActionsController()
         {
             // One dropdown button — "Case Actions ▾"
             _caseActionsMenu = new SingleChoiceAction(this, "CaseActionsMenu", PredefinedCategory.Edit)
             {
-                Caption = "Case Actions",
+                Caption = DEFAULT_CASE_ACTIONS_CAPTION,
                 ToolTip = "Available actions for this case based on its current status.",
                 ImageName = "Action_SimpleAction",
                 PaintStyle = ActionItemPaintStyle.CaptionAndImage,
@@ -211,6 +213,24 @@ namespace LemonLaw.Module.Controllers
 
         // ── Dispatch selected action ──────────────────────────────────────────
 
+        private void SetCaseActionBusy(bool isBusy, string? caption = null)
+        {
+            if (isBusy)
+            {
+                _busyOperationCount++;
+            }
+            else if (_busyOperationCount > 0)
+            {
+                _busyOperationCount--;
+            }
+
+            var isAnyOperationRunning = _busyOperationCount > 0;
+            _caseActionsMenu.Enabled.SetItemValue("CaseActionBusy", !isAnyOperationRunning);
+            _caseActionsMenu.Caption = isAnyOperationRunning
+                ? (string.IsNullOrWhiteSpace(caption) ? "Processing..." : caption)
+                : DEFAULT_CASE_ACTIONS_CAPTION;
+        }
+
         private void OnCaseActionSelected(object sender, SingleChoiceActionExecuteEventArgs e)
         {
             var key = e.SelectedChoiceActionItem?.Id;
@@ -288,6 +308,7 @@ namespace LemonLaw.Module.Controllers
             var applicationId = app.Id;
             var caseNumber = app.CaseNumber;
 
+            SetCaseActionBusy(true, "Updating...");
             try
             {
                     using var client = CreateHttpClient();
@@ -320,6 +341,10 @@ namespace LemonLaw.Module.Controllers
             catch (Exception ex)
             {
                 Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+            }
+            finally
+            {
+                SetCaseActionBusy(false);
             }
         }
 
@@ -371,6 +396,7 @@ namespace LemonLaw.Module.Controllers
                 $"Sending dealer outreach to {dealerEmail}…",
                 InformationType.Info, 2000, InformationPosition.Top);
 
+            SetCaseActionBusy(true, "Sending...");
             try
             {
                     using var client = CreateHttpClient();
@@ -411,6 +437,10 @@ namespace LemonLaw.Module.Controllers
             catch (Exception ex)
             {
                 Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+            }
+            finally
+            {
+                SetCaseActionBusy(false);
             }
         }
 
@@ -461,6 +491,7 @@ namespace LemonLaw.Module.Controllers
                     $"Scheduling hearing for case {caseNumber}…",
                     InformationType.Info, 2000, InformationPosition.Top);
 
+                SetCaseActionBusy(true, "Scheduling...");
                 try
                 {
                         using var client = CreateHttpClient();
@@ -501,6 +532,10 @@ namespace LemonLaw.Module.Controllers
                 {
                     Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
                 }
+                finally
+                {
+                    SetCaseActionBusy(false);
+                }
             };
 
             svp.Controllers.Add(dialogController);
@@ -520,6 +555,7 @@ namespace LemonLaw.Module.Controllers
                 $"Issuing decision for case {caseNumber}…",
                 InformationType.Info, 2000, InformationPosition.Top);
 
+            SetCaseActionBusy(true, "Issuing...");
             try
             {
                     using var client = CreateHttpClient();
@@ -560,6 +596,10 @@ namespace LemonLaw.Module.Controllers
             catch (Exception ex)
             {
                 Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+            }
+            finally
+            {
+                SetCaseActionBusy(false);
             }
         }
 
