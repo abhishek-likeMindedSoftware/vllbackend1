@@ -4,6 +4,7 @@
 @using LemonLaw.Core.Enums
 @using Microsoft.Extensions.DependencyInjection
 @inject IServiceProvider ServiceProvider
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
 
 <PageTitle>Dashboard — OCABR Lemon Law Workbench</PageTitle>
 
@@ -14,8 +15,14 @@
     <!-- Page header -->
     <div class="d-header">
         <div>
-            <h1 class="d-title">Workbench Overview</h1>
-            <p class="d-subtitle">@DateTime.Now.ToString("dddd, MMMM d, yyyy") &nbsp;·&nbsp; OCABR Vehicle Lemon Law Program</p>
+            <h1 class="d-title">@(_isCaseManagerView ? "My Cases" : "Workbench Overview")</h1>
+            <p class="d-subtitle">
+                @DateTime.Now.ToString("dddd, MMMM d, yyyy") &nbsp;·&nbsp; OCABR Vehicle Lemon Law Program
+                @if (_isCaseManagerView)
+                {
+                    <span>&nbsp;·&nbsp; <strong style="color:#0265A3;">Showing your assigned cases</strong></span>
+                }
+            </p>
         </div>
     </div>
 
@@ -41,9 +48,9 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                 </div>
                 <div>
-                    <p class="d-kpi-label">Open Cases</p>
+                    <p class="d-kpi-label">@(_isCaseManagerView ? "My Open Cases" : "Open Cases")</p>
                     <p class="d-kpi-num" style="color:#ea580c;">@_totalOpen</p>
-                    <p class="d-kpi-sub">Active in system</p>
+                    <p class="d-kpi-sub">@(_isCaseManagerView ? "Assigned to you" : "Active in system")</p>
                 </div>
             </div>
             <div class="d-kpi d-kpi-amber">
@@ -406,6 +413,8 @@
 @code {
     private bool _loading = true;
     private string? _loadError;
+    private bool _isCaseManagerView = false;
+    private string? _currentUserId;
 
     private int _totalOpen;
     private int _pendingReview;
@@ -436,7 +445,35 @@
             var eventRepo = scope.ServiceProvider
                 .GetRequiredService<IGenericRepository<CaseEvent>>();
 
+            // Detect current user role via XAF security
+            // CASE_MANAGER sees only their assigned cases
+            var security = scope.ServiceProvider
+                .GetService<DevExpress.ExpressApp.Security.ISecurityStrategyBase>();
+
+            _currentUserId = null;
+            _isCaseManagerView = false;
+
+            if (security?.User is LemonLaw.Core.Entities.ApplicationUser xafUser)
+            {
+                _currentUserId = xafUser.UserName;
+                var isCaseManager = xafUser.Roles.Any(r => r.Name == "CASE_MANAGER") &&
+                                    !xafUser.Roles.Any(r => r.Name == "OCABR_ADMIN" ||
+                                                             r.Name == "Administrators" ||
+                                                             r.Name == "SUPERVISOR");
+                _isCaseManagerView = isCaseManager;
+            }
+
             var allApps = (await appRepo.GetAllAsync()).ToList();
+
+            // Filter to assigned cases only for CASE_MANAGER
+            if (_isCaseManagerView && !string.IsNullOrWhiteSpace(_currentUserId))
+            {
+                allApps = allApps
+                    .Where(a => a.AssignedToStaffId == _currentUserId ||
+                                a.AssignedToName == _currentUserId)
+                    .ToList();
+            }
+
             var openApps = allApps.Where(a => !ClosedStatuses.Contains(a.Status)).ToList();
             var today = DateTime.UtcNow;
 
@@ -458,7 +495,13 @@
                 .GroupBy(a => a.ApplicationType.ToString())
                 .ToDictionary(g => g.Key, g => g.Count());
 
+            // Recent activity — scoped to assigned cases for CASE_MANAGER
             var allEvents = await eventRepo.GetAllAsync();
+            if (_isCaseManagerView)
+            {
+                var myAppIds = allApps.Select(a => a.Id).ToHashSet();
+                allEvents = allEvents.Where(e => e.ApplicationId.HasValue && myAppIds.Contains(e.ApplicationId.Value));
+            }
             _recentActivity = allEvents
                 .OrderByDescending(e => e.EventTimestamp)
                 .Take(20)

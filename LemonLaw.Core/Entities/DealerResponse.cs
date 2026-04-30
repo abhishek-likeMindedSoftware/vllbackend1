@@ -85,6 +85,7 @@ public class DealerResponse : AuditDetails,
 
     [ForeignKey("OutreachId")]
     [DevExpress.Xpo.Association("DealerOutreach-Response")]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual DealerOutreach? Outreach
     {
         get => _outreach;
@@ -125,6 +126,7 @@ public class DealerResponse : AuditDetails,
 
     [ForeignKey("ApplicationId")]
     [DevExpress.Xpo.Association("Application-DealerResponses")]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual Application? Application
     {
         get => _application;
@@ -235,6 +237,7 @@ public class DealerResponse : AuditDetails,
 
     [XafDisplayName("Response Narrative")]
     [VisibleInListView(false)]
+    [EditorAlias(EditorAliases.RichTextPropertyEditor)]
     public virtual string ResponseNarrative
     {
         get => _responseNarrative;
@@ -253,6 +256,7 @@ public class DealerResponse : AuditDetails,
 
     [XafDisplayName("Repair History Notes")]
     [VisibleInListView(false)]
+    [EditorAlias(EditorAliases.RichTextPropertyEditor)]
     public virtual string? RepairHistoryNotes
     {
         get => _repairHistoryNotes;

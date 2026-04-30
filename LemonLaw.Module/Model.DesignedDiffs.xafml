@@ -27,5 +27,32 @@
         </LayoutGroup>
       </Layout>
     </DetailView>
+
+    <!-- DealerResponse — read-only view for staff workbench.
+         Layout is intentionally omitted — XAF auto-generates a clean
+         vertical single-column layout from the entity's VisibleInDetailView
+         attributes. The Actions block disables editing. -->
+    <DetailView Id="DealerResponse_DetailView">
+      <Actions>
+        <ActionDesign>
+          <Actions>
+            <Action Id="Save"         Active="False" />
+            <Action Id="SaveAndClose" Active="False" />
+            <Action Id="SaveAndNew"   Active="False" />
+            <Action Id="Delete"       Active="False" />
+          </Actions>
+        </ActionDesign>
+      </Actions>
+    </DetailView>
+
+    <!-- AssignCaseInput — filter SelectedUser lookup to CASE_MANAGER role only -->
+    <DetailView Id="AssignCaseInput_DetailView" IsNewNode="True">
+      <Items IsNewNode="True">
+        <PropertyEditor Id="SelectedUser" PropertyName="SelectedUser"
+                        DataSourceCriteria="Roles[Name = 'CASE_MANAGER']"
+                        IsNewNode="True" />
+      </Items>
+    </DetailView>
+
   </Views>
 </Application>

@@ -42,6 +42,10 @@ namespace LemonLaw.Module
             AdditionalExportedTypes.Add(typeof(FaqAnswer));
             // Non-persistent dashboard host entity
             AdditionalExportedTypes.Add(typeof(AdminDashboard));
+            // Non-persistent popup input objects
+            AdditionalExportedTypes.Add(typeof(LemonLaw.Module.BusinessObjects.AssignCaseInput));
+            AdditionalExportedTypes.Add(typeof(LemonLaw.Module.BusinessObjects.ScheduleHearingInput));
+            AdditionalExportedTypes.Add(typeof(LemonLaw.Module.BusinessObjects.IssueDecisionInput));
 
             // ── Required modules ──────────────────────────────────────────────
             RequiredModuleTypes.Add(typeof(DevExpress.ExpressApp.SystemModule.SystemModule));

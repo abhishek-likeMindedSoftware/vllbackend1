@@ -76,90 +76,32 @@
       </Layout>
     </DetailView>
 
-    <!-- DealerResponse detail view — explicit layout so all fields are visible in XAF workbench -->
+    <!-- DealerResponse detail view — read-only, no custom layout (auto-generated from entity attributes) -->
     <DetailView Id="DealerResponse_DetailView" IsNewNode="True">
       <Items IsNewNode="True">
-        <PropertyEditor Id="ResponderName" PropertyName="ResponderName" IsNewNode="True" />
-        <PropertyEditor Id="ResponderTitle" PropertyName="ResponderTitle" IsNewNode="True" />
-        <PropertyEditor Id="ResponderEmail" PropertyName="ResponderEmail" IsNewNode="True" />
-        <PropertyEditor Id="ResponderPhone" PropertyName="ResponderPhone" IsNewNode="True" />
-        <PropertyEditor Id="DealerPosition" PropertyName="DealerPosition" IsNewNode="True" />
-        <PropertyEditor Id="SubmittedAt" PropertyName="SubmittedAt" IsNewNode="True" />
-        <PropertyEditor Id="ResponseNarrative" PropertyName="ResponseNarrative" IsNewNode="True" />
-        <PropertyEditor Id="RepairHistoryNotes" PropertyName="RepairHistoryNotes" IsNewNode="True" />
-        <PropertyEditor Id="SettlementOffer" PropertyName="SettlementOffer" IsNewNode="True" />
-        <PropertyEditor Id="SettlementDetails" PropertyName="SettlementDetails" IsNewNode="True" />
+        <PropertyEditor Id="ResponderName"         PropertyName="ResponderName"         IsNewNode="True" />
+        <PropertyEditor Id="ResponderTitle"        PropertyName="ResponderTitle"        IsNewNode="True" />
+        <PropertyEditor Id="ResponderEmail"        PropertyName="ResponderEmail"        IsNewNode="True" />
+        <PropertyEditor Id="ResponderPhone"        PropertyName="ResponderPhone"        IsNewNode="True" />
+        <PropertyEditor Id="DealerPosition"        PropertyName="DealerPosition"        IsNewNode="True" />
+        <PropertyEditor Id="SubmittedAt"           PropertyName="SubmittedAt"           IsNewNode="True" />
+        <PropertyEditor Id="ResponseNarrative"     PropertyName="ResponseNarrative"     IsNewNode="True" />
+        <PropertyEditor Id="RepairHistoryNotes"    PropertyName="RepairHistoryNotes"    IsNewNode="True" />
+        <PropertyEditor Id="SettlementOffer"       PropertyName="SettlementOffer"       IsNewNode="True" />
+        <PropertyEditor Id="SettlementDetails"     PropertyName="SettlementDetails"     IsNewNode="True" />
         <PropertyEditor Id="CertificationAccepted" PropertyName="CertificationAccepted" IsNewNode="True" />
-        <PropertyEditor Id="CertifierFullName" PropertyName="CertifierFullName" IsNewNode="True" />
+        <PropertyEditor Id="CertifierFullName"     PropertyName="CertifierFullName"     IsNewNode="True" />
       </Items>
       <Actions IsNewNode="True">
         <ActionDesign IsNewNode="True">
           <Actions IsNewNode="True">
-            <!-- Response records are read-only in the workbench — dealers submit via portal only -->
-            <Action Id="Save" Active="False" IsNewNode="True" />
+            <Action Id="Save"         Active="False" IsNewNode="True" />
             <Action Id="SaveAndClose" Active="False" IsNewNode="True" />
-            <Action Id="SaveAndNew" Active="False" IsNewNode="True" />
-            <Action Id="Delete" Active="False" IsNewNode="True" />
+            <Action Id="SaveAndNew"   Active="False" IsNewNode="True" />
+            <Action Id="Delete"       Active="False" IsNewNode="True" />
           </Actions>
         </ActionDesign>
       </Actions>
-      <Layout IsNewNode="True">
-        <LayoutGroup Id="Main" RelativeSize="100" IsNewNode="True">
-          <LayoutGroup Id="SimpleEditors" RelativeSize="100" IsNewNode="True">
-            <LayoutGroup Id="DealerResponse" RelativeSize="100" IsNewNode="True">
-
-              <!-- Row 1: Responder contact info -->
-              <LayoutGroup Id="ResponderInfo" Caption="Responder Information" ShowCaption="True"
-                           CaptionLocation="Top" Direction="Horizontal" Index="0" RelativeSize="20" IsNewNode="True">
-                <LayoutGroup Id="ResponderLeft" ShowCaption="False" Index="0" RelativeSize="50" IsNewNode="True">
-                  <LayoutItem Id="ResponderName" ViewItem="ResponderName" Index="0" IsNewNode="True" />
-                  <LayoutItem Id="ResponderTitle" ViewItem="ResponderTitle" Index="1" IsNewNode="True" />
-                </LayoutGroup>
-                <LayoutGroup Id="ResponderRight" ShowCaption="False" Index="1" RelativeSize="50" IsNewNode="True">
-                  <LayoutItem Id="ResponderEmail" ViewItem="ResponderEmail" Index="0" IsNewNode="True" />
-                  <LayoutItem Id="ResponderPhone" ViewItem="ResponderPhone" Index="1" IsNewNode="True" />
-                </LayoutGroup>
-              </LayoutGroup>
-
-              <!-- Row 2: Position and submission timestamp -->
-              <LayoutGroup Id="PositionRow" Caption="Response Summary" ShowCaption="True"
-                           CaptionLocation="Top" Direction="Horizontal" Index="1" RelativeSize="10" IsNewNode="True">
-                <LayoutItem Id="DealerPosition" ViewItem="DealerPosition" Index="0" RelativeSize="50" IsNewNode="True" />
-                <LayoutItem Id="SubmittedAt" ViewItem="SubmittedAt" Index="1" RelativeSize="50" IsNewNode="True" />
-              </LayoutGroup>
-
-              <!-- Row 3: Narrative (tall) -->
-              <LayoutGroup Id="NarrativeGroup" Caption="Response Narrative" ShowCaption="True"
-                           CaptionLocation="Top" Index="2" RelativeSize="30" IsNewNode="True">
-                <LayoutItem Id="ResponseNarrative" ViewItem="ResponseNarrative" Index="0"
-                            RelativeSize="100" ShowCaption="False" IsNewNode="True" />
-              </LayoutGroup>
-
-              <!-- Row 4: Repair history notes -->
-              <LayoutGroup Id="RepairGroup" Caption="Repair History Notes" ShowCaption="True"
-                           CaptionLocation="Top" Index="3" RelativeSize="20" IsNewNode="True">
-                <LayoutItem Id="RepairHistoryNotes" ViewItem="RepairHistoryNotes" Index="0"
-                            RelativeSize="100" ShowCaption="False" IsNewNode="True" />
-              </LayoutGroup>
-
-              <!-- Row 5: Settlement (only relevant when position = OFFERS_SETTLEMENT) -->
-              <LayoutGroup Id="SettlementGroup" Caption="Settlement Offer" ShowCaption="True"
-                           CaptionLocation="Top" Direction="Horizontal" Index="4" RelativeSize="10" IsNewNode="True">
-                <LayoutItem Id="SettlementOffer" ViewItem="SettlementOffer" Index="0" RelativeSize="30" IsNewNode="True" />
-                <LayoutItem Id="SettlementDetails" ViewItem="SettlementDetails" Index="1" RelativeSize="70" IsNewNode="True" />
-              </LayoutGroup>
-
-              <!-- Row 6: Certification -->
-              <LayoutGroup Id="CertGroup" Caption="Certification" ShowCaption="True"
-                           CaptionLocation="Top" Direction="Horizontal" Index="5" RelativeSize="10" IsNewNode="True">
-                <LayoutItem Id="CertificationAccepted" ViewItem="CertificationAccepted" Index="0" RelativeSize="20" IsNewNode="True" />
-                <LayoutItem Id="CertifierFullName" ViewItem="CertifierFullName" Index="1" RelativeSize="80" IsNewNode="True" />
-              </LayoutGroup>
-
-            </LayoutGroup>
-          </LayoutGroup>
-        </LayoutGroup>
-      </Layout>
     </DetailView>
   </Views>
 </Application>
