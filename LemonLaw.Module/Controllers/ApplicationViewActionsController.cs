@@ -44,11 +44,28 @@ namespace LemonLaw.Module.Controllers
             }
             else if (View is DetailView)
             {
-                // Hide SaveAndNew and SaveAndClose — saves go through the Blazor edit popups
+                // Hide SaveAndNew, SaveAndClose, Save — saves go through the Blazor edit popups
                 if (modificationsController != null)
                 {
                     modificationsController.SaveAndNewAction.Active["PortalOnly"]   = false;
                     modificationsController.SaveAndCloseAction.Active["PortalOnly"] = false;
+                    modificationsController.SaveAction.Active["PortalOnly"]         = false;
+                }
+
+                // Hide Refresh
+                var refreshController = Frame.GetController<DevExpress.ExpressApp.SystemModule.RefreshController>();
+                if (refreshController != null)
+                    refreshController.RefreshAction.Active["PortalOnly"] = false;
+
+                // Hide Previous/Next navigation arrows — iterate all controllers and deactivate
+                // PreviousObject and NextObject actions by their well-known IDs
+                foreach (var controller in Frame.Controllers)
+                {
+                    foreach (var action in controller.Actions)
+                    {
+                        if (action.Id == "PreviousObject" || action.Id == "NextObject")
+                            action.Active["PortalOnly"] = false;
+                    }
                 }
             }
         }
