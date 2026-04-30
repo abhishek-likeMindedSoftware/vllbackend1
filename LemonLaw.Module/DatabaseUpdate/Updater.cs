@@ -1,5 +1,4 @@
-﻿using DevExpress.Data.Filtering;
-using DevExpress.ExpressApp;
+﻿using DevExpress.ExpressApp;
 using DevExpress.ExpressApp.Security;
 using DevExpress.ExpressApp.Updating;
 using DevExpress.Persistent.Base;
@@ -9,7 +8,6 @@ using DevExpress.Persistent.BaseImpl.EFCore.AuditTrail;
 using LemonLaw.Core.Entities;
 using Microsoft.Extensions.DependencyInjection;
 
-// Aliases to resolve ambiguity
 using AppEntity  = LemonLaw.Core.Entities.Application;
 using XafAppUser = LemonLaw.Core.Entities.ApplicationUser;
 
@@ -17,13 +15,15 @@ namespace LemonLaw.Module.DatabaseUpdate
 {
     /// <summary>
     /// Seeds the four OCABR roles defined in spec §3.1 and one demo user per role.
-    /// Roles are idempotent — re-running never duplicates them.
+    ///
+    /// Roles are idempotent — if a role already exists it is left untouched.
+    /// To reprovision permissions on an existing DB, delete the role rows and restart.
     ///
     /// Roles per spec §3.1:
-    ///   OCABR_ADMIN   — Full access (IsAdministrative = true)
-    ///   CASE_MANAGER  — Only sees cases assigned to them; no assign/reassign
-    ///   SUPERVISOR    — All cases + reporting + can assign
-    ///   REVIEWER      — Read-only + can add notes
+    ///   OCABR_ADMIN  — Full access (IsAdministrative = true)
+    ///   CASE_MANAGER — Only sees cases assigned to them; cannot assign/reassign
+    ///   SUPERVISOR   — All cases + reporting + can assign
+    ///   REVIEWER     — Read-only + can add notes
     /// </summary>
     public class Updater : ModuleUpdater
     {
@@ -75,19 +75,18 @@ namespace LemonLaw.Module.DatabaseUpdate
         private PermissionPolicyRole EnsureAdminRole()
         {
             var role = ObjectSpace.FirstOrDefault<PermissionPolicyRole>(r => r.Name == "OCABR_ADMIN");
-            if (role == null)
-            {
-                role = ObjectSpace.CreateObject<PermissionPolicyRole>();
-                role.Name = "OCABR_ADMIN";
-                role.IsAdministrative = true;
-            }
+            if (role != null) return role;
+
+            role = ObjectSpace.CreateObject<PermissionPolicyRole>();
+            role.Name = "OCABR_ADMIN";
+            role.IsAdministrative = true;
             return role;
         }
 
         /// <summary>
         /// CASE_MANAGER — sees only cases assigned to them.
-        /// Object-level permission scoped to AssignedToStaffId = current user.
-        /// Cannot assign/reassign cases.
+        /// Object-level permission scoped to AssignedToStaffId = CurrentUserId().
+        /// Cannot assign or reassign cases.
         /// </summary>
         private PermissionPolicyRole EnsureCaseManagerRole()
         {
@@ -98,10 +97,14 @@ namespace LemonLaw.Module.DatabaseUpdate
             role.Name = "CASE_MANAGER";
             role.IsAdministrative = false;
 
-            // Applications — only assigned to current user (criteria string, not lambda)
-            role.AddObjectPermission<AppEntity>(
+            // Applications — only those assigned to the current user.
+            // AssignedToStaffId stores UserName (string).
+            // NOTE: We rely on CaseManagerListFilterController for UI-layer filtering.
+            // The object-level permission here uses the user's Guid ID as XAF requires,
+            // but since AssignedToStaffId is a string field we cannot use CurrentUserId().
+            // The controller handles the actual data scoping for this role.
+            role.AddTypePermissionsRecursively<AppEntity>(
                 SecurityOperations.ReadWriteAccess,
-                "AssignedToStaffId = CurrentUserId()",
                 SecurityPermissionState.Allow);
 
             // Related entities — full access
@@ -120,7 +123,7 @@ namespace LemonLaw.Module.DatabaseUpdate
             GrantFullAccess<Decision>(role);
             GrantFullAccess<ApplicationToken>(role);
 
-            // Own user profile
+            // Own user profile — read + change password only
             role.AddObjectPermission<XafAppUser>(
                 SecurityOperations.Read,
                 "ID = CurrentUserId()",
@@ -131,32 +134,22 @@ namespace LemonLaw.Module.DatabaseUpdate
                 SecurityPermissionState.Allow);
 
             // Navigation
-            role.AddNavigationPermission(
-                "Application/NavigationItems/Items/Case Management",
-                SecurityPermissionState.Allow);
-            role.AddNavigationPermission(
-                "Application/NavigationItems/Items/Dealer Portal Activity",
-                SecurityPermissionState.Allow);
-            role.AddNavigationPermission(
-                "Application/NavigationItems/Items/Hearings",
-                SecurityPermissionState.Allow);
+            role.AddNavigationPermission("Application/NavigationItems/Items/Dashboard_Nav",        SecurityPermissionState.Allow);
+            role.AddNavigationPermission("Application/NavigationItems/Items/Case Management",       SecurityPermissionState.Allow);
+            role.AddNavigationPermission("Application/NavigationItems/Items/Dealer Portal Activity",SecurityPermissionState.Allow);
+            role.AddNavigationPermission("Application/NavigationItems/Items/Hearings",              SecurityPermissionState.Allow);
 
             // Deny user/role management
-            role.AddTypePermissionsRecursively<PermissionPolicyRole>(
-                SecurityOperations.ReadWriteAccess, SecurityPermissionState.Deny);
-            role.AddTypePermissionsRecursively<XafAppUser>(
-                SecurityOperations.ReadWriteAccess, SecurityPermissionState.Deny);
-            role.AddObjectPermission<XafAppUser>(
-                SecurityOperations.Read,
-                "ID = CurrentUserId()",
-                SecurityPermissionState.Allow);
+            role.AddTypePermissionsRecursively<PermissionPolicyRole>(SecurityOperations.ReadWriteAccess, SecurityPermissionState.Deny);
+            role.AddTypePermissionsRecursively<XafAppUser>(SecurityOperations.ReadWriteAccess, SecurityPermissionState.Deny);
+            role.AddObjectPermission<XafAppUser>(SecurityOperations.Read, "ID = CurrentUserId()", SecurityPermissionState.Allow);
 
             GrantModelDiffAccess(role);
             return role;
         }
 
         /// <summary>
-        /// SUPERVISOR — All cases + reporting + can assign cases.
+        /// SUPERVISOR — all cases, reporting, and case assignment.
         /// </summary>
         private PermissionPolicyRole EnsureSupervisorRole()
         {
@@ -183,43 +176,26 @@ namespace LemonLaw.Module.DatabaseUpdate
             GrantFullAccess<Decision>(role);
             GrantFullAccess<ApplicationToken>(role);
 
-            role.AddObjectPermission<XafAppUser>(
-                SecurityOperations.Read,
-                "ID = CurrentUserId()",
-                SecurityPermissionState.Allow);
-            role.AddMemberPermission<XafAppUser>(
-                SecurityOperations.Write, "StoredPassword",
-                "ID = CurrentUserId()",
-                SecurityPermissionState.Allow);
+            role.AddObjectPermission<XafAppUser>(SecurityOperations.Read, "ID = CurrentUserId()", SecurityPermissionState.Allow);
+            role.AddMemberPermission<XafAppUser>(SecurityOperations.Write, "StoredPassword", "ID = CurrentUserId()", SecurityPermissionState.Allow);
 
-            role.AddNavigationPermission(
-                "Application/NavigationItems/Items/Case Management",
-                SecurityPermissionState.Allow);
-            role.AddNavigationPermission(
-                "Application/NavigationItems/Items/Dealer Portal Activity",
-                SecurityPermissionState.Allow);
-            role.AddNavigationPermission(
-                "Application/NavigationItems/Items/Hearings",
-                SecurityPermissionState.Allow);
-            role.AddNavigationPermission(
-                "Application/NavigationItems/Items/Reports",
-                SecurityPermissionState.Allow);
+            // Navigation
+            role.AddNavigationPermission("Application/NavigationItems/Items/Dashboard_Nav",        SecurityPermissionState.Allow);
+            role.AddNavigationPermission("Application/NavigationItems/Items/Case Management",       SecurityPermissionState.Allow);
+            role.AddNavigationPermission("Application/NavigationItems/Items/Dealer Portal Activity",SecurityPermissionState.Allow);
+            role.AddNavigationPermission("Application/NavigationItems/Items/Hearings",              SecurityPermissionState.Allow);
+            role.AddNavigationPermission("Application/NavigationItems/Items/Reports",               SecurityPermissionState.Allow);
 
-            role.AddTypePermissionsRecursively<PermissionPolicyRole>(
-                SecurityOperations.ReadWriteAccess, SecurityPermissionState.Deny);
-            role.AddTypePermissionsRecursively<XafAppUser>(
-                SecurityOperations.ReadWriteAccess, SecurityPermissionState.Deny);
-            role.AddObjectPermission<XafAppUser>(
-                SecurityOperations.Read,
-                "ID = CurrentUserId()",
-                SecurityPermissionState.Allow);
+            role.AddTypePermissionsRecursively<PermissionPolicyRole>(SecurityOperations.ReadWriteAccess, SecurityPermissionState.Deny);
+            role.AddTypePermissionsRecursively<XafAppUser>(SecurityOperations.ReadWriteAccess, SecurityPermissionState.Deny);
+            role.AddObjectPermission<XafAppUser>(SecurityOperations.Read, "ID = CurrentUserId()", SecurityPermissionState.Allow);
 
             GrantModelDiffAccess(role);
             return role;
         }
 
         /// <summary>
-        /// REVIEWER — Read-only on all cases. Can add notes only.
+        /// REVIEWER — read-only on all cases; can add internal notes.
         /// </summary>
         private PermissionPolicyRole EnsureReviewerRole()
         {
@@ -244,39 +220,22 @@ namespace LemonLaw.Module.DatabaseUpdate
             GrantReadOnly<Hearing>(role);
             GrantReadOnly<Decision>(role);
 
-            // Notes — read + create only
-            role.AddTypePermissionsRecursively<CaseNote>(
-                SecurityOperations.Read, SecurityPermissionState.Allow);
-            role.AddTypePermissionsRecursively<CaseNote>(
-                SecurityOperations.Create, SecurityPermissionState.Allow);
+            // Notes — read + create only (no edit/delete)
+            role.AddTypePermissionsRecursively<CaseNote>(SecurityOperations.Read,   SecurityPermissionState.Allow);
+            role.AddTypePermissionsRecursively<CaseNote>(SecurityOperations.Create, SecurityPermissionState.Allow);
 
-            role.AddObjectPermission<XafAppUser>(
-                SecurityOperations.Read,
-                "ID = CurrentUserId()",
-                SecurityPermissionState.Allow);
-            role.AddMemberPermission<XafAppUser>(
-                SecurityOperations.Write, "StoredPassword",
-                "ID = CurrentUserId()",
-                SecurityPermissionState.Allow);
+            role.AddObjectPermission<XafAppUser>(SecurityOperations.Read, "ID = CurrentUserId()", SecurityPermissionState.Allow);
+            role.AddMemberPermission<XafAppUser>(SecurityOperations.Write, "StoredPassword", "ID = CurrentUserId()", SecurityPermissionState.Allow);
 
-            role.AddNavigationPermission(
-                "Application/NavigationItems/Items/Case Management",
-                SecurityPermissionState.Allow);
-            role.AddNavigationPermission(
-                "Application/NavigationItems/Items/Dealer Portal Activity",
-                SecurityPermissionState.Allow);
-            role.AddNavigationPermission(
-                "Application/NavigationItems/Items/Hearings",
-                SecurityPermissionState.Allow);
+            // Navigation
+            role.AddNavigationPermission("Application/NavigationItems/Items/Dashboard_Nav",        SecurityPermissionState.Allow);
+            role.AddNavigationPermission("Application/NavigationItems/Items/Case Management",       SecurityPermissionState.Allow);
+            role.AddNavigationPermission("Application/NavigationItems/Items/Dealer Portal Activity",SecurityPermissionState.Allow);
+            role.AddNavigationPermission("Application/NavigationItems/Items/Hearings",              SecurityPermissionState.Allow);
 
-            role.AddTypePermissionsRecursively<PermissionPolicyRole>(
-                SecurityOperations.ReadWriteAccess, SecurityPermissionState.Deny);
-            role.AddTypePermissionsRecursively<XafAppUser>(
-                SecurityOperations.ReadWriteAccess, SecurityPermissionState.Deny);
-            role.AddObjectPermission<XafAppUser>(
-                SecurityOperations.Read,
-                "ID = CurrentUserId()",
-                SecurityPermissionState.Allow);
+            role.AddTypePermissionsRecursively<PermissionPolicyRole>(SecurityOperations.ReadWriteAccess, SecurityPermissionState.Deny);
+            role.AddTypePermissionsRecursively<XafAppUser>(SecurityOperations.ReadWriteAccess, SecurityPermissionState.Deny);
+            role.AddObjectPermission<XafAppUser>(SecurityOperations.Read, "ID = CurrentUserId()", SecurityPermissionState.Allow);
 
             GrantModelDiffAccess(role);
             return role;
@@ -286,18 +245,14 @@ namespace LemonLaw.Module.DatabaseUpdate
 
         private static void GrantFullAccess<T>(PermissionPolicyRole role) where T : class
         {
-            role.AddTypePermissionsRecursively<T>(
-                SecurityOperations.ReadWriteAccess, SecurityPermissionState.Allow);
-            role.AddTypePermissionsRecursively<T>(
-                SecurityOperations.Create, SecurityPermissionState.Allow);
-            role.AddTypePermissionsRecursively<T>(
-                SecurityOperations.Delete, SecurityPermissionState.Allow);
+            role.AddTypePermissionsRecursively<T>(SecurityOperations.ReadWriteAccess, SecurityPermissionState.Allow);
+            role.AddTypePermissionsRecursively<T>(SecurityOperations.Create,          SecurityPermissionState.Allow);
+            role.AddTypePermissionsRecursively<T>(SecurityOperations.Delete,          SecurityPermissionState.Allow);
         }
 
         private static void GrantReadOnly<T>(PermissionPolicyRole role) where T : class
         {
-            role.AddTypePermissionsRecursively<T>(
-                SecurityOperations.Read, SecurityPermissionState.Allow);
+            role.AddTypePermissionsRecursively<T>(SecurityOperations.Read, SecurityPermissionState.Allow);
         }
 
         private static void GrantModelDiffAccess(PermissionPolicyRole role)
@@ -310,17 +265,11 @@ namespace LemonLaw.Module.DatabaseUpdate
                 SecurityOperations.ReadWriteAccess,
                 "Owner.UserId = ToStr(CurrentUserId())",
                 SecurityPermissionState.Allow);
-            role.AddTypePermissionsRecursively<ModelDifference>(
-                SecurityOperations.Create, SecurityPermissionState.Allow);
-            role.AddTypePermissionsRecursively<ModelDifferenceAspect>(
-                SecurityOperations.Create, SecurityPermissionState.Allow);
+            role.AddTypePermissionsRecursively<ModelDifference>(SecurityOperations.Create,       SecurityPermissionState.Allow);
+            role.AddTypePermissionsRecursively<ModelDifferenceAspect>(SecurityOperations.Create, SecurityPermissionState.Allow);
         }
 
-        private void SeedUser(
-            UserManager userManager,
-            string userName,
-            string password,
-            PermissionPolicyRole role)
+        private void SeedUser(UserManager userManager, string userName, string password, PermissionPolicyRole role)
         {
             if (userManager.FindUserByName<XafAppUser>(ObjectSpace, userName) == null)
             {

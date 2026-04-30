@@ -445,22 +445,16 @@
             var eventRepo = scope.ServiceProvider
                 .GetRequiredService<IGenericRepository<CaseEvent>>();
 
-            // Detect current user role via XAF security
-            // CASE_MANAGER sees only their assigned cases
-            var security = scope.ServiceProvider
-                .GetService<DevExpress.ExpressApp.Security.ISecurityStrategyBase>();
-
+            // Detect current user role via XAF SecuritySystem (reliable in Blazor server context)
             _currentUserId = null;
             _isCaseManagerView = false;
 
-            if (security?.User is LemonLaw.Core.Entities.ApplicationUser xafUser)
+            if (DevExpress.ExpressApp.SecuritySystem.CurrentUser is LemonLaw.Core.Entities.ApplicationUser xafUser)
             {
                 _currentUserId = xafUser.UserName;
-                var isCaseManager = xafUser.Roles.Any(r => r.Name == "CASE_MANAGER") &&
-                                    !xafUser.Roles.Any(r => r.Name == "OCABR_ADMIN" ||
-                                                             r.Name == "Administrators" ||
-                                                             r.Name == "SUPERVISOR");
-                _isCaseManagerView = isCaseManager;
+                _isCaseManagerView = xafUser.Roles.Any(r => r.Name == "CASE_MANAGER") &&
+                                     !xafUser.Roles.Any(r => r.Name == "OCABR_ADMIN" ||
+                                                              r.Name == "SUPERVISOR");
             }
 
             var allApps = (await appRepo.GetAllAsync()).ToList();
