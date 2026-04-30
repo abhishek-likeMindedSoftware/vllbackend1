@@ -1,40 +1,53 @@
 using DevExpress.ExpressApp;
 using DevExpress.ExpressApp.SystemModule;
 using AppEntity = LemonLaw.Core.Entities.Application;
+using DecisionEntity = LemonLaw.Core.Entities.Decision;
 
 namespace LemonLaw.Module.Controllers
 {
     /// <summary>
-    /// Controls toolbar actions on Application views.
-    /// - List view: hides New (applications are created via consumer portal only)
-    /// - Detail view: hides SaveAndNew
+    /// Controls toolbar actions on views that use a custom Blazor detail panel.
+    /// Covers Application and Decision (and any future entity added to <see cref="CustomDetailViewTypes"/>).
+    ///
+    /// List view  → hides New (records are created via portal / case workflow only)
+    /// Detail view → hides SaveAndNew and SaveAndClose
+    ///               (saves happen via the custom Edit popups inside the Blazor component)
     /// </summary>
     public class ApplicationViewActionsController : ViewController
     {
+        /// <summary>
+        /// Entity types that use a custom Blazor detail panel.
+        /// Add new types here to automatically get the same toolbar behaviour.
+        /// </summary>
+        private static readonly HashSet<Type> CustomDetailViewTypes = new()
+        {
+            typeof(AppEntity),
+            typeof(DecisionEntity),
+        };
+
         protected override void OnActivated()
         {
             base.OnActivated();
 
-            // Only apply to Application views
-            if (View?.ObjectTypeInfo?.Type != typeof(AppEntity))
+            var entityType = View?.ObjectTypeInfo?.Type;
+            if (entityType == null || !CustomDetailViewTypes.Contains(entityType))
                 return;
 
             var modificationsController = Frame.GetController<ModificationsController>();
-            var newObjectController = Frame.GetController<NewObjectViewController>();
+            var newObjectController    = Frame.GetController<NewObjectViewController>();
 
             if (View is ListView)
             {
-                // Hide New button on the list view
+                // Hide New button — records are never created directly from the list
                 if (newObjectController != null)
                     newObjectController.NewObjectAction.Active["PortalOnly"] = false;
             }
             else if (View is DetailView)
             {
-                // Hide SaveAndNew and SaveAndClose on the detail view
-                // (saves happen via our custom Edit popups, not XAF toolbar)
+                // Hide SaveAndNew and SaveAndClose — saves go through the Blazor edit popups
                 if (modificationsController != null)
                 {
-                    modificationsController.SaveAndNewAction.Active["PortalOnly"] = false;
+                    modificationsController.SaveAndNewAction.Active["PortalOnly"]   = false;
                     modificationsController.SaveAndCloseAction.Active["PortalOnly"] = false;
                 }
             }

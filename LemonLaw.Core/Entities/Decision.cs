@@ -85,6 +85,7 @@ public class Decision : AuditDetails,
 
     [ForeignKey("ApplicationId")]
     [DevExpress.Xpo.Association("Application-Decisions")]
+    [VisibleInDetailView(false)]
     public virtual Application? Application
     {
         get => _application;
@@ -107,6 +108,7 @@ public class Decision : AuditDetails,
     private DecisionType _decisionType;
 
     [XafDisplayName("Decision Type")]
+    [VisibleInDetailView(false)]
     public virtual DecisionType DecisionType
     {
         get => _decisionType;
@@ -124,6 +126,7 @@ public class Decision : AuditDetails,
     private DateOnly _decisionDate;
 
     [XafDisplayName("Decision Date")]
+    [VisibleInDetailView(false)]
     public virtual DateOnly DecisionDate
     {
         get => _decisionDate;
@@ -158,7 +161,7 @@ public class Decision : AuditDetails,
     private decimal? _refundAmount;
 
     [XafDisplayName("Refund Amount ($)")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual decimal? RefundAmount
     {
         get => _refundAmount;
@@ -176,7 +179,7 @@ public class Decision : AuditDetails,
     private DateOnly? _complianceDeadline;
 
     [XafDisplayName("Compliance Deadline")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual DateOnly? ComplianceDeadline
     {
         get => _complianceDeadline;
@@ -211,7 +214,7 @@ public class Decision : AuditDetails,
     private bool _consumerNotified;
 
     [XafDisplayName("Consumer Notified")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual bool ConsumerNotified
     {
         get => _consumerNotified;
@@ -229,7 +232,7 @@ public class Decision : AuditDetails,
     private bool _dealerNotified;
 
     [XafDisplayName("Dealer Notified")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual bool DealerNotified
     {
         get => _dealerNotified;
@@ -243,6 +246,19 @@ public class Decision : AuditDetails,
             }
         }
     }
+
+    #endregion
+
+    #region Custom Detail View Hook
+
+    /// <summary>
+    /// The only property visible in the Decision Detail View.
+    /// DecisionDetailPropertyEditor renders the full custom Blazor component.
+    /// </summary>
+    [NotMapped]
+    [XafDisplayName("Decision Detail")]
+    [VisibleInDetailView(true), VisibleInListView(false)]
+    public object? DetailPanel => this;
 
     #endregion
 }

@@ -1,0 +1,194 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Core.Enums
+
+<div class="ll-wrap">
+
+    @if (_loading)
+    {
+        <div class="ll-loading"><span class="ll-spinner"></span><span>Loading decision…</span></div>
+    }
+    else if (_loadError != null)
+    {
+        <div class="ll-error-box">@_loadError</div>
+    }
+    else if (_decision != null)
+    {
+        var app = _decision.Application;
+        var vehicle = app?.Vehicle;
+
+        @* ── Case Header ──────────────────────────────────────────────────────── *@
+        @if (app != null)
+        {
+            <div class="ll-header">
+                <div class="ll-header-left">
+                    <p class="ll-case-number">Case @app.CaseNumber</p>
+                    <div class="ll-meta-row">
+                        <span class="ll-badge ll-badge-@app.Status.ToString().ToLower()">@app.Status.ToString().Replace("_", " ")</span>
+                        <span class="ll-meta-item"><span class="ll-meta-label">Type:</span> @app.ApplicationType.ToString().Replace("_", " ")</span>
+                        @if (app.SubmittedAt != default)
+                        {
+                            <span class="ll-meta-item"><span class="ll-meta-label">Submitted:</span> @app.SubmittedAt.ToLocalTime().ToString("MM/dd/yyyy")</span>
+                        }
+                        <span class="ll-meta-item"><span class="ll-meta-label">Last Activity:</span> @app.LastActivityAt.ToLocalTime().ToString("MM/dd/yyyy")</span>
+                        @if (app.AssignedToName != null)
+                        {
+                            <span class="ll-meta-item"><span class="ll-meta-label">Assigned To:</span> @app.AssignedToName</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* ── Dealer Information ───────────────────────────────────────────────── *@
+        @if (vehicle != null)
+        {
+            <div class="ll-card">
+                <div class="ll-card-head">
+                    <p class="ll-card-title">Dealer Information</p>
+                </div>
+                <div class="ll-card-body">
+                    <div class="ll-fields ll-fields-3">
+                        <div>
+                            <p class="ll-field-label">Dealer Name</p>
+                            <p class="ll-field-value @(string.IsNullOrWhiteSpace(vehicle.DealerName) ? "ll-field-empty" : "")">
+                                @(string.IsNullOrWhiteSpace(vehicle.DealerName) ? "—" : vehicle.DealerName)
+                            </p>
+                        </div>
+                        <div>
+                            <p class="ll-field-label">Dealer Phone</p>
+                            <p class="ll-field-value @(string.IsNullOrWhiteSpace(vehicle.DealerPhone) ? "ll-field-empty" : "")">
+                                @(string.IsNullOrWhiteSpace(vehicle.DealerPhone) ? "—" : vehicle.DealerPhone)
+                            </p>
+                        </div>
+                        <div>
+                            <p class="ll-field-label">Dealer Email</p>
+                            <p class="ll-field-value @(string.IsNullOrWhiteSpace(vehicle.DealerEmail) ? "ll-field-empty" : "")">
+                                @(string.IsNullOrWhiteSpace(vehicle.DealerEmail) ? "—" : vehicle.DealerEmail)
+                            </p>
+                        </div>
+                        <div>
+                            <p class="ll-field-label">Dealer Address</p>
+                            <p class="ll-field-value @(string.IsNullOrWhiteSpace(vehicle.DealerAddressLine1) ? "ll-field-empty" : "")">
+                                @(string.IsNullOrWhiteSpace(vehicle.DealerAddressLine1) ? "—" : vehicle.DealerAddressLine1)
+                                @if (!string.IsNullOrWhiteSpace(vehicle.DealerAddressLine2))
+                                {
+                                    <br />@vehicle.DealerAddressLine2
+                                }
+                            </p>
+                        </div>
+                        <div>
+                            <p class="ll-field-label">Dealer City / State / ZIP</p>
+                            <p class="ll-field-value @(string.IsNullOrWhiteSpace(vehicle.DealerCity) ? "ll-field-empty" : "")">
+                                @if (!string.IsNullOrWhiteSpace(vehicle.DealerCity))
+                                {
+                                    @($"{vehicle.DealerCity}, {vehicle.DealerState} {vehicle.DealerZip}".Trim(' ', ','))
+                                }
+                                else
+                                {
+                                    <span>—</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* ── Decision Details ─────────────────────────────────────────────────── *@
+        <div class="ll-card">
+            <div class="ll-card-head">
+                <p class="ll-card-title">Decision</p>
+                <button class="ll-edit-btn" type="button" @onclick="OpenEdit"><EditIcon /> Edit</button>
+            </div>
+            <div class="ll-card-body">
+                <div class="ll-fields ll-fields-3">
+                    <div>
+                        <p class="ll-field-label">Decision Type</p>
+                        <p class="ll-field-value">@EnumHelper.GetDescription(_decision.DecisionType)</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Decision Date</p>
+                        <p class="ll-field-value">@_decision.DecisionDate.ToString("MM/dd/yyyy")</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Refund Amount</p>
+                        <p class="ll-field-value @(_decision.RefundAmount == null ? "ll-field-empty" : "")">
+                            @(_decision.RefundAmount?.ToString("C") ?? "—")
+                        </p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Compliance Deadline</p>
+                        <p class="ll-field-value @(_decision.ComplianceDeadline == null ? "ll-field-empty" : "")">
+                            @(_decision.ComplianceDeadline?.ToString("MM/dd/yyyy") ?? "—")
+                        </p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Consumer Notified</p>
+                        <p class="ll-field-value">@(_decision.ConsumerNotified ? "Yes" : "No")</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Dealer Notified</p>
+                        <p class="ll-field-value">@(_decision.DealerNotified ? "Yes" : "No")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    }
+</div>
+
+@* ── Edit Decision Popup ──────────────────────────────────────────────────── *@
+<DxPopup @bind-Visible="_showEdit" HeaderText="Edit Decision" Width="560px" ShowFooter="true" CloseOnOutsideClick="false">
+    <BodyContentTemplate>
+        @if (_form != null)
+        {
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Decision Type *</label>
+                    <select class="ll-select" @bind="_form.DecisionType">
+                        @foreach (var v in Enum.GetValues<DecisionType>())
+                        {
+                            <option value="@v">@EnumHelper.GetDescription(v)</option>
+                        }
+                    </select>
+                </div>
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Decision Date *</label>
+                    <input class="ll-input" type="date" @bind="_form.DecisionDate" />
+                </div>
+            </div>
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Refund Amount ($)</label>
+                    <input class="ll-input" type="number" step="0.01" @bind="_form.RefundAmount" />
+                </div>
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Compliance Deadline</label>
+                    <input class="ll-input" type="date" @bind="_form.ComplianceDeadline" />
+                </div>
+            </div>
+            <div class="ll-form-row ll-form-row-2" style="margin-top:4px;">
+                <div class="ll-checkbox-row">
+                    <input type="checkbox" id="dec-consumer" @bind="_form.ConsumerNotified" />
+                    <label for="dec-consumer">Consumer notified</label>
+                </div>
+                <div class="ll-checkbox-row">
+                    <input type="checkbox" id="dec-dealer" @bind="_form.DealerNotified" />
+                    <label for="dec-dealer">Dealer notified</label>
+                </div>
+            </div>
+            @if (_saveError != null)
+            {
+                <div class="ll-alert ll-alert-error" style="margin-top:10px;">@_saveError</div>
+            }
+        }
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <button class="ll-btn ll-btn-ghost" type="button" @onclick="CloseEdit" disabled="@_saving">Cancel</button>
+        <button class="ll-btn ll-btn-primary" type="button" @onclick="SaveAsync" disabled="@_saving">
+            @(_saving ? "Saving…" : "Save")
+        </button>
+    </FooterContentTemplate>
+</DxPopup>
+
+
