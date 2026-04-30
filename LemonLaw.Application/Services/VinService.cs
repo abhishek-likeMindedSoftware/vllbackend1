@@ -4,7 +4,8 @@ using LemonLaw.Shared.DTOs;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System.Net.Http.Json;
+using System.Net.Http.Headers;
+using System.Text.Json;
 
 namespace LemonLaw.Application.Services;
 
@@ -17,6 +18,11 @@ public class VinService(
 {
     private const string CacheKeyPrefix = "vin_";
 
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     public async Task<CommonResponseDto<VinLookupResponseDto>> LookupVinAsync(
         string vin, Guid? excludeApplicationId = null)
     {
@@ -27,7 +33,6 @@ public class VinService(
             if (vin.Length != 17)
                 return Fail("VIN must be exactly 17 characters.");
 
-            // Check cache first
             var cacheKey = $"{CacheKeyPrefix}{vin}";
             VinDecodeResult? decoded;
 
@@ -74,7 +79,12 @@ public class VinService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Error looking up VIN {VIN}", vin);
-            return Fail("VIN lookup failed. Please try again.");
+            return new CommonResponseDto<VinLookupResponseDto>
+            {
+                Success = false,
+                Message = "VIN lookup failed. Please try again.",
+                ExceptionMessage = ex.Message
+            };
         }
     }
 
@@ -82,37 +92,44 @@ public class VinService(
     {
         try
         {
-            // Uses NHTSA free VIN decode API as default
-            var baseUrl = configuration["VinApi:BaseUrl"]
-                ?? $"https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/{vin}?format=json";
+            var url = $"https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/{vin}?format=json";
 
             var client = httpClientFactory.CreateClient("VinApi");
-            var response = await client.GetFromJsonAsync<NhtsaVinResponse>(baseUrl);
 
+            // Must explicitly set Accept: application/json — NHTSA returns XML otherwise
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            using var httpResponse = await client.SendAsync(request);
+            if (!httpResponse.IsSuccessStatusCode) return null;
+
+            var json = await httpResponse.Content.ReadAsStringAsync();
+            logger.LogDebug("NHTSA response for {VIN}: {Json}", vin, json[..Math.Min(500, json.Length)]);
+
+            var response = JsonSerializer.Deserialize<NhtsaVinResponse>(json, _jsonOptions);
             if (response?.Results == null) return null;
 
-            var yearResult = response.Results.FirstOrDefault(r => r.Variable == "Model Year");
-            var makeResult = response.Results.FirstOrDefault(r => r.Variable == "Make");
-            var modelResult = response.Results.FirstOrDefault(r => r.Variable == "Model");
-            var trimResult = response.Results.FirstOrDefault(r => r.Variable == "Trim");
-            var errorResult = response.Results.FirstOrDefault(r => r.Variable == "Error Code");
+            var make  = response.Results.FirstOrDefault(r => r.Variable == "Make")?.Value;
+            var year  = response.Results.FirstOrDefault(r => r.Variable == "Model Year")?.Value;
+            var model = response.Results.FirstOrDefault(r => r.Variable == "Model")?.Value;
+            var trim  = response.Results.FirstOrDefault(r => r.Variable == "Trim")?.Value;
 
-            if (errorResult?.Value == "0" || (makeResult?.Value != null && makeResult.Value != ""))
+            // Valid if Make is present — NHTSA may return non-zero error codes for partial data
+            if (string.IsNullOrWhiteSpace(make))
+                return new VinDecodeResult { IsValid = false };
+
+            return new VinDecodeResult
             {
-                return new VinDecodeResult
-                {
-                    IsValid = true,
-                    Year = short.TryParse(yearResult?.Value, out var y) ? y : null,
-                    Make = makeResult?.Value,
-                    Model = modelResult?.Value,
-                    Trim = trimResult?.Value
-                };
-            }
-
-            return new VinDecodeResult { IsValid = false };
+                IsValid = true,
+                Year  = short.TryParse(year, out var y) ? y : null,
+                Make  = make,
+                Model = string.IsNullOrWhiteSpace(model) ? null : model,
+                Trim  = string.IsNullOrWhiteSpace(trim)  ? null : trim
+            };
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogWarning(ex, "NHTSA VIN API call failed for VIN {VIN}", vin);
             return null;
         }
     }
@@ -137,6 +154,6 @@ public class VinService(
     private record NhtsaResult
     {
         public string? Variable { get; init; }
-        public string? Value { get; init; }
+        public string? Value    { get; init; }
     }
 }
