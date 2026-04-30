@@ -12,6 +12,15 @@
 
 <div class="d-wrap">
 
+    <!-- Refresh overlay — shown over existing content during refresh -->
+    @if (_loading && _hasLoadedOnce)
+    {
+        <div class="d-overlay">
+            <span class="d-spinner"></span>
+            <span>Refreshing…</span>
+        </div>
+    }
+
     <!-- Page header -->
     <div class="d-header">
         <div>
@@ -24,6 +33,13 @@
                 }
             </p>
         </div>
+        <button class="d-refresh-btn" @onclick="RefreshAsync" disabled="@_loading" title="Refresh dashboard">
+            <svg class="@(_loading ? "d-spin" : "")" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            @(_loading ? "Refreshing…" : "Refresh")
+        </button>
     </div>
 
     @if (_loading)
@@ -197,7 +213,7 @@
     }
 
     /* ── Header ────────────────────────────────────────────────────────────── */
-    .d-header { margin-bottom: 28px; }
+    .d-header { margin-bottom: 28px; display: flex; align-items: flex-start; justify-content: space-between; }
     .d-title {
         font-size: 1.375rem;
         font-weight: 700;
@@ -211,11 +227,36 @@
         margin: 0;
         font-weight: 400;
     }
+    .d-refresh-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 7px 14px;
+        font-size: 0.8125rem; font-weight: 600;
+        color: #374151;
+        background: #ffffff;
+        border: 1px solid #d1d5db;
+        border-radius: 7px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s, border-color 0.15s;
+        flex-shrink: 0;
+        margin-top: 4px;
+    }
+    .d-refresh-btn:hover:not(:disabled) { background: #f9fafb; border-color: #9ca3af; }
+    .d-refresh-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
     /* ── Loading / Error ───────────────────────────────────────────────────── */
     .d-loading {
         display: flex; align-items: center; gap: 10px;
         color: #64748b; padding: 48px 0; font-size: 0.875rem;
+    }
+    .d-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(255,255,255,0.65);
+        backdrop-filter: blur(2px);
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        z-index: 999;
+        font-size: 0.875rem; color: #374151; font-weight: 500;
     }
     .d-spinner {
         width: 16px; height: 16px;
@@ -415,6 +456,7 @@
     private string? _loadError;
     private bool _isCaseManagerView = false;
     private string? _currentUserId;
+    private bool _hasLoadedOnce = false;
 
     private int _totalOpen;
     private int _pendingReview;
@@ -432,6 +474,15 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadDataAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        _loading = true;
+        _loadError = null;
+        StateHasChanged();           // force render so overlay appears
+        await Task.Yield();          // yield to let Blazor paint the overlay
         await LoadDataAsync();
     }
 
@@ -508,6 +559,7 @@
         finally
         {
             _loading = false;
+            _hasLoadedOnce = true;
         }
     }
 
