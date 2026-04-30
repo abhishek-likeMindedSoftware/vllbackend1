@@ -1,0 +1,98 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Application.Repositories
+@using Microsoft.Extensions.DependencyInjection
+@using Microsoft.AspNetCore.Http
+
+@inject IServiceProvider ServiceProvider
+@inject IHttpContextAccessor HttpContextAccessor
+
+<div class="ll-card-head" style="border-top:1px solid #f1f5f9;">
+    <p class="ll-card-title">Internal Notes (@_items.Count)</p>
+    <button class="ll-btn ll-btn-ghost ll-btn-sm" type="button" @onclick="OpenNew">+ Add Note</button>
+</div>
+<div style="padding:0;">
+    @if (!_items.Any()) { <p class="ll-table-empty">No notes yet.</p> }
+    else
+    {
+        <table class="ll-table">
+            <thead><tr><th>Note</th><th>Created By</th><th>Date</th><th>Pinned</th><th style="width:50px;"></th></tr></thead>
+            <tbody>
+                @foreach (var item in _items.OrderByDescending(n => n.IsPinned).ThenByDescending(n => n.CreatedAt))
+                {
+                    <tr>
+                        <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@item.NoteText</td>
+                        <td>@item.CreatedByName</td>
+                        <td>@item.CreatedAt.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt")</td>
+                        <td>@(item.IsPinned ? "📌" : "—")</td>
+                        <td><button class="ll-row-edit-btn" type="button" @onclick="() => OpenEdit(item)"><EditIcon Size="13" /></button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+<DxPopup @bind-Visible="_showEdit" HeaderText="@(_editId == null ? "Add Note" : "Edit Note")" Width="520px" ShowFooter="true" CloseOnOutsideClick="false">
+    <BodyContentTemplate>
+        @if (_form != null)
+        {
+            <div class="ll-form-row"><div class="ll-form-group"><label class="ll-form-label">Note *</label><textarea class="ll-textarea" style="min-height:120px;" @bind="_form.NoteText"></textarea></div></div>
+            <div class="ll-checkbox-row" style="margin-top:4px;">
+                <input type="checkbox" id="note-pinned-@_editId" @bind="_form.IsPinned" />
+                <label for="note-pinned-@_editId">Pin this note</label>
+            </div>
+            @if (_saveError != null) { <div class="ll-alert ll-alert-error" style="margin-top:10px;">@_saveError</div> }
+        }
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <button class="ll-btn ll-btn-ghost" type="button" @onclick="CloseEdit" disabled="@_saving">Cancel</button>
+        <button class="ll-btn ll-btn-primary" type="button" @onclick="SaveAsync" disabled="@_saving">@(_saving ? "Saving…" : "Save")</button>
+    </FooterContentTemplate>
+</DxPopup>
+
+@code {
+    [Parameter] public Guid ApplicationId { get; set; }
+    [Parameter] public IEnumerable<CaseNote>? InitialData { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private List<CaseNote> _items = new();
+    private NoteFormModel? _form;
+    private Guid? _editId;
+    private bool _showEdit, _saving;
+    private string? _saveError;
+
+    protected override void OnParametersSet() => _items = InitialData?.ToList() ?? new();
+
+    private void OpenNew() { _editId = null; _form = new(); _saveError = null; _showEdit = true; }
+    private void OpenEdit(CaseNote n) { _editId = n.Id; _form = new(n); _saveError = null; _showEdit = true; }
+    private void CloseEdit() { _showEdit = false; _form = null; }
+
+    private string GetCurrentUserName() => HttpContextAccessor.HttpContext?.User?.Identity?.Name ?? "Staff";
+
+    private async Task SaveAsync()
+    {
+        if (_form == null) return;
+        _saving = true; _saveError = null;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IGenericRepository<CaseNote>>();
+            if (_editId == null) { var e = new CaseNote { ApplicationId = ApplicationId, CreatedByName = GetCurrentUserName(), CreatedAt = DateTime.UtcNow }; _form.ApplyTo(e); await repo.AddAsync(e); await repo.SaveChangesAsync(); _items.Add(e); }
+            else { var e = _items.First(x => x.Id == _editId); _form.ApplyTo(e); repo.Update(e); await repo.SaveChangesAsync(); }
+            _showEdit = false;
+            await OnSaved.InvokeAsync();
+        }
+        catch (Exception ex) { _saveError = ex.Message; }
+        finally { _saving = false; }
+    }
+
+    private class NoteFormModel
+    {
+        public string NoteText { get; set; } = string.Empty;
+        public bool IsPinned { get; set; }
+
+        public NoteFormModel() { }
+        public NoteFormModel(CaseNote n) { NoteText = n.NoteText; IsPinned = n.IsPinned; }
+        public void ApplyTo(CaseNote n) { n.NoteText = NoteText; n.IsPinned = IsPinned; }
+    }
+}

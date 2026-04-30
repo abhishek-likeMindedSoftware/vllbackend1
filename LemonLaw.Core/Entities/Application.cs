@@ -70,8 +70,7 @@ public class Application : AuditDetails,
     private string _caseNumber = string.Empty;
 
     [XafDisplayName("Case Number")]
-    //[ReadOnly(true)]
-    //[ModelDefault("AllowEdit", "False")]
+    [VisibleInDetailView(false)]
     public virtual string CaseNumber
     {
         get => _caseNumber;
@@ -89,6 +88,7 @@ public class Application : AuditDetails,
     private ApplicationType _applicationType;
 
     [XafDisplayName("Application Type")]
+    [VisibleInDetailView(false)]
     public virtual ApplicationType ApplicationType
     {
         get => _applicationType;
@@ -106,6 +106,7 @@ public class Application : AuditDetails,
     private ApplicationStatus _status = ApplicationStatus.SUBMITTED;
 
     [XafDisplayName("Status")]
+    [VisibleInDetailView(false)]
     public virtual ApplicationStatus Status
     {
         get => _status;
@@ -144,7 +145,7 @@ public class Application : AuditDetails,
     private string? _assignedToName;
 
     [XafDisplayName("Assigned To")]
-    [VisibleInListView(true)]
+    [VisibleInListView(true), VisibleInDetailView(false)]
     public virtual string? AssignedToName
     {
         get => _assignedToName;
@@ -162,7 +163,7 @@ public class Application : AuditDetails,
     private DateTime? _assignedAt;
 
     [XafDisplayName("Assigned At")]
-    [VisibleInListView(false)]
+    [VisibleInListView(false), VisibleInDetailView(false)]
     public virtual DateTime? AssignedAt
     {
         get => _assignedAt;
@@ -204,6 +205,7 @@ public class Application : AuditDetails,
     [ReadOnly(true)]
     [ModelDefault("AllowEdit", "False")]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
+    [VisibleInDetailView(false)]
     public virtual DateTime SubmittedAt
     {
         get => _submittedAt;
@@ -224,6 +226,7 @@ public class Application : AuditDetails,
     [ReadOnly(true)]
     [ModelDefault("AllowEdit", "False")]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
+    [VisibleInDetailView(false)]
     public virtual DateTime LastActivityAt
     {
         get => _lastActivityAt;
@@ -244,7 +247,7 @@ public class Application : AuditDetails,
 
     private bool _emailVerified;
 
-    [VisibleInListView(false)]
+    [VisibleInListView(false), VisibleInDetailView(false)]
     public virtual bool EmailVerified
     {
         get => _emailVerified;
@@ -261,7 +264,7 @@ public class Application : AuditDetails,
 
     private bool _certificationAccepted;
 
-    [VisibleInListView(false)]
+    [VisibleInListView(false), VisibleInDetailView(false)]
     public virtual bool CertificationAccepted
     {
         get => _certificationAccepted;
@@ -279,7 +282,7 @@ public class Application : AuditDetails,
     private string? _signatureFullName;
 
     [XafDisplayName("Signature Name")]
-    [VisibleInListView(false)]
+    [VisibleInListView(false), VisibleInDetailView(false)]
     public virtual string? SignatureFullName
     {
         get => _signatureFullName;
@@ -296,7 +299,7 @@ public class Application : AuditDetails,
 
     private DateTime? _signatureTimestamp;
 
-    [VisibleInListView(false)]
+    [VisibleInListView(false), VisibleInDetailView(false)]
     public virtual DateTime? SignatureTimestamp
     {
         get => _signatureTimestamp;
@@ -352,7 +355,7 @@ public class Application : AuditDetails,
     private string? _narrativeStatement;
 
     [XafDisplayName("Narrative Statement")]
-    [VisibleInListView(false)]
+    [VisibleInListView(false), VisibleInDetailView(false)]
     public virtual string? NarrativeStatement
     {
         get => _narrativeStatement;
@@ -370,7 +373,7 @@ public class Application : AuditDetails,
     private bool? _priorContactDealer;
 
     [XafDisplayName("Prior Contact — Dealer")]
-    [VisibleInListView(false)]
+    [VisibleInListView(false), VisibleInDetailView(false)]
     public virtual bool? PriorContactDealer
     {
         get => _priorContactDealer;
@@ -388,7 +391,7 @@ public class Application : AuditDetails,
     private bool? _priorContactMfr;
 
     [XafDisplayName("Prior Contact — Manufacturer")]
-    [VisibleInListView(false)]
+    [VisibleInListView(false), VisibleInDetailView(false)]
     public virtual bool? PriorContactMfr
     {
         get => _priorContactMfr;
@@ -406,7 +409,7 @@ public class Application : AuditDetails,
     private string? _priorContactNotes;
 
     [XafDisplayName("Prior Contact Notes")]
-    [VisibleInListView(false)]
+    [VisibleInListView(false), VisibleInDetailView(false)]
     public virtual string? PriorContactNotes
     {
         get => _priorContactNotes;
@@ -424,7 +427,7 @@ public class Application : AuditDetails,
     private DesiredResolution? _desiredResolution;
 
     [XafDisplayName("Desired Resolution")]
-    [VisibleInListView(false)]
+    [VisibleInListView(false), VisibleInDetailView(false)]
     public virtual DesiredResolution? DesiredResolution
     {
         get => _desiredResolution;
@@ -441,13 +444,13 @@ public class Application : AuditDetails,
 
     #endregion
 
-
     #region Defects Relationship (1:M)
 
     private readonly ObservableCollection<Defect> _defects = new();
 
     [XafDisplayName("Defects")]
     [DevExpress.Xpo.Association("Application-Defects")]
+    [VisibleInDetailView(false)]
     public virtual ICollection<Defect> Defects
     {
         get => _defects;
@@ -469,13 +472,14 @@ public class Application : AuditDetails,
 
     #endregion
 
-
     #region Navigation Properties
 
     [XafDisplayName("Applicant")]
+    [VisibleInDetailView(false)]
     public virtual Applicant? Applicant { get; set; }
 
     [XafDisplayName("Vehicle")]
+    [VisibleInDetailView(false)]
     public virtual Vehicle? Vehicle { get; set; }
 
     [Browsable(false)]
@@ -485,6 +489,7 @@ public class Application : AuditDetails,
 
     [XafDisplayName("Repair Attempts")]
     [DevExpress.Xpo.Association("Application-RepairAttempts")]
+    [VisibleInDetailView(false)]
     public virtual ICollection<RepairAttempt> RepairAttempts
     {
         get => _repairAttempts;
@@ -505,6 +510,7 @@ public class Application : AuditDetails,
 
     [XafDisplayName("Expenses")]
     [DevExpress.Xpo.Association("Application-Expenses")]
+    [VisibleInDetailView(false)]
     public virtual ICollection<Expense> Expenses
     {
         get => _expenses;
@@ -525,6 +531,7 @@ public class Application : AuditDetails,
 
     [XafDisplayName("Documents")]
     [DevExpress.Xpo.Association("Application-Documents")]
+    [VisibleInDetailView(false)]
     public virtual ICollection<ApplicationDocument> Documents
     {
         get => _documents;
@@ -545,6 +552,7 @@ public class Application : AuditDetails,
 
     [XafDisplayName("Case Timeline")]
     [DevExpress.Xpo.Association("Application-Events")]
+    [VisibleInDetailView(false)]
     public virtual ICollection<CaseEvent> Events
     {
         get => _events;
@@ -565,6 +573,7 @@ public class Application : AuditDetails,
 
     [XafDisplayName("Internal Notes")]
     [DevExpress.Xpo.Association("Application-Notes")]
+    [VisibleInDetailView(false)]
     public virtual ICollection<CaseNote> Notes
     {
         get => _notes;
@@ -585,6 +594,7 @@ public class Application : AuditDetails,
 
     [XafDisplayName("Correspondence")]
     [DevExpress.Xpo.Association("Application-Correspondences")]
+    [VisibleInDetailView(false)]
     public virtual ICollection<Correspondence> Correspondences
     {
         get => _correspondences;
@@ -605,6 +615,7 @@ public class Application : AuditDetails,
 
     [XafDisplayName("Dealer Outreach")]
     [DevExpress.Xpo.Association("Application-DealerOutreaches")]
+    [VisibleInDetailView(false)]
     public virtual ICollection<DealerOutreach> DealerOutreaches
     {
         get => _dealerOutreaches;
@@ -625,6 +636,7 @@ public class Application : AuditDetails,
 
     [XafDisplayName("Hearings")]
     [DevExpress.Xpo.Association("Application-Hearings")]
+    [VisibleInDetailView(false)]
     public virtual ICollection<Hearing> Hearings
     {
         get => _hearings;
@@ -642,7 +654,21 @@ public class Application : AuditDetails,
     }
 
     [XafDisplayName("Decision")]
+    [VisibleInDetailView(false)]
     public virtual Decision? Decision { get; set; }
+
+    #endregion
+
+    #region Custom Detail View Hook
+
+    /// <summary>
+    /// The only property visible in the Detail View.
+    /// ApplicationDetailPropertyEditor renders the full custom Blazor component.
+    /// </summary>
+    [NotMapped]
+    [XafDisplayName("Case Detail")]
+    [VisibleInDetailView(true), VisibleInListView(false)]
+    public object? DetailPanel => this;
 
     #endregion
 }

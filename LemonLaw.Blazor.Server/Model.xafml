@@ -103,5 +103,27 @@
         </ActionDesign>
       </Actions>
     </DetailView>
+    <!--
+      Application Detail View — custom component layout.
+      All default property editors are hidden; only DetailPanel is shown,
+      which renders the full ApplicationDetailView Razor component.
+    -->
+    <DetailView Id="Application_DetailView" IsNewNode="True">
+      <Items IsNewNode="True">
+        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel"
+                        PropertyEditorType="LemonLaw.Blazor.Server.Editors.ApplicationDetailPropertyEditor"
+                        Caption="" IsNewNode="True" />
+      </Items>
+      <Layout IsNewNode="True">
+        <LayoutGroup Id="Main" ShowCaption="False" IsNewNode="True">
+          <LayoutGroup Id="SimpleEditors" ShowCaption="False" RelativeSize="100" IsNewNode="True">
+            <LayoutGroup Id="Application" ShowCaption="False" RelativeSize="100" IsNewNode="True">
+              <LayoutItem Id="DetailPanel" ViewItem="DetailPanel" Index="0"
+                          RelativeSize="100" ShowCaption="False" IsNewNode="True" />
+            </LayoutGroup>
+          </LayoutGroup>
+        </LayoutGroup>
+      </Layout>
+    </DetailView>
   </Views>
 </Application>

@@ -5,6 +5,7 @@ using DevExpress.ExpressApp.Templates;
 using DevExpress.Persistent.Base;
 using LemonLaw.Core.Enums;
 using LemonLaw.Module.BusinessObjects;
+using System.ComponentModel;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -40,16 +41,20 @@ namespace LemonLaw.Module.Controllers
         private const string KEY_ISSUE_DECISION    = "IssueDecision";
         private const string KEY_CLOSE             = "CloseCase";
         private const string KEY_WITHDRAW          = "WithdrawCase";
-        private const string KEY_ASSIGN            = "AssignCase";
+        private const string KEY_ASSIGN                    = "AssignCase";
+        private const string DEFAULT_CASE_ACTIONS_CAPTION  = "Case Actions";
 
         private SingleChoiceAction _caseActionsMenu;
+        private AppEntity? _trackedApplication;
+        private RefreshController? _refreshController;
+        private int _busyOperationCount;
 
         public CaseActionsController()
         {
             // One dropdown button — "Case Actions ▾"
             _caseActionsMenu = new SingleChoiceAction(this, "CaseActionsMenu", PredefinedCategory.Edit)
             {
-                Caption = "Case Actions",
+                Caption = DEFAULT_CASE_ACTIONS_CAPTION,
                 ToolTip = "Available actions for this case based on its current status.",
                 ImageName = "Action_SimpleAction",
                 PaintStyle = ActionItemPaintStyle.CaptionAndImage,
@@ -62,17 +67,36 @@ namespace LemonLaw.Module.Controllers
         protected override void OnActivated()
         {
             base.OnActivated();
-            _caseActionsMenu.Active.SetItemValue("IsApplicationView",
-                View?.CurrentObject is AppEntity);
+            if (View != null)
+                View.CurrentObjectChanged += OnCurrentObjectChanged;
 
-            if (View?.CurrentObject is AppEntity)
-                RebuildMenuItems();
+            _refreshController = Frame.GetController<RefreshController>();
+            if (_refreshController != null)
+                _refreshController.RefreshAction.Executed += OnRefreshExecuted;
+
+            TrackCurrentApplication();
+            RebuildMenuItems();
         }
 
         protected override void OnViewChanging(View view)
         {
             base.OnViewChanging(view);
+            UntrackCurrentApplication();
             RebuildMenuItems();
+        }
+
+        protected override void OnDeactivated()
+        {
+            if (View != null)
+                View.CurrentObjectChanged -= OnCurrentObjectChanged;
+
+            if (_refreshController != null)
+                _refreshController.RefreshAction.Executed -= OnRefreshExecuted;
+
+            UntrackCurrentApplication();
+            _refreshController = null;
+
+            base.OnDeactivated();
         }
 
         /// <summary>
@@ -159,7 +183,64 @@ namespace LemonLaw.Module.Controllers
             _caseActionsMenu.Items.Add(item);
         }
 
+        private void OnCurrentObjectChanged(object? sender, EventArgs e)
+        {
+            TrackCurrentApplication();
+            RebuildMenuItems();
+        }
+
+        private void OnRefreshExecuted(object? sender, ActionBaseEventArgs e)
+        {
+            TrackCurrentApplication();
+            RebuildMenuItems();
+        }
+
+        private void TrackCurrentApplication()
+        {
+            var currentApp = View?.CurrentObject as AppEntity;
+            if (ReferenceEquals(_trackedApplication, currentApp))
+                return;
+
+            UntrackCurrentApplication();
+            _trackedApplication = currentApp;
+
+            if (_trackedApplication != null)
+                _trackedApplication.PropertyChanged += OnTrackedApplicationPropertyChanged;
+        }
+
+        private void UntrackCurrentApplication()
+        {
+            if (_trackedApplication != null)
+                _trackedApplication.PropertyChanged -= OnTrackedApplicationPropertyChanged;
+
+            _trackedApplication = null;
+        }
+
+        private void OnTrackedApplicationPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(e.PropertyName) || e.PropertyName == nameof(AppEntity.Status))
+                RebuildMenuItems();
+        }
+
         // ── Dispatch selected action ──────────────────────────────────────────
+
+        private void SetCaseActionBusy(bool isBusy, string? caption = null)
+        {
+            if (isBusy)
+            {
+                _busyOperationCount++;
+            }
+            else if (_busyOperationCount > 0)
+            {
+                _busyOperationCount--;
+            }
+
+            var isAnyOperationRunning = _busyOperationCount > 0;
+            _caseActionsMenu.Enabled.SetItemValue("CaseActionBusy", !isAnyOperationRunning);
+            _caseActionsMenu.Caption = isAnyOperationRunning
+                ? (string.IsNullOrWhiteSpace(caption) ? "Processing..." : caption)
+                : DEFAULT_CASE_ACTIONS_CAPTION;
+        }
 
         private void OnCaseActionSelected(object sender, SingleChoiceActionExecuteEventArgs e)
         {
@@ -235,17 +316,16 @@ namespace LemonLaw.Module.Controllers
 
         // ── Status Transition ─────────────────────────────────────────────────
 
-        private void ExecuteTransition(string newStatus, string? reason)
+        private async void ExecuteTransition(string newStatus, string? reason)
         {
             if (View?.CurrentObject is not AppEntity app) return;
 
             var applicationId = app.Id;
             var caseNumber = app.CaseNumber;
 
-            _ = Task.Run(async () =>
+            SetCaseActionBusy(true, "Updating...");
+            try
             {
-                try
-                {
                     using var client = CreateHttpClient();
                     var payload = new { newStatus, reason };
                     var response = await client.PutAsJsonAsync($"api/cases/{applicationId}/status", payload);
@@ -260,7 +340,7 @@ namespace LemonLaw.Module.Controllers
                             Application.ShowViewStrategy.ShowMessage(
                                 $"✓ Case {caseNumber} — status updated to {newStatus}.",
                                 InformationType.Success, 5000, InformationPosition.Top);
-                            Application.MainWindow?.GetController<RefreshController>()?.RefreshAction.DoExecute();
+                            RefreshCurrentView(newStatus);
                         }
                         else
                         {
@@ -272,17 +352,20 @@ namespace LemonLaw.Module.Controllers
                     {
                         Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
                     }
-                }
-                catch (Exception ex)
-                {
-                    Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
-                }
-            });
+            }
+            catch (Exception ex)
+            {
+                Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+            }
+            finally
+            {
+                SetCaseActionBusy(false);
+            }
         }
 
         // ── Send Dealer Outreach ──────────────────────────────────────────────
 
-        private void ExecuteSendOutreach()
+        private async void ExecuteSendOutreach()
         {
             if (View?.CurrentObject is not AppEntity app) return;
 
@@ -328,10 +411,9 @@ namespace LemonLaw.Module.Controllers
                 $"Sending dealer outreach to {dealerEmail}…",
                 InformationType.Info, 2000, InformationPosition.Top);
 
-            _ = Task.Run(async () =>
+            SetCaseActionBusy(true, "Sending...");
+            try
             {
-                try
-                {
                     using var client = CreateHttpClient();
                     var payload = new
                     {
@@ -354,6 +436,7 @@ namespace LemonLaw.Module.Controllers
                             Application.ShowViewStrategy.ShowMessage(
                                 $"✓ Dealer outreach sent to {dealerEmail}. Deadline: {responseDeadline:MMMM d, yyyy}.",
                                 InformationType.Success, 6000, InformationPosition.Top);
+                            RefreshCurrentView();
                         }
                         else
                         {
@@ -365,12 +448,15 @@ namespace LemonLaw.Module.Controllers
                     {
                         Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
                     }
-                }
-                catch (Exception ex)
-                {
-                    Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
-                }
-            });
+            }
+            catch (Exception ex)
+            {
+                Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+            }
+            finally
+            {
+                SetCaseActionBusy(false);
+            }
         }
 
         // ── Schedule Hearing ──────────────────────────────────────────────────
@@ -396,11 +482,11 @@ namespace LemonLaw.Module.Controllers
                 TargetWindow = TargetWindow.NewModalWindow,
             };
 
-            var dialogController = new DialogController();
+            var dialogController = Application.CreateController<DialogController>();
             dialogController.AcceptAction.Caption = "Schedule Hearing";
             dialogController.CancelAction.Caption = "Cancel";
 
-            dialogController.AcceptAction.Execute += (_, _) =>
+            dialogController.AcceptAction.Execute += async (_, _) =>
             {
                 // Validate: hearing date must be in the future
                 if (input.HearingDate <= DateTime.UtcNow)
@@ -420,10 +506,9 @@ namespace LemonLaw.Module.Controllers
                     $"Scheduling hearing for case {caseNumber}…",
                     InformationType.Info, 2000, InformationPosition.Top);
 
-                _ = Task.Run(async () =>
+                SetCaseActionBusy(true, "Scheduling...");
+                try
                 {
-                    try
-                    {
                         using var client = CreateHttpClient();
                         var payload = new
                         {
@@ -445,7 +530,7 @@ namespace LemonLaw.Module.Controllers
                                 Application.ShowViewStrategy.ShowMessage(
                                     $"✓ Hearing scheduled for {hearingDate:MMMM d, yyyy h:mm tt}. Consumer notified.",
                                     InformationType.Success, 6000, InformationPosition.Top);
-                                Application.MainWindow?.GetController<RefreshController>()?.RefreshAction.DoExecute();
+                                RefreshCurrentView(ApplicationStatus.HEARING_SCHEDULED.ToString());
                             }
                             else
                             {
@@ -457,12 +542,15 @@ namespace LemonLaw.Module.Controllers
                         {
                             Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
-                    }
-                });
+                }
+                catch (Exception ex)
+                {
+                    Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+                }
+                finally
+                {
+                    SetCaseActionBusy(false);
+                }
             };
 
             svp.Controllers.Add(dialogController);
@@ -471,7 +559,7 @@ namespace LemonLaw.Module.Controllers
 
         // ── Issue Decision ────────────────────────────────────────────────────
 
-        private void ExecuteIssueDecision()
+        private async void ExecuteIssueDecision()
         {
             if (View?.CurrentObject is not AppEntity app) return;
 
@@ -482,78 +570,52 @@ namespace LemonLaw.Module.Controllers
             var os = Application.CreateObjectSpace(typeof(IssueDecisionInput));
             var input = os.CreateObject<IssueDecisionInput>();
 
-            var detailView = Application.CreateDetailView(os, input);
-            detailView.Caption = $"Issue Decision — {caseNumber}";
-
-            var svp = new ShowViewParameters(detailView)
+            SetCaseActionBusy(true, "Issuing...");
+            try
             {
-                Context = TemplateContext.PopupWindow,
-                TargetWindow = TargetWindow.NewModalWindow,
-            };
-
-            var dialogController = new DialogController();
-            dialogController.AcceptAction.Caption = "Issue Decision";
-            dialogController.CancelAction.Caption = "Cancel";
-
-            dialogController.AcceptAction.Execute += (_, _) =>
-            {
-                var decisionType = input.DecisionType.ToString();
-                var decisionDate = input.DecisionDate;
-                var refundAmount = input.RefundAmount;
-                var complianceDeadline = input.ComplianceDeadline?.ToString("yyyy-MM-dd");
-
-                Application.ShowViewStrategy.ShowMessage(
-                    $"Issuing decision for case {caseNumber}…",
-                    InformationType.Info, 2000, InformationPosition.Top);
-
-                _ = Task.Run(async () =>
+                using var client = CreateHttpClient();
+                var payload = new
                 {
-                    try
+                    decisionType = input.DecisionType.ToString(),
+                    decisionDate = input.DecisionDate.ToString("yyyy-MM-dd"),
+                    refundAmount = input.RefundAmount,
+                    complianceDeadline = input.ComplianceDeadline?.ToString("yyyy-MM-dd"),
+                    decisionDocumentId = (Guid?)null
+                };
+
+                var response = await client.PostAsJsonAsync($"api/cases/{applicationId}/decisions", payload);
+                var body = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    using var doc = JsonDocument.Parse(body);
+                    var success = doc.RootElement.TryGetProperty("success", out var sv) && sv.GetBoolean();
+                    if (success)
                     {
-                        using var client = CreateHttpClient();
-                        var payload = new
-                        {
-                            decisionType,
-                            decisionDate = decisionDate.ToString("yyyy-MM-dd"),
-                            refundAmount,
-                            complianceDeadline,
-                            decisionDocumentId = (Guid?)null
-                        };
-
-                        var response = await client.PostAsJsonAsync($"api/cases/{applicationId}/decisions", payload);
-                        var body = await response.Content.ReadAsStringAsync();
-
-                        if (response.IsSuccessStatusCode)
-                        {
-                            using var doc = JsonDocument.Parse(body);
-                            var success = doc.RootElement.TryGetProperty("success", out var sv) && sv.GetBoolean();
-                            if (success)
-                            {
-                                Application.ShowViewStrategy.ShowMessage(
-                                    $"✓ Decision issued for case {caseNumber}. Consumer notified.",
-                                    InformationType.Success, 6000, InformationPosition.Top);
-                                Application.MainWindow?.GetController<RefreshController>()?.RefreshAction.DoExecute();
-                            }
-                            else
-                            {
-                                var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Unknown error";
-                                Application.ShowViewStrategy.ShowMessage($"Issue decision failed: {msg}", InformationType.Error, 5000, InformationPosition.Top);
-                            }
-                        }
-                        else
-                        {
-                            Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
-                        }
+                        Application.ShowViewStrategy.ShowMessage(
+                            $"✓ Decision issued for case {caseNumber}. Consumer notified.",
+                            InformationType.Success, 6000, InformationPosition.Top);
+                        RefreshCurrentView(ApplicationStatus.DECISION_ISSUED.ToString());
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+                        var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Unknown error";
+                        Application.ShowViewStrategy.ShowMessage($"Issue decision failed: {msg}", InformationType.Error, 5000, InformationPosition.Top);
                     }
-                });
-            };
-
-            svp.Controllers.Add(dialogController);
-            Application.ShowViewStrategy.ShowView(svp, new ShowViewSource(null, null));
+                }
+                else
+                {
+                    Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
+                }
+            }
+            catch (Exception ex)
+            {
+                Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+            }
+            finally
+            {
+                SetCaseActionBusy(false);
+            }
         }
 
         // ── Assign Case ───────────────────────────────────────────────────────
@@ -582,11 +644,11 @@ namespace LemonLaw.Module.Controllers
                 TargetWindow = TargetWindow.NewModalWindow,
             };
 
-            var dialogController = new DialogController();
+            var dialogController = Application.CreateController<DialogController>();
             dialogController.AcceptAction.Caption = "Assign";
             dialogController.CancelAction.Caption = "Cancel";
 
-            dialogController.AcceptAction.Execute += (_, _) =>
+            dialogController.AcceptAction.Execute += async (_, _) =>
             {
                 var selectedUser = listView.CurrentObject as XafAppUser;
                 if (selectedUser == null)
@@ -600,42 +662,44 @@ namespace LemonLaw.Module.Controllers
                 var staffId   = selectedUser.UserName;
                 var staffName = selectedUser.UserName;
 
-                _ = Task.Run(async () =>
+                SetCaseActionBusy(true, "Assigning...");
+                try
                 {
-                    try
-                    {
-                        using var client = CreateHttpClient();
-                        var payload = new { staffId, staffName };
-                        var response = await client.PutAsJsonAsync($"api/cases/{applicationId}/assign", payload);
-                        var body = await response.Content.ReadAsStringAsync();
+                    using var client = CreateHttpClient();
+                    var payload = new { staffId, staffName };
+                    var response = await client.PutAsJsonAsync($"api/cases/{applicationId}/assign", payload);
+                    var body = await response.Content.ReadAsStringAsync();
 
-                        if (response.IsSuccessStatusCode)
+                    if (response.IsSuccessStatusCode)
+                    {
+                        using var doc = JsonDocument.Parse(body);
+                        var success = doc.RootElement.TryGetProperty("success", out var sv) && sv.GetBoolean();
+                        if (success)
                         {
-                            using var doc = JsonDocument.Parse(body);
-                            var success = doc.RootElement.TryGetProperty("success", out var sv) && sv.GetBoolean();
-                            if (success)
-                            {
-                                Application.ShowViewStrategy.ShowMessage(
-                                    $"✓ Case {caseNumber} assigned to {staffName}.",
-                                    InformationType.Success, 5000, InformationPosition.Top);
-                                Application.MainWindow?.GetController<RefreshController>()?.RefreshAction.DoExecute();
-                            }
-                            else
-                            {
-                                var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Unknown error";
-                                Application.ShowViewStrategy.ShowMessage($"Assignment failed: {msg}", InformationType.Error, 5000, InformationPosition.Top);
-                            }
+                            Application.ShowViewStrategy.ShowMessage(
+                                $"✓ Case {caseNumber} assigned to {staffName}.",
+                                InformationType.Success, 5000, InformationPosition.Top);
+                            RefreshCurrentView();
                         }
                         else
                         {
-                            Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
+                            var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Unknown error";
+                            Application.ShowViewStrategy.ShowMessage($"Assignment failed: {msg}", InformationType.Error, 5000, InformationPosition.Top);
                         }
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+                        Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
                     }
-                });
+                }
+                catch (Exception ex)
+                {
+                    Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+                }
+                finally
+                {
+                    SetCaseActionBusy(false);
+                }
             };
 
             svp.Controllers.Add(dialogController);
@@ -677,6 +741,20 @@ namespace LemonLaw.Module.Controllers
                 ServerCertificateCustomValidationCallback = (_, _, _, _) => true
             };
             return new HttpClient(handler) { BaseAddress = new Uri(GetApiBaseUrl()) };
+        }
+
+        private void RefreshCurrentView(string? newStatus = null)
+        {
+            if (!string.IsNullOrWhiteSpace(newStatus)
+                && View?.CurrentObject is AppEntity app
+                && Enum.TryParse(newStatus, true, out ApplicationStatus parsedStatus))
+            {
+                app.Status = parsedStatus;
+                app.LastActivityAt = DateTime.UtcNow;
+            }
+
+            RebuildMenuItems();
+            Frame.GetController<RefreshController>()?.RefreshAction.DoExecute();
         }
 
         private string GetApiBaseUrl()

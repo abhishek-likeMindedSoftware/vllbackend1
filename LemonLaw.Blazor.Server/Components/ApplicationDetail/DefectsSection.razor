@@ -1,0 +1,106 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Core.Enums
+@using LemonLaw.Application.Repositories
+@using Microsoft.Extensions.DependencyInjection
+
+@inject IServiceProvider ServiceProvider
+
+<div class="ll-card-head" style="border-top:1px solid #f1f5f9;">
+    <p class="ll-card-title">Defects (@_items.Count)</p>
+    <button class="ll-btn ll-btn-ghost ll-btn-sm" type="button" @onclick="OpenNew">+ New</button>
+</div>
+<div style="padding:0;">
+    @if (!_items.Any()) { <p class="ll-table-empty">No defects recorded.</p> }
+    else
+    {
+        <table class="ll-table">
+            <thead><tr><th>Description</th><th>Category</th><th>First Occurrence</th><th>Ongoing</th><th style="width:50px;"></th></tr></thead>
+            <tbody>
+                @foreach (var item in _items.OrderBy(d => d.SortOrder))
+                {
+                    <tr>
+                        <td>@item.DefectDescription</td>
+                        <td>@EnumHelper.GetDescription(item.DefectCategory)</td>
+                        <td>@item.FirstOccurrenceDate.ToString("MM/dd/yyyy")</td>
+                        <td>@(item.IsOngoing ? "Yes" : "No")</td>
+                        <td><button class="ll-row-edit-btn" type="button" @onclick="() => OpenEdit(item)"><EditIcon Size="13" /></button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+<DxPopup @bind-Visible="_showEdit" HeaderText="@(_editId == null ? "New Defect" : "Edit Defect")" Width="560px" ShowFooter="true" CloseOnOutsideClick="false">
+    <BodyContentTemplate>
+        @if (_form != null)
+        {
+            <div class="ll-form-row"><div class="ll-form-group"><label class="ll-form-label">Description *</label><textarea class="ll-textarea" @bind="_form.DefectDescription"></textarea></div></div>
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Category</label>
+                    <select class="ll-select" @bind="_form.DefectCategory">
+                        @foreach (var v in Enum.GetValues<DefectCategory>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
+                    </select>
+                </div>
+                <div class="ll-form-group"><label class="ll-form-label">First Occurrence Date</label><input class="ll-input" type="date" @bind="_form.FirstOccurrenceDate" /></div>
+            </div>
+            <div class="ll-checkbox-row" style="margin-top:4px;">
+                <input type="checkbox" id="defect-ongoing-@_editId" @bind="_form.IsOngoing" />
+                <label for="defect-ongoing-@_editId">Defect is ongoing</label>
+            </div>
+            @if (_saveError != null) { <div class="ll-alert ll-alert-error" style="margin-top:10px;">@_saveError</div> }
+        }
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <button class="ll-btn ll-btn-ghost" type="button" @onclick="CloseEdit" disabled="@_saving">Cancel</button>
+        <button class="ll-btn ll-btn-primary" type="button" @onclick="SaveAsync" disabled="@_saving">@(_saving ? "Saving…" : "Save")</button>
+    </FooterContentTemplate>
+</DxPopup>
+
+@code {
+    [Parameter] public Guid ApplicationId { get; set; }
+    [Parameter] public IEnumerable<Defect>? InitialData { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private List<Defect> _items = new();
+    private DefectFormModel? _form;
+    private Guid? _editId;
+    private bool _showEdit, _saving;
+    private string? _saveError;
+
+    protected override void OnParametersSet() => _items = InitialData?.ToList() ?? new();
+
+    private void OpenNew() { _editId = null; _form = new(); _saveError = null; _showEdit = true; }
+    private void OpenEdit(Defect d) { _editId = d.Id; _form = new(d); _saveError = null; _showEdit = true; }
+    private void CloseEdit() { _showEdit = false; _form = null; }
+
+    private async Task SaveAsync()
+    {
+        if (_form == null) return;
+        _saving = true; _saveError = null;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IGenericRepository<Defect>>();
+            if (_editId == null) { var e = new Defect { ApplicationId = ApplicationId }; _form.ApplyTo(e); await repo.AddAsync(e); await repo.SaveChangesAsync(); _items.Add(e); }
+            else { var e = _items.First(x => x.Id == _editId); _form.ApplyTo(e); repo.Update(e); await repo.SaveChangesAsync(); }
+            _showEdit = false;
+            await OnSaved.InvokeAsync();
+        }
+        catch (Exception ex) { _saveError = ex.Message; }
+        finally { _saving = false; }
+    }
+
+    private class DefectFormModel
+    {
+        public string DefectDescription { get; set; } = string.Empty;
+        public DefectCategory DefectCategory { get; set; }
+        public DateOnly FirstOccurrenceDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+        public bool IsOngoing { get; set; }
+
+        public DefectFormModel() { }
+        public DefectFormModel(Defect d) { DefectDescription = d.DefectDescription; DefectCategory = d.DefectCategory; FirstOccurrenceDate = d.FirstOccurrenceDate; IsOngoing = d.IsOngoing; }
+        public void ApplyTo(Defect d) { d.DefectDescription = DefectDescription; d.DefectCategory = DefectCategory; d.FirstOccurrenceDate = FirstOccurrenceDate; d.IsOngoing = IsOngoing; }
+    }
+}

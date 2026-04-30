@@ -1,0 +1,109 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Core.Enums
+@using LemonLaw.Application.Repositories
+@using Microsoft.Extensions.DependencyInjection
+
+@inject IServiceProvider ServiceProvider
+
+<div class="ll-card-head" style="border-top:1px solid #f1f5f9;">
+    <p class="ll-card-title">Expenses (@_items.Count) — Total: @_items.Sum(e => e.Amount).ToString("C")</p>
+    <button class="ll-btn ll-btn-ghost ll-btn-sm" type="button" @onclick="OpenNew">+ New</button>
+</div>
+<div style="padding:0;">
+    @if (!_items.Any()) { <p class="ll-table-empty">No expenses recorded.</p> }
+    else
+    {
+        <table class="ll-table">
+            <thead><tr><th>Type</th><th>Date</th><th>Amount</th><th>Description</th><th>Receipt</th><th style="width:50px;"></th></tr></thead>
+            <tbody>
+                @foreach (var item in _items.OrderBy(e => e.ExpenseDate))
+                {
+                    <tr>
+                        <td>@EnumHelper.GetDescription(item.ExpenseType)</td>
+                        <td>@(item.ExpenseDate?.ToString("MM/dd/yyyy") ?? "—")</td>
+                        <td>@item.Amount.ToString("C")</td>
+                        <td>@(item.Description ?? "—")</td>
+                        <td>@(item.ReceiptUploaded ? "✓" : "—")</td>
+                        <td><button class="ll-row-edit-btn" type="button" @onclick="() => OpenEdit(item)"><EditIcon Size="13" /></button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+<DxPopup @bind-Visible="_showEdit" HeaderText="@(_editId == null ? "New Expense" : "Edit Expense")" Width="520px" ShowFooter="true" CloseOnOutsideClick="false">
+    <BodyContentTemplate>
+        @if (_form != null)
+        {
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Expense Type *</label>
+                    <select class="ll-select" @bind="_form.ExpenseType">
+                        @foreach (var v in Enum.GetValues<ExpenseType>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
+                    </select>
+                </div>
+                <div class="ll-form-group"><label class="ll-form-label">Date</label><input class="ll-input" type="date" @bind="_form.ExpenseDate" /></div>
+            </div>
+            <div class="ll-form-row"><div class="ll-form-group"><label class="ll-form-label">Amount ($) *</label><input class="ll-input" type="number" step="0.01" @bind="_form.Amount" /></div></div>
+            <div class="ll-form-row"><div class="ll-form-group"><label class="ll-form-label">Description</label><textarea class="ll-textarea" @bind="_form.Description"></textarea></div></div>
+            <div class="ll-checkbox-row" style="margin-top:4px;">
+                <input type="checkbox" id="expense-receipt-@_editId" @bind="_form.ReceiptUploaded" />
+                <label for="expense-receipt-@_editId">Receipt uploaded</label>
+            </div>
+            @if (_saveError != null) { <div class="ll-alert ll-alert-error" style="margin-top:10px;">@_saveError</div> }
+        }
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <button class="ll-btn ll-btn-ghost" type="button" @onclick="CloseEdit" disabled="@_saving">Cancel</button>
+        <button class="ll-btn ll-btn-primary" type="button" @onclick="SaveAsync" disabled="@_saving">@(_saving ? "Saving…" : "Save")</button>
+    </FooterContentTemplate>
+</DxPopup>
+
+@code {
+    [Parameter] public Guid ApplicationId { get; set; }
+    [Parameter] public IEnumerable<Expense>? InitialData { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private List<Expense> _items = new();
+    private ExpenseFormModel? _form;
+    private Guid? _editId;
+    private bool _showEdit, _saving;
+    private string? _saveError;
+
+    protected override void OnParametersSet() => _items = InitialData?.ToList() ?? new();
+
+    private void OpenNew() { _editId = null; _form = new(); _saveError = null; _showEdit = true; }
+    private void OpenEdit(Expense e) { _editId = e.Id; _form = new(e); _saveError = null; _showEdit = true; }
+    private void CloseEdit() { _showEdit = false; _form = null; }
+
+    private async Task SaveAsync()
+    {
+        if (_form == null) return;
+        _saving = true; _saveError = null;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IGenericRepository<Expense>>();
+            if (_editId == null) { var e = new Expense { ApplicationId = ApplicationId }; _form.ApplyTo(e); await repo.AddAsync(e); await repo.SaveChangesAsync(); _items.Add(e); }
+            else { var e = _items.First(x => x.Id == _editId); _form.ApplyTo(e); repo.Update(e); await repo.SaveChangesAsync(); }
+            _showEdit = false;
+            await OnSaved.InvokeAsync();
+        }
+        catch (Exception ex) { _saveError = ex.Message; }
+        finally { _saving = false; }
+    }
+
+    private class ExpenseFormModel
+    {
+        public ExpenseType ExpenseType { get; set; }
+        public DateOnly? ExpenseDate { get; set; }
+        public decimal Amount { get; set; }
+        public string? Description { get; set; }
+        public bool ReceiptUploaded { get; set; }
+
+        public ExpenseFormModel() { }
+        public ExpenseFormModel(Expense e) { ExpenseType = e.ExpenseType; ExpenseDate = e.ExpenseDate; Amount = e.Amount; Description = e.Description; ReceiptUploaded = e.ReceiptUploaded; }
+        public void ApplyTo(Expense e) { e.ExpenseType = ExpenseType; e.ExpenseDate = ExpenseDate; e.Amount = Amount; e.Description = Description; e.ReceiptUploaded = ReceiptUploaded; }
+    }
+}

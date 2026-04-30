@@ -1,0 +1,56 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Core.Enums
+
+<div class="ll-card-head" style="border-top:1px solid #f1f5f9;">
+    <p class="ll-card-title">Case Timeline (@_items.Count events)</p>
+</div>
+<div class="ll-card-body">
+    @if (!_items.Any()) { <p class="ll-field-empty">No events recorded.</p> }
+    else
+    {
+        <div class="ll-timeline">
+            @foreach (var item in _items.OrderByDescending(e => e.EventTimestamp))
+            {
+                <div class="ll-tl-item">
+                    <span class="ll-tl-dot" style="background:@GetDotColor(item.EventType);"></span>
+                    <div class="ll-tl-body">
+                        <p class="ll-tl-desc">@item.Description</p>
+                        <p class="ll-tl-meta">
+                            @item.ActorDisplayName &nbsp;·&nbsp;
+                            @item.EventTimestamp.ToLocalTime().ToString("MMM d, yyyy h:mm tt") &nbsp;·&nbsp;
+                            @item.EventType.ToString().Replace("_", " ")
+                        </p>
+                        @if (item.PreviousValue != null || item.NewValue != null)
+                        {
+                            <p class="ll-tl-meta" style="margin-top:2px;">
+                                @if (item.PreviousValue != null) { <span>From: @item.PreviousValue</span> }
+                                @if (item.NewValue != null) { <span>&nbsp;→ @item.NewValue</span> }
+                            </p>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public IEnumerable<CaseEvent>? InitialData { get; set; }
+
+    private List<CaseEvent> _items = new();
+
+    protected override void OnParametersSet() => _items = InitialData?.ToList() ?? new();
+
+    private string GetDotColor(CaseEventType t) => t switch
+    {
+        CaseEventType.STATUS_CHANGE      => "#ea580c",
+        CaseEventType.DECISION_ISSUED    => "#16a34a",
+        CaseEventType.HEARING_SCHEDULED  => "#7c3aed",
+        CaseEventType.DEALER_RESPONDED   => "#2563eb",
+        CaseEventType.DOCUMENT_UPLOADED  => "#0891b2",
+        CaseEventType.DOCUMENT_ACCEPTED  => "#16a34a",
+        CaseEventType.DOCUMENT_REJECTED  => "#dc2626",
+        CaseEventType.NOTE_ADDED         => "#94a3b8",
+        _                                => "#cbd5e1"
+    };
+}

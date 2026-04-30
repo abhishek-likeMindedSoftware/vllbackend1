@@ -1,0 +1,131 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Core.Enums
+@using LemonLaw.Application.Repositories
+@using Microsoft.Extensions.DependencyInjection
+
+@inject IServiceProvider ServiceProvider
+
+<div class="ll-card">
+    <div class="ll-card-head">
+        <p class="ll-card-title">Applicant</p>
+        <button class="ll-edit-btn" type="button" @onclick="OpenEdit"><EditIcon /> Edit</button>
+    </div>
+    <div class="ll-card-body">
+        @if (_applicant == null)
+        {
+            <p class="ll-field-empty">No applicant information on file.</p>
+        }
+        else
+        {
+            <div class="ll-fields ll-fields-3">
+                <div><p class="ll-field-label">First Name</p><p class="ll-field-value">@_applicant.FirstName</p></div>
+                <div><p class="ll-field-label">Middle Name</p><p class="ll-field-value @(_applicant.MiddleName == null ? "ll-field-empty" : "")">@(_applicant.MiddleName ?? "—")</p></div>
+                <div><p class="ll-field-label">Last Name</p><p class="ll-field-value">@_applicant.LastName</p></div>
+                <div><p class="ll-field-label">Email</p><p class="ll-field-value">@_applicant.EmailAddress</p></div>
+                <div><p class="ll-field-label">Phone</p><p class="ll-field-value">@_applicant.PhoneNumber (@_applicant.PhoneType)</p></div>
+                <div><p class="ll-field-label">Preferred Contact</p><p class="ll-field-value">@EnumHelper.GetDescription(_applicant.PreferredContact)</p></div>
+                <div><p class="ll-field-label">Address</p><p class="ll-field-value">@_applicant.AddressLine1@(_applicant.AddressLine2 != null ? ", " + _applicant.AddressLine2 : "")</p></div>
+                <div><p class="ll-field-label">City / State / ZIP</p><p class="ll-field-value">@_applicant.City, @_applicant.AddressState @_applicant.ZipCode</p></div>
+            </div>
+        }
+    </div>
+</div>
+
+<DxPopup @bind-Visible="_showEdit" HeaderText="Edit Applicant" Width="700px" ShowFooter="true" CloseOnOutsideClick="false" Scrollable="true">
+    <BodyContentTemplate>
+        @if (_form != null)
+        {
+            <div class="ll-form-row ll-form-row-3">
+                <div class="ll-form-group"><label class="ll-form-label">First Name *</label><input class="ll-input" @bind="_form.FirstName" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">Middle Name</label><input class="ll-input" @bind="_form.MiddleName" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">Last Name *</label><input class="ll-input" @bind="_form.LastName" /></div>
+            </div>
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group"><label class="ll-form-label">Email Address</label><input class="ll-input" type="email" @bind="_form.EmailAddress" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">Phone Number</label><input class="ll-input" @bind="_form.PhoneNumber" /></div>
+            </div>
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Phone Type</label>
+                    <select class="ll-select" @bind="_form.PhoneType">
+                        @foreach (var v in Enum.GetValues<PhoneType>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
+                    </select>
+                </div>
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Preferred Contact</label>
+                    <select class="ll-select" @bind="_form.PreferredContact">
+                        @foreach (var v in Enum.GetValues<PreferredContactMethod>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
+                    </select>
+                </div>
+            </div>
+            <div class="ll-form-row"><div class="ll-form-group"><label class="ll-form-label">Address Line 1</label><input class="ll-input" @bind="_form.AddressLine1" /></div></div>
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group"><label class="ll-form-label">Address Line 2</label><input class="ll-input" @bind="_form.AddressLine2" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">City</label><input class="ll-input" @bind="_form.City" /></div>
+            </div>
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group"><label class="ll-form-label">State</label><input class="ll-input" @bind="_form.AddressState" maxlength="2" /></div>
+                <div class="ll-form-group"><label class="ll-form-label">ZIP Code</label><input class="ll-input" @bind="_form.ZipCode" /></div>
+            </div>
+            @if (_saveError != null) { <div class="ll-alert ll-alert-error">@_saveError</div> }
+        }
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <button class="ll-btn ll-btn-ghost" type="button" @onclick="CloseEdit" disabled="@_saving">Cancel</button>
+        <button class="ll-btn ll-btn-primary" type="button" @onclick="SaveAsync" disabled="@_saving">@(_saving ? "Saving…" : "Save")</button>
+    </FooterContentTemplate>
+</DxPopup>
+
+@code {
+    [Parameter] public Guid ApplicationId { get; set; }
+    [Parameter] public Applicant? InitialData { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private Applicant? _applicant;
+    private ApplicantFormModel? _form;
+    private bool _showEdit, _saving;
+    private string? _saveError;
+
+    protected override void OnParametersSet() => _applicant = InitialData;
+
+    private void OpenEdit() { _form = _applicant != null ? new(_applicant) : new(); _saveError = null; _showEdit = true; }
+    private void CloseEdit() { _showEdit = false; _form = null; }
+
+    private async Task SaveAsync()
+    {
+        if (_form == null) return;
+        _saving = true; _saveError = null;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IGenericRepository<Applicant>>();
+            if (_applicant == null) { _applicant = new Applicant { ApplicationId = ApplicationId }; _form.ApplyTo(_applicant); await repo.AddAsync(_applicant); }
+            else { _form.ApplyTo(_applicant); repo.Update(_applicant); }
+            await repo.SaveChangesAsync();
+            _showEdit = false;
+            await OnSaved.InvokeAsync();
+        }
+        catch (Exception ex) { _saveError = ex.Message; }
+        finally { _saving = false; }
+    }
+
+    private class ApplicantFormModel
+    {
+        public string FirstName { get; set; } = string.Empty;
+        public string? MiddleName { get; set; }
+        public string LastName { get; set; } = string.Empty;
+        public string EmailAddress { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
+        public PhoneType PhoneType { get; set; }
+        public PreferredContactMethod PreferredContact { get; set; }
+        public string AddressLine1 { get; set; } = string.Empty;
+        public string? AddressLine2 { get; set; }
+        public string City { get; set; } = string.Empty;
+        public string AddressState { get; set; } = string.Empty;
+        public string ZipCode { get; set; } = string.Empty;
+
+        public ApplicantFormModel() { }
+        public ApplicantFormModel(Applicant a) { FirstName = a.FirstName; MiddleName = a.MiddleName; LastName = a.LastName; EmailAddress = a.EmailAddress; PhoneNumber = a.PhoneNumber; PhoneType = a.PhoneType; PreferredContact = a.PreferredContact; AddressLine1 = a.AddressLine1; AddressLine2 = a.AddressLine2; City = a.City; AddressState = a.AddressState; ZipCode = a.ZipCode; }
+        public void ApplyTo(Applicant a) { a.FirstName = FirstName; a.MiddleName = MiddleName; a.LastName = LastName; a.EmailAddress = EmailAddress; a.PhoneNumber = PhoneNumber; a.PhoneType = PhoneType; a.PreferredContact = PreferredContact; a.AddressLine1 = AddressLine1; a.AddressLine2 = AddressLine2; a.City = City; a.AddressState = AddressState; a.ZipCode = ZipCode; }
+    }
+}
