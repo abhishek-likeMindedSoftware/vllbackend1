@@ -1,15 +1,15 @@
 @using LemonLaw.Core.Entities
 @using LemonLaw.Core.Enums
 
-<div class="ll-card-head" style="border-top:1px solid #f1f5f9;">
-    <p class="ll-card-title">Case Timeline (@_items.Count events)</p>
+<div class="ll-section-toolbar">
+    <input class="ll-search-input" type="search" placeholder="Search timeline…" @bind="_search" @bind:event="oninput" />
 </div>
 <div class="ll-card-body">
-    @if (!_items.Any()) { <p class="ll-field-empty">No events recorded.</p> }
+    @if (!_filtered.Any()) { <p class="ll-field-empty">@(_search.Length > 0 ? "No results." : "No events recorded.")</p> }
     else
     {
         <div class="ll-timeline">
-            @foreach (var item in _items.OrderByDescending(e => e.EventTimestamp))
+            @foreach (var item in _filtered.OrderByDescending(e => e.EventTimestamp))
             {
                 <div class="ll-tl-item">
                     <span class="ll-tl-dot" style="background:@GetDotColor(item.EventType);"></span>
@@ -38,6 +38,13 @@
     [Parameter] public IEnumerable<CaseEvent>? InitialData { get; set; }
 
     private List<CaseEvent> _items = new();
+    private string _search = string.Empty;
+    private List<CaseEvent> _filtered => string.IsNullOrWhiteSpace(_search)
+        ? _items
+        : _items.Where(e =>
+            e.Description.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            (e.ActorDisplayName ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            e.EventType.ToString().Contains(_search, StringComparison.OrdinalIgnoreCase)).ToList();
 
     protected override void OnParametersSet() => _items = InitialData?.ToList() ?? new();
 

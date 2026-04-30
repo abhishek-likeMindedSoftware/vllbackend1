@@ -125,5 +125,29 @@
         </LayoutGroup>
       </Layout>
     </DetailView>
+    <!--
+      Decision Detail View — custom component layout.
+      All default property editors are hidden via [VisibleInDetailView(false)] on the entity.
+      Only DetailPanel is shown, which renders the full DecisionDetailView Razor component.
+      The inherited AuditDetails fields (CreatedDate, ModifiedDate, etc.) remain visible
+      below the component as the standard XAF audit section.
+    -->
+    <DetailView Id="Decision_DetailView" IsNewNode="True">
+      <Items IsNewNode="True">
+        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel"
+                        PropertyEditorType="LemonLaw.Blazor.Server.Editors.DecisionDetailPropertyEditor"
+                        Caption="" IsNewNode="True" />
+      </Items>
+      <Layout IsNewNode="True">
+        <LayoutGroup Id="Main" ShowCaption="False" IsNewNode="True">
+          <LayoutGroup Id="SimpleEditors" ShowCaption="False" RelativeSize="100" IsNewNode="True">
+            <LayoutGroup Id="Decision" ShowCaption="False" RelativeSize="100" IsNewNode="True">
+              <LayoutItem Id="DetailPanel" ViewItem="DetailPanel" Index="0"
+                          RelativeSize="100" ShowCaption="False" IsNewNode="True" />
+            </LayoutGroup>
+          </LayoutGroup>
+        </LayoutGroup>
+      </Layout>
+    </DetailView>
   </Views>
 </Application>

@@ -235,7 +235,7 @@ namespace LemonLaw.Infrastructure.Data
                 e.Property(x => x.TokenType).HasConversion<string>();
                 e.HasOne(x => x.Application).WithOne(x => x.Token)
                     .HasForeignKey<ApplicationToken>(x => x.ApplicationId)
-                    .OnDelete(DeleteBehavior.NoAction);
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // CaseEvent — append-only, no soft delete

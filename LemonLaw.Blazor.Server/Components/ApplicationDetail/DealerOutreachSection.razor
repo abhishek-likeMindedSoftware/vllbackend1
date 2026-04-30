@@ -1,17 +1,17 @@
 @using LemonLaw.Core.Entities
 @using LemonLaw.Core.Enums
 
-<div class="ll-card-head" style="border-top:1px solid #f1f5f9;">
-    <p class="ll-card-title">Dealer Outreach (@_items.Count)</p>
+<div class="ll-section-toolbar">
+    <input class="ll-search-input" type="search" placeholder="Search dealer outreach…" @bind="_search" @bind:event="oninput" />
 </div>
 <div style="padding:0;">
-    @if (!_items.Any()) { <p class="ll-table-empty">No dealer outreach sent.</p> }
+    @if (!_filtered.Any()) { <p class="ll-table-empty">@(_search.Length > 0 ? "No results." : "No dealer outreach sent.")</p> }
     else
     {
         <table class="ll-table">
             <thead><tr><th>Dealer</th><th>Email</th><th>Type</th><th>Sent At</th><th>Response Deadline</th><th>Status</th><th>Response</th></tr></thead>
             <tbody>
-                @foreach (var item in _items.OrderByDescending(o => o.SentAt))
+                @foreach (var item in _filtered.OrderByDescending(o => o.SentAt))
                 {
                     <tr>
                         <td>@item.DealerName</td>
@@ -33,6 +33,14 @@
     [Parameter] public IEnumerable<DealerOutreach>? InitialData { get; set; }
 
     private List<DealerOutreach> _items = new();
+    private string _search = string.Empty;
+    private List<DealerOutreach> _filtered => string.IsNullOrWhiteSpace(_search)
+        ? _items
+        : _items.Where(o =>
+            o.DealerName.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            o.DealerEmail.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            o.Status.ToString().Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            o.OutreachType.ToString().Contains(_search, StringComparison.OrdinalIgnoreCase)).ToList();
 
     protected override void OnParametersSet() => _items = InitialData?.ToList() ?? new();
 

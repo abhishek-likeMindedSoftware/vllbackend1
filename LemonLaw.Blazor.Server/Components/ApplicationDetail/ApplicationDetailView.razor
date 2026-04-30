@@ -4,8 +4,10 @@
 @using LemonLaw.Application.Repositories
 @using LemonLaw.Shared.DTOs
 @using Microsoft.Extensions.DependencyInjection
+@using Microsoft.JSInterop
 
 @inject IServiceProvider ServiceProvider
+@inject IJSRuntime JS
 
 <div class="ll-wrap">
 
@@ -87,9 +89,10 @@
         <DecisionSection ApplicationId="_app.Id" InitialData="_app.Decision" OnSaved="RefreshAsync" />
 
         @* ── Tabbed 1:M Sections ──────────────────────────────────────────────── *@
-        <div class="ll-card" style="overflow:visible;">
-            <div class="ll-card-head" style="padding:0;border-bottom:1px solid #e2e8f0;background:#fafafa;">
-                <div class="ll-tabs">
+        <div class="ll-card" style="overflow:hidden;">
+            <div class="ll-tabs-wrapper">
+                <button class="ll-tabs-arrow ll-tabs-arrow-left" type="button" @onclick="ScrollTabsLeft" aria-label="Scroll tabs left">&#8249;</button>
+                <div class="ll-tabs" id="ll-tabs-strip">
                     @foreach (var tab in _tabs)
                     {
                         <button type="button" class="ll-tab @(_activeTab == tab.Key ? "ll-tab-active" : "")" @onclick="() => _activeTab = tab.Key">
@@ -98,18 +101,19 @@
                         </button>
                     }
                 </div>
+                <button class="ll-tabs-arrow ll-tabs-arrow-right" type="button" @onclick="ScrollTabsRight" aria-label="Scroll tabs right">&#8250;</button>
             </div>
             <div style="overflow:visible;">
                 @switch (_activeTab)
                 {
-                    case "defects":        <DefectsSection ApplicationId="_app.Id" InitialData="_app.Defects" OnSaved="RefreshAsync" /> break;
-                    case "repairs":        <RepairAttemptsSection ApplicationId="_app.Id" InitialData="_app.RepairAttempts" OnSaved="RefreshAsync" /> break;
-                    case "expenses":       <ExpensesSection ApplicationId="_app.Id" InitialData="_app.Expenses" OnSaved="RefreshAsync" /> break;
-                    case "hearings":       <HearingsSection ApplicationId="_app.Id" InitialData="_app.Hearings" OnSaved="RefreshAsync" /> break;
-                    case "documents":      <DocumentsSection ApplicationId="_app.Id" InitialData="_app.Documents" OnSaved="RefreshAsync" /> break;
+                    case "defects":        <DefectsSection ApplicationId="_app.Id" InitialData="_app.Defects" OnCountChanged="OnDefectsCountChanged" /> break;
+                    case "repairs":        <RepairAttemptsSection ApplicationId="_app.Id" InitialData="_app.RepairAttempts" OnCountChanged="OnRepairsCountChanged" /> break;
+                    case "expenses":       <ExpensesSection ApplicationId="_app.Id" InitialData="_app.Expenses" OnCountChanged="OnExpensesCountChanged" /> break;
+                    case "hearings":       <HearingsSection ApplicationId="_app.Id" InitialData="_app.Hearings" OnCountChanged="OnHearingsCountChanged" /> break;
+                    case "documents":      <DocumentsSection ApplicationId="_app.Id" InitialData="_app.Documents" OnCountChanged="OnDocumentsCountChanged" /> break;
                     case "correspondence": <CorrespondenceSection ApplicationId="_app.Id" InitialData="_app.Correspondences" /> break;
                     case "outreach":       <DealerOutreachSection ApplicationId="_app.Id" InitialData="_app.DealerOutreaches" /> break;
-                    case "notes":          <NotesSection ApplicationId="_app.Id" InitialData="_app.Notes" OnSaved="RefreshAsync" /> break;
+                    case "notes":          <NotesSection ApplicationId="_app.Id" InitialData="_app.Notes" OnCountChanged="OnNotesCountChanged" /> break;
                     case "timeline":       <CaseTimelineSection InitialData="_app.Events" /> break;
                 }
             </div>
@@ -269,6 +273,23 @@
 
     private void OpenAppInfoEdit() { if (_app == null) return; _appInfoForm = new(_app); _appInfoError = null; _showAppInfoEdit = true; }
     private void CloseAppInfoEdit() { _showAppInfoEdit = false; _appInfoForm = null; }
+
+    private void UpdateTabCount(string key, int count)
+    {
+        var idx = _tabs.FindIndex(t => t.Key == key);
+        if (idx >= 0) _tabs[idx] = _tabs[idx] with { Count = count };
+        StateHasChanged();
+    }
+
+    private void OnDefectsCountChanged(int c)   => UpdateTabCount("defects",   c);
+    private void OnRepairsCountChanged(int c)    => UpdateTabCount("repairs",   c);
+    private void OnExpensesCountChanged(int c)   => UpdateTabCount("expenses",  c);
+    private void OnHearingsCountChanged(int c)   => UpdateTabCount("hearings",  c);
+    private void OnDocumentsCountChanged(int c)  => UpdateTabCount("documents", c);
+    private void OnNotesCountChanged(int c)      => UpdateTabCount("notes",     c);
+
+    private async Task ScrollTabsLeft()  => await JS.InvokeVoidAsync("eval", "document.getElementById('ll-tabs-strip').scrollBy({left:-160,behavior:'smooth'})");
+    private async Task ScrollTabsRight() => await JS.InvokeVoidAsync("eval", "document.getElementById('ll-tabs-strip').scrollBy({left:160,behavior:'smooth'})");
 
     private async Task SaveAppInfoAsync()
     {
