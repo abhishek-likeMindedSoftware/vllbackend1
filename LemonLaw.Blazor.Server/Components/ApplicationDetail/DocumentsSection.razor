@@ -13,18 +13,17 @@
     else
     {
         <table class="ll-table">
-            <thead><tr><th>File Name</th><th>Type</th><th>Uploaded By</th><th>Uploaded At</th><th>Status</th><th>Virus Scan</th><th style="width:50px;"></th></tr></thead>
+            <thead><tr><th>File Name</th><th>Type</th><th>Uploaded By</th><th>Uploaded At</th><th>Status</th><th>Virus Scan</th></tr></thead>
             <tbody>
                 @foreach (var item in _filtered.OrderByDescending(d => d.UploadedAt))
                 {
-                    <tr>
+                    <tr class="ll-row-clickable" @onclick="() => OnOpenDetail.InvokeAsync(item.Id)">
                         <td>@item.FileName</td>
                         <td>@EnumHelper.GetDescription(item.DocumentType)</td>
                         <td>@EnumHelper.GetDescription(item.UploadedByRole)</td>
                         <td>@item.UploadedAt.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt")</td>
                         <td><span class="ll-badge @GetDocStatusClass(item.Status)">@EnumHelper.GetDescription(item.Status)</span></td>
                         <td>@EnumHelper.GetDescription(item.VirusScanResult)</td>
-                        <td><button class="ll-row-edit-btn" type="button" @onclick="() => OpenEdit(item)"><EditIcon Size="13" /></button></td>
                     </tr>
                 }
             </tbody>
@@ -75,6 +74,7 @@
     [Parameter] public Guid ApplicationId { get; set; }
     [Parameter] public IEnumerable<ApplicationDocument>? InitialData { get; set; }
     [Parameter] public EventCallback<int> OnCountChanged { get; set; }
+    [Parameter] public EventCallback<Guid> OnOpenDetail { get; set; }
 
     private List<ApplicationDocument> _items = new();
     private string _search = string.Empty;

@@ -13,18 +13,17 @@
     else
     {
         <table class="ll-table">
-            <thead><tr><th>Date</th><th>Facility</th><th>Defects Addressed</th><th>RO #</th><th>Successful</th><th>Days OOS</th><th style="width:50px;"></th></tr></thead>
+            <thead><tr><th>Date</th><th>Facility</th><th>Defects Addressed</th><th>RO #</th><th>Successful</th><th>Days OOS</th></tr></thead>
             <tbody>
                 @foreach (var item in _filtered.OrderBy(r => r.RepairDate))
                 {
-                    <tr>
+                    <tr class="ll-row-clickable" @onclick="() => OnOpenDetail.InvokeAsync(item.Id)">
                         <td>@item.RepairDate.ToString("MM/dd/yyyy")</td>
                         <td>@item.RepairFacilityName</td>
                         <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@item.DefectsAddressed</td>
                         <td>@(item.RoNumber ?? "—")</td>
                         <td>@(item.RepairSuccessful ? "Yes" : "No")</td>
                         <td>@(item.DaysOutOfService?.ToString() ?? "—")</td>
-                        <td><button class="ll-row-edit-btn" type="button" @onclick="() => OpenEdit(item)"><EditIcon Size="13" /></button></td>
                     </tr>
                 }
             </tbody>
@@ -66,6 +65,7 @@
     [Parameter] public Guid ApplicationId { get; set; }
     [Parameter] public IEnumerable<RepairAttempt>? InitialData { get; set; }
     [Parameter] public EventCallback<int> OnCountChanged { get; set; }
+    [Parameter] public EventCallback<Guid> OnOpenDetail { get; set; }
 
     private List<RepairAttempt> _items = new();
     private string _search = string.Empty;

@@ -14,17 +14,16 @@
     else
     {
         <table class="ll-table">
-            <thead><tr><th>Date</th><th>Format</th><th>Location / URL</th><th>Arbitrator</th><th>Outcome</th><th style="width:50px;"></th></tr></thead>
+            <thead><tr><th>Date</th><th>Format</th><th>Location / URL</th><th>Arbitrator</th><th>Outcome</th></tr></thead>
             <tbody>
                 @foreach (var item in _filtered.OrderByDescending(h => h.HearingDate))
                 {
-                    <tr>
+                    <tr class="ll-row-clickable" @onclick="() => OnOpenDetail.InvokeAsync(item.Id)">
                         <td>@item.HearingDate.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt")</td>
                         <td>@EnumHelper.GetDescription(item.HearingFormat)</td>
                         <td>@(item.HearingLocation ?? "—")</td>
                         <td>@(item.ArbitratorName ?? "—")</td>
                         <td>@EnumHelper.GetDescription(item.Outcome)</td>
-                        <td><button class="ll-row-edit-btn" type="button" @onclick="() => OpenEdit(item)"><EditIcon Size="13" /></button></td>
                     </tr>
                 }
             </tbody>
@@ -85,6 +84,7 @@
     [Parameter] public Guid ApplicationId { get; set; }
     [Parameter] public IEnumerable<Hearing>? InitialData { get; set; }
     [Parameter] public EventCallback<int> OnCountChanged { get; set; }
+    [Parameter] public EventCallback<Guid> OnOpenDetail { get; set; }
 
     private List<Hearing> _items = new();
     private string _search = string.Empty;

@@ -14,16 +14,15 @@
     else
     {
         <table class="ll-table">
-            <thead><tr><th>Description</th><th>Category</th><th>First Occurrence</th><th>Ongoing</th><th style="width:50px;"></th></tr></thead>
+            <thead><tr><th>Description</th><th>Category</th><th>First Occurrence</th><th>Ongoing</th></tr></thead>
             <tbody>
                 @foreach (var item in _filtered.OrderBy(d => d.SortOrder))
                 {
-                    <tr>
+                    <tr class="ll-row-clickable" @onclick="() => OnOpenDetail.InvokeAsync(item.Id)">
                         <td>@item.DefectDescription</td>
                         <td>@EnumHelper.GetDescription(item.DefectCategory)</td>
                         <td>@item.FirstOccurrenceDate.ToString("MM/dd/yyyy")</td>
                         <td>@(item.IsOngoing ? "Yes" : "No")</td>
-                        <td><button class="ll-row-edit-btn" type="button" @onclick="() => OpenEdit(item)"><EditIcon Size="13" /></button></td>
                     </tr>
                 }
             </tbody>
@@ -62,6 +61,7 @@
     [Parameter] public Guid ApplicationId { get; set; }
     [Parameter] public IEnumerable<Defect>? InitialData { get; set; }
     [Parameter] public EventCallback<int> OnCountChanged { get; set; }
+    [Parameter] public EventCallback<Guid> OnOpenDetail { get; set; }
 
     private List<Defect> _items = new();
     private string _search = string.Empty;

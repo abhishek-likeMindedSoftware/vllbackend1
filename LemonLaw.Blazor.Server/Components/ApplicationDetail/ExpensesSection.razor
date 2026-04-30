@@ -14,17 +14,16 @@
     else
     {
         <table class="ll-table">
-            <thead><tr><th>Type</th><th>Date</th><th>Amount</th><th>Description</th><th>Receipt</th><th style="width:50px;"></th></tr></thead>
+            <thead><tr><th>Type</th><th>Date</th><th>Amount</th><th>Description</th><th>Receipt</th></tr></thead>
             <tbody>
                 @foreach (var item in _filtered.OrderBy(e => e.ExpenseDate))
                 {
-                    <tr>
+                    <tr class="ll-row-clickable" @onclick="() => OnOpenDetail.InvokeAsync(item.Id)">
                         <td>@EnumHelper.GetDescription(item.ExpenseType)</td>
                         <td>@(item.ExpenseDate?.ToString("MM/dd/yyyy") ?? "—")</td>
                         <td>@item.Amount.ToString("C")</td>
                         <td>@(item.Description ?? "—")</td>
                         <td>@(item.ReceiptUploaded ? "✓" : "—")</td>
-                        <td><button class="ll-row-edit-btn" type="button" @onclick="() => OpenEdit(item)"><EditIcon Size="13" /></button></td>
                     </tr>
                 }
             </tbody>
@@ -64,6 +63,7 @@
     [Parameter] public Guid ApplicationId { get; set; }
     [Parameter] public IEnumerable<Expense>? InitialData { get; set; }
     [Parameter] public EventCallback<int> OnCountChanged { get; set; }
+    [Parameter] public EventCallback<Guid> OnOpenDetail { get; set; }
 
     private List<Expense> _items = new();
     private string _search = string.Empty;
