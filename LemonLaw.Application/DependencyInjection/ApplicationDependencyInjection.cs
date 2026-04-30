@@ -9,7 +9,14 @@ public static class ApplicationDependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddMemoryCache();
-        services.AddHttpClient("VinApi");
+
+        // VinApi client — bypass SSL validation for dev (NHTSA cert chain issues on some machines)
+        services.AddHttpClient("VinApi")
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback =
+                    HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            });
 
         services.AddScoped<IApplicationService, ApplicationService>();
         services.AddScoped<IVinService, VinService>();

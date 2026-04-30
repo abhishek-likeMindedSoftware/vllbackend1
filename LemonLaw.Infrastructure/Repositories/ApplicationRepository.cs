@@ -86,12 +86,12 @@ public class ApplicationRepository(LemonLawAPIDbContext context)
 
     public async Task<bool> VinHasActiveApplicationAsync(string vin, Guid? excludeApplicationId = null)
     {
-        var activeStatuses = new[] { ApplicationStatus.WITHDRAWN, ApplicationStatus.CLOSED };
         var query = _context.Applications
             .Include(a => a.Vehicle)
             .Where(a => a.Vehicle != null
                         && a.Vehicle.VIN == vin
-                        && !activeStatuses.Contains(a.Status));
+                        && a.Status != ApplicationStatus.WITHDRAWN
+                        && a.Status != ApplicationStatus.CLOSED);
 
         if (excludeApplicationId.HasValue)
             query = query.Where(a => a.Id != excludeApplicationId.Value);
@@ -101,12 +101,12 @@ public class ApplicationRepository(LemonLawAPIDbContext context)
 
     public async Task<List<string>> GetActiveApplicationCaseNumbersByVinAsync(string vin)
     {
-        var activeStatuses = new[] { ApplicationStatus.WITHDRAWN, ApplicationStatus.CLOSED };
         return await _context.Applications
             .Include(a => a.Vehicle)
             .Where(a => a.Vehicle != null
                         && a.Vehicle.VIN == vin
-                        && !activeStatuses.Contains(a.Status))
+                        && a.Status != ApplicationStatus.WITHDRAWN
+                        && a.Status != ApplicationStatus.CLOSED)
             .Select(a => a.CaseNumber)
             .ToListAsync();
     }

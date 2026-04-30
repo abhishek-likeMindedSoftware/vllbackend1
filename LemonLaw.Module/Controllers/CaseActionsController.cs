@@ -9,7 +9,8 @@ using System.ComponentModel;
 using System.Net.Http.Json;
 using System.Text.Json;
 
-using AppEntity = LemonLaw.Core.Entities.Application;
+using AppEntity  = LemonLaw.Core.Entities.Application;
+using XafAppUser = LemonLaw.Core.Entities.ApplicationUser;
 
 namespace LemonLaw.Module.Controllers
 {
@@ -40,7 +41,8 @@ namespace LemonLaw.Module.Controllers
         private const string KEY_ISSUE_DECISION    = "IssueDecision";
         private const string KEY_CLOSE             = "CloseCase";
         private const string KEY_WITHDRAW          = "WithdrawCase";
-        private const string DEFAULT_CASE_ACTIONS_CAPTION = "Case Actions";
+        private const string KEY_ASSIGN                    = "AssignCase";
+        private const string DEFAULT_CASE_ACTIONS_CAPTION  = "Case Actions";
 
         private SingleChoiceAction _caseActionsMenu;
         private AppEntity? _trackedApplication;
@@ -124,40 +126,49 @@ namespace LemonLaw.Module.Controllers
             }
 
             // Build items based on current status per spec §3.4
+            var canAssign = CanCurrentUserAssign();
+
             switch (s)
             {
                 case ApplicationStatus.SUBMITTED:
                     AddItem(KEY_ACCEPT,      "Accept Application",  "State_Validation_Valid");
                     AddItem(KEY_INCOMPLETE,  "Mark Incomplete",     "State_Validation_Warning");
+                    if (canAssign) AddItem(KEY_ASSIGN, "Assign Case", "BO_Employee");
                     AddItem(KEY_WITHDRAW,    "Withdraw",            "Action_Cancel");
                     break;
 
                 case ApplicationStatus.INCOMPLETE:
+                    if (canAssign) AddItem(KEY_ASSIGN, "Assign Case", "BO_Employee");
                     AddItem(KEY_WITHDRAW,    "Withdraw",            "Action_Cancel");
                     break;
 
                 case ApplicationStatus.ACCEPTED:
                     AddItem(KEY_SEND_OUTREACH,    "Send Dealer Outreach", "BO_Supplier");
                     AddItem(KEY_SCHEDULE_HEARING, "Schedule Hearing",     "State_Priority_Normal");
+                    if (canAssign) AddItem(KEY_ASSIGN, "Assign Case", "BO_Employee");
                     AddItem(KEY_WITHDRAW,         "Withdraw",             "Action_Cancel");
                     break;
 
                 case ApplicationStatus.DEALER_RESPONDED:
                     AddItem(KEY_SCHEDULE_HEARING, "Schedule Hearing", "State_Priority_Normal");
+                    if (canAssign) AddItem(KEY_ASSIGN, "Assign Case", "BO_Employee");
                     AddItem(KEY_WITHDRAW,         "Withdraw",         "Action_Cancel");
                     break;
 
                 case ApplicationStatus.HEARING_SCHEDULED:
                     AddItem(KEY_HEARING_COMPLETE, "Mark Hearing Complete", "State_Validation_Valid");
+                    if (canAssign) AddItem(KEY_ASSIGN, "Assign Case", "BO_Employee");
                     AddItem(KEY_WITHDRAW,         "Withdraw",              "Action_Cancel");
                     break;
 
                 case ApplicationStatus.HEARING_COMPLETE:
                     AddItem(KEY_ISSUE_DECISION, "Issue Decision", "BO_Report");
+                    if (canAssign) AddItem(KEY_ASSIGN, "Assign Case", "BO_Employee");
                     break;
 
                 case ApplicationStatus.DECISION_ISSUED:
-                    AddItem(KEY_CLOSE, "Close Case", "Action_Delete");
+                    AddItem(KEY_CLOSE,  "Close Case",  "Action_Delete");
+                    if (canAssign) AddItem(KEY_ASSIGN, "Assign Case", "BO_Employee");
                     break;
             }
         }
@@ -282,6 +293,10 @@ namespace LemonLaw.Module.Controllers
                     ConfirmAndRun(
                         "Withdraw this application? The consumer will be notified.",
                         () => ExecuteTransition("WITHDRAWN", null));
+                    break;
+
+                case KEY_ASSIGN:
+                    ExecuteAssignCase();
                     break;
             }
         }
@@ -551,47 +566,47 @@ namespace LemonLaw.Module.Controllers
             var applicationId = app.Id;
             var caseNumber = app.CaseNumber;
 
-            Application.ShowViewStrategy.ShowMessage(
-                $"Issuing decision for case {caseNumber}…",
-                InformationType.Info, 2000, InformationPosition.Top);
+            // Open a popup form so staff can choose decision type, amount, deadline
+            var os = Application.CreateObjectSpace(typeof(IssueDecisionInput));
+            var input = os.CreateObject<IssueDecisionInput>();
 
             SetCaseActionBusy(true, "Issuing...");
             try
             {
-                    using var client = CreateHttpClient();
-                    var payload = new
-                    {
-                        decisionType = "CLAIM_DENIED",
-                        decisionDate = DateOnly.FromDateTime(DateTime.UtcNow).ToString("yyyy-MM-dd"),
-                        refundAmount = (decimal?)null,
-                        complianceDeadline = (string?)null,
-                        decisionDocumentId = (Guid?)null
-                    };
+                using var client = CreateHttpClient();
+                var payload = new
+                {
+                    decisionType = input.DecisionType.ToString(),
+                    decisionDate = input.DecisionDate.ToString("yyyy-MM-dd"),
+                    refundAmount = input.RefundAmount,
+                    complianceDeadline = input.ComplianceDeadline?.ToString("yyyy-MM-dd"),
+                    decisionDocumentId = (Guid?)null
+                };
 
-                    var response = await client.PostAsJsonAsync($"api/cases/{applicationId}/decisions", payload);
-                    var body = await response.Content.ReadAsStringAsync();
+                var response = await client.PostAsJsonAsync($"api/cases/{applicationId}/decisions", payload);
+                var body = await response.Content.ReadAsStringAsync();
 
-                    if (response.IsSuccessStatusCode)
+                if (response.IsSuccessStatusCode)
+                {
+                    using var doc = JsonDocument.Parse(body);
+                    var success = doc.RootElement.TryGetProperty("success", out var sv) && sv.GetBoolean();
+                    if (success)
                     {
-                        using var doc = JsonDocument.Parse(body);
-                        var success = doc.RootElement.TryGetProperty("success", out var sv) && sv.GetBoolean();
-                        if (success)
-                        {
-                            Application.ShowViewStrategy.ShowMessage(
-                                $"✓ Decision issued for case {caseNumber}. Consumer notified.",
-                                InformationType.Success, 6000, InformationPosition.Top);
-                            RefreshCurrentView(ApplicationStatus.DECISION_ISSUED.ToString());
-                        }
-                        else
-                        {
-                            var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Unknown error";
-                            Application.ShowViewStrategy.ShowMessage($"Issue decision failed: {msg}", InformationType.Error, 5000, InformationPosition.Top);
-                        }
+                        Application.ShowViewStrategy.ShowMessage(
+                            $"✓ Decision issued for case {caseNumber}. Consumer notified.",
+                            InformationType.Success, 6000, InformationPosition.Top);
+                        RefreshCurrentView(ApplicationStatus.DECISION_ISSUED.ToString());
                     }
                     else
                     {
-                        Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
+                        var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Unknown error";
+                        Application.ShowViewStrategy.ShowMessage($"Issue decision failed: {msg}", InformationType.Error, 5000, InformationPosition.Top);
                     }
+                }
+                else
+                {
+                    Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
+                }
             }
             catch (Exception ex)
             {
@@ -603,7 +618,121 @@ namespace LemonLaw.Module.Controllers
             }
         }
 
+        // ── Assign Case ───────────────────────────────────────────────────────
+
+        private void ExecuteAssignCase()
+        {
+            if (View?.CurrentObject is not AppEntity app) return;
+
+            var applicationId = app.Id;
+            var caseNumber = app.CaseNumber;
+
+            // Open a ListView of ApplicationUser filtered to CASE_MANAGER role.
+            // This is the standard XAF pattern for a user picker — no non-persistent type needed.
+            var os = Application.CreateObjectSpace(typeof(XafAppUser));
+
+            var criteria = DevExpress.Data.Filtering.CriteriaOperator.Parse(
+                "Roles[Name = 'CASE_MANAGER']");
+
+            var listView = Application.CreateListView(os, typeof(XafAppUser), true);
+            listView.Caption = $"Select Case Manager — {caseNumber}";
+            listView.CollectionSource.Criteria["CaseManagerOnly"] = criteria;
+
+            var svp = new ShowViewParameters(listView)
+            {
+                Context = TemplateContext.PopupWindow,
+                TargetWindow = TargetWindow.NewModalWindow,
+            };
+
+            var dialogController = Application.CreateController<DialogController>();
+            dialogController.AcceptAction.Caption = "Assign";
+            dialogController.CancelAction.Caption = "Cancel";
+
+            dialogController.AcceptAction.Execute += async (_, _) =>
+            {
+                var selectedUser = listView.CurrentObject as XafAppUser;
+                if (selectedUser == null)
+                {
+                    Application.ShowViewStrategy.ShowMessage(
+                        "Please select a case manager from the list.",
+                        InformationType.Warning, 4000, InformationPosition.Top);
+                    return;
+                }
+
+                var staffId   = selectedUser.UserName;
+                var staffName = selectedUser.UserName;
+
+                SetCaseActionBusy(true, "Assigning...");
+                try
+                {
+                    using var client = CreateHttpClient();
+                    var payload = new { staffId, staffName };
+                    var response = await client.PutAsJsonAsync($"api/cases/{applicationId}/assign", payload);
+                    var body = await response.Content.ReadAsStringAsync();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        using var doc = JsonDocument.Parse(body);
+                        var success = doc.RootElement.TryGetProperty("success", out var sv) && sv.GetBoolean();
+                        if (success)
+                        {
+                            Application.ShowViewStrategy.ShowMessage(
+                                $"✓ Case {caseNumber} assigned to {staffName}.",
+                                InformationType.Success, 5000, InformationPosition.Top);
+                            RefreshCurrentView();
+                        }
+                        else
+                        {
+                            var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Unknown error";
+                            Application.ShowViewStrategy.ShowMessage($"Assignment failed: {msg}", InformationType.Error, 5000, InformationPosition.Top);
+                        }
+                    }
+                    else
+                    {
+                        Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+                }
+                finally
+                {
+                    SetCaseActionBusy(false);
+                }
+            };
+
+            svp.Controllers.Add(dialogController);
+            Application.ShowViewStrategy.ShowView(svp, new ShowViewSource(null, null));
+        }
+
         // ── Helpers ───────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Only OCABR_ADMIN and SUPERVISOR can assign cases.
+        /// CASE_MANAGER works their own queue — they cannot reassign.
+        /// </summary>
+        private bool CanCurrentUserAssign()
+        {
+            try
+            {
+                var security = Application.Security;
+                if (security == null) return true; // fallback: allow if security not configured
+
+                var user = security.User as XafAppUser;
+                if (user == null) return true;
+
+                // Check if the user has any of the admin/supervisor roles
+                return user.Roles.Any(r =>
+                    r.Name == "OCABR_ADMIN" ||
+                    r.Name == "Administrators" ||
+                    r.Name == "SUPERVISOR");
+            }
+            catch
+            {
+                return true; // fail open — don't block the action if role check fails
+            }
+        }
 
         private HttpClient CreateHttpClient()
         {

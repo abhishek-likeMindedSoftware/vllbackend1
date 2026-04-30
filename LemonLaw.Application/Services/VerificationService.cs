@@ -10,7 +10,7 @@ public class VerificationService(
     IEmailService emailService,
     ILogger<VerificationService> logger) : IVerificationService
 {
-    private const string CodePrefix = "verify_";
+    private const string CodePrefix    = "verify_";
     private const string AttemptPrefix = "verify_attempts_";
 
     public async Task<CommonResponseDto<bool>> SendVerificationCodeAsync(SendVerificationCodeDto dto)
@@ -74,9 +74,6 @@ public class VerificationService(
                 };
             }
 
-            // Mark as verified — replace the code entry with a verified flag so
-            // SubmitApplicationAsync can confirm verification without re-checking the code.
-            // The flag expires after 30 minutes to prevent stale sessions.
             var verifiedKey = $"verified_{dto.EmailAddress}";
             cache.Set(verifiedKey, true, TimeSpan.FromMinutes(30));
             cache.Remove(codeKey);
@@ -106,7 +103,6 @@ public class VerificationService(
 
     private static string GenerateCode()
     {
-        var rng = System.Security.Cryptography.RandomNumberGenerator.GetInt32(100000, 999999);
-        return rng.ToString();
+        return System.Security.Cryptography.RandomNumberGenerator.GetInt32(100000, 999999).ToString();
     }
 }
