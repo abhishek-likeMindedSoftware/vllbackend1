@@ -5,18 +5,18 @@
 
 @inject IServiceProvider ServiceProvider
 
-<div class="ll-card-head" style="border-top:1px solid #f1f5f9;">
-    <p class="ll-card-title">Defects (@_items.Count)</p>
+<div class="ll-section-toolbar">
+    <input class="ll-search-input" type="search" placeholder="Search defects…" @bind="_search" @bind:event="oninput" />
     <button class="ll-btn ll-btn-ghost ll-btn-sm" type="button" @onclick="OpenNew">+ New</button>
 </div>
 <div style="padding:0;">
-    @if (!_items.Any()) { <p class="ll-table-empty">No defects recorded.</p> }
+    @if (!_filtered.Any()) { <p class="ll-table-empty">@(_search.Length > 0 ? "No results." : "No defects recorded.")</p> }
     else
     {
         <table class="ll-table">
             <thead><tr><th>Description</th><th>Category</th><th>First Occurrence</th><th>Ongoing</th><th style="width:50px;"></th></tr></thead>
             <tbody>
-                @foreach (var item in _items.OrderBy(d => d.SortOrder))
+                @foreach (var item in _filtered.OrderBy(d => d.SortOrder))
                 {
                     <tr>
                         <td>@item.DefectDescription</td>
@@ -61,15 +61,30 @@
 @code {
     [Parameter] public Guid ApplicationId { get; set; }
     [Parameter] public IEnumerable<Defect>? InitialData { get; set; }
-    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback<int> OnCountChanged { get; set; }
 
     private List<Defect> _items = new();
+    private string _search = string.Empty;
+    private List<Defect> _filtered => string.IsNullOrWhiteSpace(_search)
+        ? _items
+        : _items.Where(d =>
+            d.DefectDescription.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            d.DefectCategory.ToString().Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            d.FirstOccurrenceDate.ToString("MM/dd/yyyy").Contains(_search)).ToList();
     private DefectFormModel? _form;
     private Guid? _editId;
     private bool _showEdit, _saving;
     private string? _saveError;
+    private bool _initialized;
 
-    protected override void OnParametersSet() => _items = InitialData?.ToList() ?? new();
+    protected override void OnParametersSet()
+    {
+        if (!_initialized)
+        {
+            _items = InitialData?.ToList() ?? new();
+            _initialized = true;
+        }
+    }
 
     private void OpenNew() { _editId = null; _form = new(); _saveError = null; _showEdit = true; }
     private void OpenEdit(Defect d) { _editId = d.Id; _form = new(d); _saveError = null; _showEdit = true; }
@@ -86,7 +101,7 @@
             if (_editId == null) { var e = new Defect { ApplicationId = ApplicationId }; _form.ApplyTo(e); await repo.AddAsync(e); await repo.SaveChangesAsync(); _items.Add(e); }
             else { var e = _items.First(x => x.Id == _editId); _form.ApplyTo(e); repo.Update(e); await repo.SaveChangesAsync(); }
             _showEdit = false;
-            await OnSaved.InvokeAsync();
+            await OnCountChanged.InvokeAsync(_items.Count);
         }
         catch (Exception ex) { _saveError = ex.Message; }
         finally { _saving = false; }

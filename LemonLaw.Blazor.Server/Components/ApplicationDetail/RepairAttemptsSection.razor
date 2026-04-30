@@ -4,18 +4,18 @@
 
 @inject IServiceProvider ServiceProvider
 
-<div class="ll-card-head" style="border-top:1px solid #f1f5f9;">
-    <p class="ll-card-title">Repair Attempts (@_items.Count)</p>
+<div class="ll-section-toolbar">
+    <input class="ll-search-input" type="search" placeholder="Search repair attempts…" @bind="_search" @bind:event="oninput" />
     <button class="ll-btn ll-btn-ghost ll-btn-sm" type="button" @onclick="OpenNew">+ New</button>
 </div>
 <div style="padding:0;">
-    @if (!_items.Any()) { <p class="ll-table-empty">No repair attempts recorded.</p> }
+    @if (!_filtered.Any()) { <p class="ll-table-empty">@(_search.Length > 0 ? "No results." : "No repair attempts recorded.")</p> }
     else
     {
         <table class="ll-table">
             <thead><tr><th>Date</th><th>Facility</th><th>Defects Addressed</th><th>RO #</th><th>Successful</th><th>Days OOS</th><th style="width:50px;"></th></tr></thead>
             <tbody>
-                @foreach (var item in _items.OrderBy(r => r.RepairDate))
+                @foreach (var item in _filtered.OrderBy(r => r.RepairDate))
                 {
                     <tr>
                         <td>@item.RepairDate.ToString("MM/dd/yyyy")</td>
@@ -65,15 +65,27 @@
 @code {
     [Parameter] public Guid ApplicationId { get; set; }
     [Parameter] public IEnumerable<RepairAttempt>? InitialData { get; set; }
-    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback<int> OnCountChanged { get; set; }
 
     private List<RepairAttempt> _items = new();
+    private string _search = string.Empty;
+    private List<RepairAttempt> _filtered => string.IsNullOrWhiteSpace(_search)
+        ? _items
+        : _items.Where(r =>
+            r.RepairFacilityName.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            r.DefectsAddressed.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            (r.RoNumber ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            r.RepairDate.ToString("MM/dd/yyyy").Contains(_search)).ToList();
     private RepairFormModel? _form;
     private Guid? _editId;
     private bool _showEdit, _saving;
     private string? _saveError;
+    private bool _initialized;
 
-    protected override void OnParametersSet() => _items = InitialData?.ToList() ?? new();
+    protected override void OnParametersSet()
+    {
+        if (!_initialized) { _items = InitialData?.ToList() ?? new(); _initialized = true; }
+    }
 
     private void OpenNew() { _editId = null; _form = new(); _saveError = null; _showEdit = true; }
     private void OpenEdit(RepairAttempt r) { _editId = r.Id; _form = new(r); _saveError = null; _showEdit = true; }
@@ -90,7 +102,7 @@
             if (_editId == null) { var e = new RepairAttempt { ApplicationId = ApplicationId }; _form.ApplyTo(e); await repo.AddAsync(e); await repo.SaveChangesAsync(); _items.Add(e); }
             else { var e = _items.First(x => x.Id == _editId); _form.ApplyTo(e); repo.Update(e); await repo.SaveChangesAsync(); }
             _showEdit = false;
-            await OnSaved.InvokeAsync();
+            await OnCountChanged.InvokeAsync(_items.Count);
         }
         catch (Exception ex) { _saveError = ex.Message; }
         finally { _saving = false; }

@@ -1,17 +1,17 @@
 @using LemonLaw.Core.Entities
 @using LemonLaw.Core.Enums
 
-<div class="ll-card-head" style="border-top:1px solid #f1f5f9;">
-    <p class="ll-card-title">Correspondence (@_items.Count)</p>
+<div class="ll-section-toolbar">
+    <input class="ll-search-input" type="search" placeholder="Search correspondence…" @bind="_search" @bind:event="oninput" />
 </div>
 <div style="padding:0;">
-    @if (!_items.Any()) { <p class="ll-table-empty">No correspondence on file.</p> }
+    @if (!_filtered.Any()) { <p class="ll-table-empty">@(_search.Length > 0 ? "No results." : "No correspondence on file.")</p> }
     else
     {
         <table class="ll-table">
             <thead><tr><th>Direction</th><th>Recipient</th><th>Subject</th><th>Sent At</th><th>Delivery</th></tr></thead>
             <tbody>
-                @foreach (var item in _items.OrderByDescending(c => c.SentAt))
+                @foreach (var item in _filtered.OrderByDescending(c => c.SentAt))
                 {
                     <tr>
                         <td>@EnumHelper.GetDescription(item.Direction)</td>
@@ -31,6 +31,13 @@
     [Parameter] public IEnumerable<Correspondence>? InitialData { get; set; }
 
     private List<Correspondence> _items = new();
+    private string _search = string.Empty;
+    private List<Correspondence> _filtered => string.IsNullOrWhiteSpace(_search)
+        ? _items
+        : _items.Where(c =>
+            c.Subject.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            c.RecipientEmail.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            c.Direction.ToString().Contains(_search, StringComparison.OrdinalIgnoreCase)).ToList();
 
     protected override void OnParametersSet() => _items = InitialData?.ToList() ?? new();
 
