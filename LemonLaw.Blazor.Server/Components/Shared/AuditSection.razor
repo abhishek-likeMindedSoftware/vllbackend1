@@ -1,0 +1,38 @@
+@using LemonLaw.Core.Entities
+
+@if (Entity != null)
+{
+    <div class="ll-card ll-audit-section">
+        <div class="ll-card-head">
+            <p class="ll-card-title">Audit Details</p>
+        </div>
+        <div class="ll-fields ll-fields-5">
+            <div>
+                <p class="ll-field-label">Created Date</p>
+                <p class="ll-field-value">@Entity.CreatedDate.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt")</p>
+            </div>
+            <div>
+                <p class="ll-field-label">Created By</p>
+                <p class="ll-field-value">@(Entity.CreatedBy?.UserName ?? "—")</p>
+            </div>
+            <div>
+                <p class="ll-field-label">Modified Date</p>
+                <p class="ll-field-value">@(Entity.ModifiedDate?.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt") ?? "—")</p>
+            </div>
+            <div>
+                <p class="ll-field-label">Modified By</p>
+                <p class="ll-field-value">@(Entity.ModifiedBy?.UserName ?? "—")</p>
+            </div>
+            <div>
+                <p class="ll-field-label">Is Deleted</p>
+                <div class="ll-field-value">@EnumHelper.BoolBadge(Entity.IsDeleted)</div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>Any entity that inherits AuditDetails.</summary>
+    [Parameter, EditorRequired]
+    public AuditDetails? Entity { get; set; }
+}

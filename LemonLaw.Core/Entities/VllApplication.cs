@@ -3,6 +3,7 @@ using DevExpress.ExpressApp.DC;
 using DevExpress.ExpressApp.Editors;
 using DevExpress.ExpressApp.Model;
 using DevExpress.Persistent.Base;
+using LemonLaw.Core.Attributes;
 using LemonLaw.Core.Enums;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -14,6 +15,7 @@ namespace LemonLaw.Core.Entities;
 [DefaultProperty(nameof(CaseNumber))]
 [NavigationItem("Case Management")]
 [XafDisplayName("Applications")]
+[HideXafAuditFields]
 public class VllApplication : AuditDetails,
      INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {

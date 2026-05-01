@@ -2,6 +2,7 @@ using DevExpress.ExpressApp;
 using DevExpress.ExpressApp.DC;
 using DevExpress.ExpressApp.Editors;
 using DevExpress.Persistent.Base;
+using LemonLaw.Core.Attributes;
 using LemonLaw.Core.Enums;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -12,6 +13,7 @@ namespace LemonLaw.Core.Entities;
 [DefaultProperty(nameof(DecisionType))]
 [NavigationItem("Case Management")]
 [XafDisplayName("Decision")]
+[HideXafAuditFields]
 public class Decision : AuditDetails,
         INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {

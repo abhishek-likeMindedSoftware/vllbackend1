@@ -112,15 +112,27 @@
 }
 .ll-card-body { padding: 16px 18px !important; }
 
+/* ── Audit section ────────────────────────────────────────────────────────── */
+.ll-audit-section .ll-fields {
+    padding: 14px 18px !important;
+}
+
 /* ── Field grids (CSS Grid — not Bootstrap) ──────────────────────────────── */
 .ll-fields {
     display: grid !important;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
     gap: 14px 20px !important;
+    align-items: start !important;
 }
 .ll-fields-2 { grid-template-columns: repeat(2, 1fr) !important; }
 .ll-fields-3 { grid-template-columns: repeat(3, 1fr) !important; }
 .ll-fields-4 { grid-template-columns: repeat(4, 1fr) !important; }
+.ll-fields-5 { grid-template-columns: repeat(5, 1fr) !important; }
+.ll-fields > div {
+    align-self: start !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
 .ll-field-label {
     font-size: .625rem !important;
     font-weight: 600 !important;
@@ -138,7 +150,9 @@
     font-weight: 500 !important;
     margin: 0 !important;
     word-break: break-word !important;
-    display: block !important;
+    display: flex !important;
+    align-items: center !important;
+    min-height: 1.25rem !important;
     padding-left: 0 !important;
 }
 .ll-field-empty { color: #d1d5db !important; font-style: normal !important; }
@@ -504,11 +518,12 @@
 }
 @media (max-width: 900px) {
     .ll-fields-4 { grid-template-columns: repeat(2, 1fr) !important; }
+    .ll-fields-5 { grid-template-columns: repeat(3, 1fr) !important; }
     .ll-fields-3 { grid-template-columns: repeat(2, 1fr) !important; }
 }
 @media (max-width: 640px) {
     .ll-wrap { padding: 12px !important; }
-    .ll-fields-2, .ll-fields-3, .ll-fields-4 { grid-template-columns: 1fr !important; }
+    .ll-fields-2, .ll-fields-3, .ll-fields-4, .ll-fields-5 { grid-template-columns: 1fr !important; }
     .ll-form-row-2, .ll-form-row-3 { grid-template-columns: 1fr !important; }
     .ll-header { flex-direction: column !important; }
 }
