@@ -6,7 +6,7 @@
 @inject IServiceProvider ServiceProvider
 @inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
 
-<PageTitle>Dashboard — OCABR Lemon Law Workbench</PageTitle>
+<PageTitle>Dashboard — OCABR Workbench</PageTitle>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
@@ -26,7 +26,7 @@
         <div>
             <h1 class="d-title">@(_isCaseManagerView ? "My Cases" : "Workbench Overview")</h1>
             <p class="d-subtitle">
-                @DateTime.Now.ToString("dddd, MMMM d, yyyy") &nbsp;·&nbsp; OCABR Vehicle Lemon Law Program
+                @DateTime.Now.ToString("dddd, MMMM d, yyyy") &nbsp;·&nbsp; Vehicle Lemon Law Program
                 @if (_isCaseManagerView)
                 {
                     <span>&nbsp;·&nbsp; <strong style="color:#0265A3;">Showing your assigned cases</strong></span>
