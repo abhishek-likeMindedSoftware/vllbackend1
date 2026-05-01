@@ -4,9 +4,9 @@ using DevExpress.ExpressApp.Blazor.Editors.Adapters;
 using DevExpress.ExpressApp.Editors;
 using DevExpress.ExpressApp.Model;
 using LemonLaw.Blazor.Server.Components.ApplicationDetail;
+using LemonLaw.Core.Entities;
 using Microsoft.AspNetCore.Components;
 
-using AppEntity = LemonLaw.Core.Entities.Application;
 
 namespace LemonLaw.Blazor.Server.Editors
 {
@@ -36,7 +36,7 @@ namespace LemonLaw.Blazor.Server.Editors
 
         public RenderFragment ComponentContent => builder =>
         {
-            var app = _editor.CurrentObject as AppEntity;
+            var app = _editor.CurrentObject as VllApplication;
 
             builder.OpenComponent<ApplicationDetailView>(0);
             builder.AddAttribute(1, nameof(ApplicationDetailView.CurrentObject), app);

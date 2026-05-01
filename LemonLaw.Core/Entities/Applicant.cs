@@ -80,11 +80,11 @@ public class Applicant : AuditDetails,
         }
     }
 
-    private Application? _application;
+    private VllApplication? _application;
 
     [ForeignKey("ApplicationId")]
     [Browsable(false)]
-    public virtual Application? Application
+    public virtual VllApplication? Application
     {
         get => _application;
         set

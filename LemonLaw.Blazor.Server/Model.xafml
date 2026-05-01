@@ -2,21 +2,22 @@
 <Application>
   <NavigationItems NavigationStyle="Accordion">
     <Items>
-      <!-- Dashboard — top-level, above Case Management, opens the custom dashboard component -->
       <Item Id="Dashboard_Nav" Caption="Dashboard" ImageName="BO_Dashboard" Index="0" ViewId="AdminDashboard_DetailView" IsNewNode="True" />
-      <Item Id="Administration" Visible="False" />
-      <Item Id="Dashboard_Group" Visible="False" />
-      <Item Id="Case Management" ImageName="BO_Document" Index="1" />
+      <Item Id="Case Management" ImageName="BO_Document" Index="1">
+        <Items>
+          <Item Id="VllApplication_ListView" Index="0" />
+        </Items>
+      </Item>
       <Item Id="Dealer Portal Activity" ImageName="BO_StateMachine" Index="2" />
       <Item Id="Default" ImageName="BO_Role" Index="3" />
       <Item Id="Hearings" ImageName="State_Priority_Normal" Index="4" />
       <Item Id="Reports" ImageName="BO_Report" Index="5">
         <Items>
-          <Item Id="DashboardData_ListView" Visible="False" />
           <Item Id="Dashboards" Visible="False" />
         </Items>
       </Item>
       <Item Id="Utility" ImageName="LayoutCustomization_Item" Index="6" />
+      <Item Id="Administration" Visible="False" />
     </Items>
   </NavigationItems>
   <Options UIType="TabbedMDI" FormStyle="Standard" RestoreTabbedMdiLayout="False" ShowTabImage="True" VirtualScrollingEnabled="True" />
@@ -24,32 +25,16 @@
     <SchemaModule Name="SystemModule" Version="25.2.6.0" IsNewNode="True" />
   </SchemaModules>
   <Views>
-    <!-- Custom dashboard detail view — renders the Dashboard Blazor component via DashboardPropertyEditor -->
     <DetailView Id="AdminDashboard_DetailView" Caption="Dashboard" IsNewNode="True">
+      <Actions Id="Actions" IsNewNode="True" />
       <Items IsNewNode="True">
-        <PropertyEditor Id="Title" PropertyName="Title" AllowEdit="False"
-                        PropertyEditorType="LemonLaw.Blazor.Server.Editors.DashboardPropertyEditor"
-                        Caption="" IsNewNode="True" />
+        <PropertyEditor Id="Title" PropertyName="Title" AllowEdit="False" PropertyEditorType="LemonLaw.Blazor.Server.Editors.DashboardPropertyEditor" Caption="" IsNewNode="True" />
       </Items>
-      <!-- Hide all toolbar actions — dashboard is read-only, no save/delete needed -->
-      <Actions IsNewNode="True">
-        <ActionDesign IsNewNode="True">
-          <Actions IsNewNode="True">
-            <Action Id="Save" Active="False" IsNewNode="True" />
-            <Action Id="SaveAndClose" Active="False" IsNewNode="True" />
-            <Action Id="SaveAndNew" Active="False" IsNewNode="True" />
-            <Action Id="Delete" Active="False" IsNewNode="True" />
-            <Action Id="PreviousObject" Active="False" IsNewNode="True" />
-            <Action Id="NextObject" Active="False" IsNewNode="True" />
-            <Action Id="ResetViewSettings" Active="False" IsNewNode="True" />
-            <Action Id="Refresh" Active="False" IsNewNode="True" />          </Actions>
-        </ActionDesign>
-      </Actions>
       <Layout IsNewNode="True">
         <LayoutGroup Id="Main" IsNewNode="True">
           <LayoutGroup Id="SimpleEditors" RelativeSize="100" IsNewNode="True">
             <LayoutGroup Id="AdminDashboard" Caption="AdminDashboard" RelativeSize="100" IsNewNode="True">
-              <LayoutItem Id="Title" ViewItem="Title" Index="0" RelativeSize="100" ShowCaption="False" IsNewNode="True" />
+              <LayoutItem Id="Title" Index="0" RelativeSize="100" ShowCaption="False" ViewItem="Title" IsNewNode="True" />
             </LayoutGroup>
           </LayoutGroup>
         </LayoutGroup>
@@ -75,75 +60,46 @@
         </LayoutGroup>
       </Layout>
     </DetailView>
-
-    <!-- DealerResponse detail view — read-only, no custom layout (auto-generated from entity attributes) -->
     <DetailView Id="DealerResponse_DetailView" IsNewNode="True">
+      <Actions Id="Actions" IsNewNode="True" />
       <Items IsNewNode="True">
-        <PropertyEditor Id="ResponderName"         PropertyName="ResponderName"         IsNewNode="True" />
-        <PropertyEditor Id="ResponderTitle"        PropertyName="ResponderTitle"        IsNewNode="True" />
-        <PropertyEditor Id="ResponderEmail"        PropertyName="ResponderEmail"        IsNewNode="True" />
-        <PropertyEditor Id="ResponderPhone"        PropertyName="ResponderPhone"        IsNewNode="True" />
-        <PropertyEditor Id="DealerPosition"        PropertyName="DealerPosition"        IsNewNode="True" />
-        <PropertyEditor Id="SubmittedAt"           PropertyName="SubmittedAt"           IsNewNode="True" />
-        <PropertyEditor Id="ResponseNarrative"     PropertyName="ResponseNarrative"     IsNewNode="True" />
-        <PropertyEditor Id="RepairHistoryNotes"    PropertyName="RepairHistoryNotes"    IsNewNode="True" />
-        <PropertyEditor Id="SettlementOffer"       PropertyName="SettlementOffer"       IsNewNode="True" />
-        <PropertyEditor Id="SettlementDetails"     PropertyName="SettlementDetails"     IsNewNode="True" />
         <PropertyEditor Id="CertificationAccepted" PropertyName="CertificationAccepted" IsNewNode="True" />
-        <PropertyEditor Id="CertifierFullName"     PropertyName="CertifierFullName"     IsNewNode="True" />
+        <PropertyEditor Id="CertifierFullName" PropertyName="CertifierFullName" IsNewNode="True" />
+        <PropertyEditor Id="DealerPosition" PropertyName="DealerPosition" IsNewNode="True" />
+        <PropertyEditor Id="RepairHistoryNotes" PropertyName="RepairHistoryNotes" IsNewNode="True" />
+        <PropertyEditor Id="ResponderEmail" PropertyName="ResponderEmail" IsNewNode="True" />
+        <PropertyEditor Id="ResponderName" PropertyName="ResponderName" IsNewNode="True" />
+        <PropertyEditor Id="ResponderPhone" PropertyName="ResponderPhone" IsNewNode="True" />
+        <PropertyEditor Id="ResponderTitle" PropertyName="ResponderTitle" IsNewNode="True" />
+        <PropertyEditor Id="ResponseNarrative" PropertyName="ResponseNarrative" IsNewNode="True" />
+        <PropertyEditor Id="SettlementDetails" PropertyName="SettlementDetails" IsNewNode="True" />
+        <PropertyEditor Id="SettlementOffer" PropertyName="SettlementOffer" IsNewNode="True" />
+        <PropertyEditor Id="SubmittedAt" PropertyName="SubmittedAt" IsNewNode="True" />
       </Items>
-      <Actions IsNewNode="True">
-        <ActionDesign IsNewNode="True">
-          <Actions IsNewNode="True">
-            <Action Id="Save"         Active="False" IsNewNode="True" />
-            <Action Id="SaveAndClose" Active="False" IsNewNode="True" />
-            <Action Id="SaveAndNew"   Active="False" IsNewNode="True" />
-            <Action Id="Delete"       Active="False" IsNewNode="True" />
-          </Actions>
-        </ActionDesign>
-      </Actions>
     </DetailView>
-    <!--
-      Application Detail View — custom component layout.
-      All default property editors are hidden; only DetailPanel is shown,
-      which renders the full ApplicationDetailView Razor component.
-    -->
-    <DetailView Id="Application_DetailView" IsNewNode="True">
-      <Items IsNewNode="True">
-        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel"
-                        PropertyEditorType="LemonLaw.Blazor.Server.Editors.ApplicationDetailPropertyEditor"
-                        Caption="" IsNewNode="True" />
-      </Items>
-      <Layout IsNewNode="True">
-        <LayoutGroup Id="Main" ShowCaption="False" IsNewNode="True">
-          <LayoutGroup Id="SimpleEditors" ShowCaption="False" RelativeSize="100" IsNewNode="True">
-            <LayoutGroup Id="Application" ShowCaption="False" RelativeSize="100" IsNewNode="True">
-              <LayoutItem Id="DetailPanel" ViewItem="DetailPanel" Index="0"
-                          RelativeSize="100" ShowCaption="False" IsNewNode="True" />
-            </LayoutGroup>
-          </LayoutGroup>
-        </LayoutGroup>
-      </Layout>
-    </DetailView>
-    <!--
-      Decision Detail View — custom component layout.
-      All default property editors are hidden via [VisibleInDetailView(false)] on the entity.
-      Only DetailPanel is shown, which renders the full DecisionDetailView Razor component.
-      The inherited AuditDetails fields (CreatedDate, ModifiedDate, etc.) remain visible
-      below the component as the standard XAF audit section.
-    -->
     <DetailView Id="Decision_DetailView" IsNewNode="True">
       <Items IsNewNode="True">
-        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel"
-                        PropertyEditorType="LemonLaw.Blazor.Server.Editors.DecisionDetailPropertyEditor"
-                        Caption="" IsNewNode="True" />
+        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.DecisionDetailPropertyEditor" Caption="" IsNewNode="True" />
       </Items>
       <Layout IsNewNode="True">
         <LayoutGroup Id="Main" ShowCaption="False" IsNewNode="True">
           <LayoutGroup Id="SimpleEditors" ShowCaption="False" RelativeSize="100" IsNewNode="True">
             <LayoutGroup Id="Decision" ShowCaption="False" RelativeSize="100" IsNewNode="True">
-              <LayoutItem Id="DetailPanel" ViewItem="DetailPanel" Index="0"
-                          RelativeSize="100" ShowCaption="False" IsNewNode="True" />
+              <LayoutItem Id="DetailPanel" Index="0" RelativeSize="100" ShowCaption="False" ViewItem="DetailPanel" IsNewNode="True" />
+            </LayoutGroup>
+          </LayoutGroup>
+        </LayoutGroup>
+      </Layout>
+    </DetailView>
+    <DetailView Id="VllApplication_DetailView" IsNewNode="True">
+      <Items IsNewNode="True">
+        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.ApplicationDetailPropertyEditor" Caption="" IsNewNode="True" />
+      </Items>
+      <Layout IsNewNode="True">
+        <LayoutGroup Id="Main" ShowCaption="False" IsNewNode="True">
+          <LayoutGroup Id="SimpleEditors" ShowCaption="False" RelativeSize="100" IsNewNode="True">
+            <LayoutGroup Id="VllApplication" ShowCaption="False" RelativeSize="100" IsNewNode="True">
+              <LayoutItem Id="DetailPanel" Index="0" RelativeSize="100" ShowCaption="False" ViewItem="DetailPanel" IsNewNode="True" />
             </LayoutGroup>
           </LayoutGroup>
         </LayoutGroup>

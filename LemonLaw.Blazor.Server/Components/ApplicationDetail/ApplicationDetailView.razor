@@ -211,9 +211,9 @@
 </DxPopup>
 
 @code {
-    [Parameter] public Application? CurrentObject { get; set; }
+    [Parameter] public VllApplication? CurrentObject { get; set; }
 
-    private Application? _app;
+    private VllApplication? _app;
     private bool _loading = true;
     private string? _loadError;
     private string _activeTab = "defects";
@@ -410,7 +410,7 @@
         public string? PriorContactNotes { get; set; }
 
         public AppInfoFormModel() { }
-        public AppInfoFormModel(Application a)
+        public AppInfoFormModel(VllApplication a)
         {
             ApplicationType = a.ApplicationType;
             NarrativeStatement = a.NarrativeStatement;
@@ -419,7 +419,7 @@
             PriorContactMfr = a.PriorContactMfr?.ToString().ToLower();
             PriorContactNotes = a.PriorContactNotes;
         }
-        public void ApplyTo(Application a)
+        public void ApplyTo(VllApplication a)
         {
             a.ApplicationType = ApplicationType;
             a.NarrativeStatement = NarrativeStatement;

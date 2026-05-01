@@ -14,7 +14,7 @@ namespace LemonLaw.Core.Entities;
 [DefaultProperty(nameof(CaseNumber))]
 [NavigationItem("Case Management")]
 [XafDisplayName("Applications")]
-public class Application : AuditDetails,
+public class VllApplication : AuditDetails,
      INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {
     #region XAF & INotify
@@ -44,7 +44,7 @@ public class Application : AuditDetails,
     }
     #endregion
 
-    public Application() { }
+    public VllApplication() { }
 
     private Guid _id = Guid.NewGuid();
 

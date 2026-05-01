@@ -1,15 +1,14 @@
+using LemonLaw.Core.Entities;
 using LemonLaw.Shared.DTOs;
-
-using AppEntity = LemonLaw.Core.Entities.Application;
 
 namespace LemonLaw.Application.Repositories;
 
-public interface IApplicationRepository : IGenericRepository<AppEntity>
+public interface IApplicationRepository : IGenericRepository<VllApplication>
 {
-    Task<AppEntity?> GetWithFullDetailsAsync(Guid applicationId);
-    Task<(IEnumerable<AppEntity> Items, int Total)> GetPagedAsync(CaseListFilterDto filter);
+    Task<VllApplication?> GetWithFullDetailsAsync(Guid applicationId);
+    Task<(IEnumerable<VllApplication> Items, int Total)> GetPagedAsync(CaseListFilterDto filter);
     Task<string> GenerateCaseNumberAsync();
     Task<bool> VinHasActiveApplicationAsync(string vin, Guid? excludeApplicationId = null);
     Task<List<string>> GetActiveApplicationCaseNumbersByVinAsync(string vin);
-    Task<AppEntity?> GetByCaseNumberAsync(string caseNumber);
+    Task<VllApplication?> GetByCaseNumberAsync(string caseNumber);
 }

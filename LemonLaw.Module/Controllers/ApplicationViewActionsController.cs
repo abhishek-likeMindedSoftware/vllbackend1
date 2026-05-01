@@ -1,6 +1,6 @@
 using DevExpress.ExpressApp;
 using DevExpress.ExpressApp.SystemModule;
-using AppEntity = LemonLaw.Core.Entities.Application;
+using LemonLaw.Core.Entities;
 using DecisionEntity = LemonLaw.Core.Entities.Decision;
 
 namespace LemonLaw.Module.Controllers
@@ -21,7 +21,7 @@ namespace LemonLaw.Module.Controllers
         /// </summary>
         private static readonly HashSet<Type> CustomDetailViewTypes = new()
         {
-            typeof(AppEntity),
+            typeof(VllApplication),
             typeof(DecisionEntity),
         };
 

@@ -74,11 +74,11 @@ public class Vehicle : AuditDetails, INotifyPropertyChanged, IObjectSpaceLink
         }
     }
 
-    private Application? _application;
+    private VllApplication? _application;
 
     [ForeignKey(nameof(ApplicationId))]
     [Browsable(false)]
-    public virtual Application? Application
+    public virtual VllApplication? Application
     {
         get => _application;
         set

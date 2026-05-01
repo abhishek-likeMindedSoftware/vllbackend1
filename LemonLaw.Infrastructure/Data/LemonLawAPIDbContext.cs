@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Security.Claims;
 
-using AppEntity = LemonLaw.Core.Entities.Application;
 
 namespace LemonLaw.Infrastructure.Data;
 
@@ -40,7 +39,7 @@ public class LemonLawAPIDbContext : DbContext
     public DbSet<AuditEFCoreWeakReference> AuditEFCoreWeakReferences { get; set; }
 
     // ── Business tables ───────────────────────────────────────────────────────
-    public DbSet<AppEntity> Applications => Set<AppEntity>();
+    public DbSet<VllApplication> VllApplications => Set<VllApplication>();
     public DbSet<Applicant> Applicants => Set<Applicant>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<Defect> Defects => Set<Defect>();
@@ -155,7 +154,7 @@ public class LemonLawAPIDbContext : DbContext
         // ── Business entity configurations ────────────────────────────────────
 
         // Application
-        modelBuilder.Entity<AppEntity>(e =>
+        modelBuilder.Entity<VllApplication>(e =>
         {
             e.HasKey(x => x.Id);
             e.Property(x => x.Id).HasDefaultValueSql("NEWSEQUENTIALID()");

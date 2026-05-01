@@ -81,11 +81,11 @@ public class Correspondence : AuditDetails,
         }
     }
 
-    private Application? _application;
+    private VllApplication? _application;
 
     [ForeignKey("ApplicationId")]
     [DevExpress.Xpo.Association("Application-Correspondences")]
-    public virtual Application? Application
+    public virtual VllApplication? Application
     {
         get => _application;
         set

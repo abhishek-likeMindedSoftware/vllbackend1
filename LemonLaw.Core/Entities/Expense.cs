@@ -80,11 +80,11 @@ public class Expense : AuditDetails,
         }
     }
 
-    private Application? _application;
+    private VllApplication? _application;
 
     [ForeignKey("ApplicationId")]
     [DevExpress.Xpo.Association("Application-Expenses")]
-    public virtual Application? Application
+    public virtual VllApplication? Application
     {
         get => _application;
         set
