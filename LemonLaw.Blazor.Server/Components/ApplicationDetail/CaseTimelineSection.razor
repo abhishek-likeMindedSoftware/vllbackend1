@@ -36,6 +36,7 @@
 
 @code {
     [Parameter] public IEnumerable<CaseEvent>? InitialData { get; set; }
+    [Parameter] public int RefreshKey { get; set; }
 
     private List<CaseEvent> _items = new();
     private string _search = string.Empty;

@@ -13,7 +13,7 @@
     else
     {
         <table class="ll-table">
-            <thead><tr><th>Date</th><th>Facility</th><th>Defects Addressed</th><th>RO #</th><th>Successful</th><th>Days OOS</th><th style="width:50px;"></th></tr></thead>
+            <thead><tr><th>Date</th><th>Facility</th><th>Defects Addressed</th><th>RO #</th><th>Successful</th><th>Days OOS</th><th style="width:70px;"></th></tr></thead>
             <tbody>
                 @foreach (var item in _filtered.OrderBy(r => r.RepairDate))
                 {
@@ -22,9 +22,12 @@
                         <td>@item.RepairFacilityName</td>
                         <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@item.DefectsAddressed</td>
                         <td>@(item.RoNumber ?? "—")</td>
-                        <td>@(item.RepairSuccessful ? "Yes" : "No")</td>
+                        <td>@EnumHelper.BoolBadge(item.RepairSuccessful)</td>
                         <td>@(item.DaysOutOfService?.ToString() ?? "—")</td>
-                        <td><button class="ll-row-edit-btn" type="button" @onclick="() => OpenEdit(item)"><EditIcon Size="13" /></button></td>
+                        <td class="ll-action-cell">
+                            <button class="ll-row-edit-btn" type="button" title="Edit" @onclick="() => OpenEdit(item)"><EditIcon Size="13" /></button>
+                            <button class="ll-row-view-btn" type="button" title="View detail" @onclick="() => OnOpenDetail.InvokeAsync(item.Id)">&#128065;</button>
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -66,6 +69,8 @@
     [Parameter] public Guid ApplicationId { get; set; }
     [Parameter] public IEnumerable<RepairAttempt>? InitialData { get; set; }
     [Parameter] public EventCallback<int> OnCountChanged { get; set; }
+    [Parameter] public EventCallback<Guid> OnOpenDetail { get; set; }
+    [Parameter] public int RefreshKey { get; set; }
 
     private List<RepairAttempt> _items = new();
     private string _search = string.Empty;
@@ -81,10 +86,16 @@
     private bool _showEdit, _saving;
     private string? _saveError;
     private bool _initialized;
+    private int _lastRefreshKey = -1;
 
     protected override void OnParametersSet()
     {
-        if (!_initialized) { _items = InitialData?.ToList() ?? new(); _initialized = true; }
+        if (!_initialized || RefreshKey != _lastRefreshKey)
+        {
+            _items = InitialData?.ToList() ?? new();
+            _initialized = true;
+            _lastRefreshKey = RefreshKey;
+        }
     }
 
     private void OpenNew() { _editId = null; _form = new(); _saveError = null; _showEdit = true; }

@@ -171,6 +171,8 @@
 }
 .ll-table tr:last-child td { border-bottom: none !important; }
 .ll-table tr:hover td { background: #f8fafc !important; }
+.ll-table tr.ll-row-clickable { cursor: pointer !important; }
+.ll-table tr.ll-row-clickable:hover td { background: #eff6ff !important; }
 .ll-table-empty {
     text-align: center !important;
     color: #94a3b8 !important;
@@ -278,6 +280,24 @@
     padding: 0 !important;
 }
 .ll-row-edit-btn:hover { background: #f0f4ff !important; border-color: #3b5bdb !important; color: #3b5bdb !important; }
+.ll-row-view-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 6px !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #fff !important;
+    color: #475569 !important;
+    cursor: pointer !important;
+    transition: all .12s !important;
+    padding: 0 !important;
+    font-size: .875rem !important;
+    line-height: 1 !important;
+}
+.ll-row-view-btn:hover { background: #f0fff4 !important; border-color: #16a34a !important; color: #16a34a !important; }
+.ll-action-cell { white-space: nowrap !important; display: flex !important; gap: 4px !important; align-items: center !important; }
 
 /* ── Form controls (used inside DxPopup) ─────────────────────────────────── */
 .ll-form-row {

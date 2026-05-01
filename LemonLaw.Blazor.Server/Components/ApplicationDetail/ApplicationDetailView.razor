@@ -5,9 +5,12 @@
 @using LemonLaw.Shared.DTOs
 @using Microsoft.Extensions.DependencyInjection
 @using Microsoft.JSInterop
+@using DevExpress.ExpressApp
+@using DevExpress.ExpressApp.Blazor.Services
 
 @inject IServiceProvider ServiceProvider
 @inject IJSRuntime JS
+@inject IXafApplicationProvider XafAppProvider
 
 <div class="ll-wrap">
 
@@ -106,15 +109,15 @@
             <div style="overflow:visible;">
                 @switch (_activeTab)
                 {
-                    case "defects":        <DefectsSection ApplicationId="_app.Id" InitialData="_app.Defects" OnCountChanged="OnDefectsCountChanged" /> break;
-                    case "repairs":        <RepairAttemptsSection ApplicationId="_app.Id" InitialData="_app.RepairAttempts" OnCountChanged="OnRepairsCountChanged" /> break;
-                    case "expenses":       <ExpensesSection ApplicationId="_app.Id" InitialData="_app.Expenses" OnCountChanged="OnExpensesCountChanged" /> break;
-                    case "hearings":       <HearingsSection ApplicationId="_app.Id" InitialData="_app.Hearings" OnCountChanged="OnHearingsCountChanged" /> break;
-                    case "documents":      <DocumentsSection ApplicationId="_app.Id" InitialData="_app.Documents" OnCountChanged="OnDocumentsCountChanged" /> break;
-                    case "correspondence": <CorrespondenceSection ApplicationId="_app.Id" InitialData="_app.Correspondences" /> break;
-                    case "outreach":       <DealerOutreachSection ApplicationId="_app.Id" InitialData="_app.DealerOutreaches" /> break;
-                    case "notes":          <NotesSection ApplicationId="_app.Id" InitialData="_app.Notes" OnCountChanged="OnNotesCountChanged" /> break;
-                    case "timeline":       <CaseTimelineSection InitialData="_app.Events" /> break;
+                    case "defects":        <DefectsSection ApplicationId="_app.Id" InitialData="_app.Defects" OnCountChanged="OnDefectsCountChanged" OnOpenDetail="OpenXafDetail" RefreshKey="_sectionRefreshKey" /> break;
+                    case "repairs":        <RepairAttemptsSection ApplicationId="_app.Id" InitialData="_app.RepairAttempts" OnCountChanged="OnRepairsCountChanged" OnOpenDetail="OpenXafDetail" RefreshKey="_sectionRefreshKey" /> break;
+                    case "expenses":       <ExpensesSection ApplicationId="_app.Id" InitialData="_app.Expenses" OnCountChanged="OnExpensesCountChanged" OnOpenDetail="OpenXafDetail" RefreshKey="_sectionRefreshKey" /> break;
+                    case "hearings":       <HearingsSection ApplicationId="_app.Id" InitialData="_app.Hearings" OnCountChanged="OnHearingsCountChanged" OnOpenDetail="OpenXafDetail" RefreshKey="_sectionRefreshKey" /> break;
+                    case "documents":      <DocumentsSection ApplicationId="_app.Id" InitialData="_app.Documents" OnCountChanged="OnDocumentsCountChanged" OnOpenDetail="OpenXafDetail" RefreshKey="_sectionRefreshKey" /> break;
+                    case "correspondence": <CorrespondenceSection ApplicationId="_app.Id" InitialData="_app.Correspondences" OnOpenDetail="OpenXafDetail" RefreshKey="_sectionRefreshKey" /> break;
+                    case "outreach":       <DealerOutreachSection ApplicationId="_app.Id" InitialData="_app.DealerOutreaches" OnOpenDetail="OpenXafDetail" RefreshKey="_sectionRefreshKey" /> break;
+                    case "notes":          <NotesSection ApplicationId="_app.Id" InitialData="_app.Notes" OnCountChanged="OnNotesCountChanged" OnOpenDetail="OpenXafDetail" RefreshKey="_sectionRefreshKey" /> break;
+                    case "timeline":       <CaseTimelineSection InitialData="_app.Events" RefreshKey="_sectionRefreshKey" /> break;
                 }
             </div>
         </div>
@@ -214,6 +217,8 @@
     private bool _loading = true;
     private string? _loadError;
     private string _activeTab = "defects";
+    private Guid _loadedId = Guid.Empty;
+    private int _sectionRefreshKey = 0;
 
     private bool _showAppInfoEdit, _appInfoSaving;
     private string? _appInfoError;
@@ -229,7 +234,38 @@
     protected override async Task OnParametersSetAsync()
     {
         if (CurrentObject == null) { _loading = false; _loadError = "No application selected."; return; }
+        if (CurrentObject.Id == _loadedId)
+        {
+            // Same application — came back from a child XAF detail view tab.
+            // Reload data silently in the background to pick up any edits,
+            // then restore scroll position so the view doesn't jump to top.
+            _ = SilentRefreshAsync();
+            return;
+        }
         await LoadAsync(CurrentObject.Id);
+    }
+
+    private async Task SilentRefreshAsync()
+    {
+        // Capture scroll position before reload
+        double scrollY = 0;
+        try { scrollY = await JS.InvokeAsync<double>("eval", "document.querySelector('.ll-wrap')?.closest('.dxbl-scroll-viewer-content, .content-container, [class*=\"scroll\"]')?.scrollTop ?? window.scrollY ?? 0"); }
+        catch { }
+
+        _loadedId = Guid.Empty;
+        await LoadAsync(_app!.Id);
+
+        // Reset section initialized flags so they pick up fresh InitialData
+        _sectionRefreshKey++;
+        StateHasChanged();
+
+        // Restore scroll position after render
+        if (scrollY > 0)
+        {
+            await Task.Delay(50);
+            try { await JS.InvokeVoidAsync("eval", $"(document.querySelector('.ll-wrap')?.closest('.dxbl-scroll-viewer-content, .content-container, [class*=\"scroll\"]') || window).scrollTo({{top:{scrollY},behavior:'instant'}})"); }
+            catch { }
+        }
     }
 
     private async Task LoadAsync(Guid id)
@@ -241,7 +277,7 @@
             var repo = scope.ServiceProvider.GetRequiredService<IApplicationRepository>();
             _app = await repo.GetWithFullDetailsAsync(id);
             if (_app == null) _loadError = "Application not found.";
-            else BuildTabs();
+            else { _loadedId = id; BuildTabs(); }
         }
         catch (Exception ex) { _loadError = ex.Message; }
         finally { _loading = false; }
@@ -250,6 +286,7 @@
     private async Task RefreshAsync()
     {
         if (_app == null) return;
+        _loadedId = Guid.Empty; // reset guard so LoadAsync runs fresh
         await LoadAsync(_app.Id);
         StateHasChanged();
     }
@@ -287,6 +324,39 @@
     private void OnHearingsCountChanged(int c)   => UpdateTabCount("hearings",  c);
     private void OnDocumentsCountChanged(int c)  => UpdateTabCount("documents", c);
     private void OnNotesCountChanged(int c)      => UpdateTabCount("notes",     c);
+
+    private void OpenXafDetail(Guid id)
+    {
+        try
+        {
+            var xafApp = XafAppProvider.GetApplication();
+            var entityType = _activeTab switch
+            {
+                "defects"        => typeof(LemonLaw.Core.Entities.Defect),
+                "repairs"        => typeof(LemonLaw.Core.Entities.RepairAttempt),
+                "expenses"       => typeof(LemonLaw.Core.Entities.Expense),
+                "hearings"       => typeof(LemonLaw.Core.Entities.Hearing),
+                "documents"      => typeof(LemonLaw.Core.Entities.ApplicationDocument),
+                "correspondence" => typeof(LemonLaw.Core.Entities.Correspondence),
+                "outreach"       => typeof(LemonLaw.Core.Entities.DealerOutreach),
+                "notes"          => typeof(LemonLaw.Core.Entities.CaseNote),
+                _                => null
+            };
+            if (entityType == null) return;
+
+            var typedOs = xafApp.CreateObjectSpace(entityType);
+            var obj = typedOs.GetObjectByKey(entityType, id);
+            if (obj == null) return;
+
+            var detailView = xafApp.CreateDetailView(typedOs, obj);
+            var svp = new DevExpress.ExpressApp.ShowViewParameters(detailView)
+            {
+                TargetWindow = DevExpress.ExpressApp.TargetWindow.NewWindow
+            };
+            xafApp.ShowViewStrategy.ShowView(svp, new DevExpress.ExpressApp.ShowViewSource(null, null));
+        }
+        catch { /* silently ignore navigation errors */ }
+    }
 
     private async Task ScrollTabsLeft()  => await JS.InvokeVoidAsync("eval", "document.getElementById('ll-tabs-strip').scrollBy({left:-160,behavior:'smooth'})");
     private async Task ScrollTabsRight() => await JS.InvokeVoidAsync("eval", "document.getElementById('ll-tabs-strip').scrollBy({left:160,behavior:'smooth'})");
