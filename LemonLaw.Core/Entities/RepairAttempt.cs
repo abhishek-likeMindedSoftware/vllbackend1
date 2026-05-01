@@ -100,6 +100,13 @@ public class RepairAttempt : AuditDetails,
 
     #endregion
 
+    // Caption is referenced by ObjectCaptionFormat="{0:Caption}" in Model.DesignedDiffs.xafml.
+    // XAF uses it to set the tab/window title when this record is opened in a detail view,
+    // showing "Repair - <CaseNumber>" instead of the DefaultProperty (RepairFacilityName).
+    [NotMapped, Browsable(false)]
+    [VisibleInDetailView(false), VisibleInListView(false), VisibleInLookupListView(false)]
+    public string Caption => $"Repair - {Application?.CaseNumber ?? Id.ToString()[..8]}";
+
     #region Repair Details
 
     private DateOnly _repairDate;

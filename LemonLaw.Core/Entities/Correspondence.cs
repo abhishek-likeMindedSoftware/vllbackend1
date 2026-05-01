@@ -102,6 +102,13 @@ public class Correspondence : AuditDetails,
 
     #endregion
 
+    // Caption is referenced by ObjectCaptionFormat="{0:Caption}" in Model.DesignedDiffs.xafml.
+    // XAF uses it to set the tab/window title when this record is opened in a detail view,
+    // showing "Correspondence - <CaseNumber>" instead of the DefaultProperty (Subject).
+    [NotMapped, Browsable(false)]
+    [VisibleInDetailView(false), VisibleInListView(false), VisibleInLookupListView(false)]
+    public string Caption => $"Correspondence - {Application?.CaseNumber ?? Id.ToString()[..8]}";
+
     #region Correspondence Details
 
     private CorrespondenceDirection _direction;

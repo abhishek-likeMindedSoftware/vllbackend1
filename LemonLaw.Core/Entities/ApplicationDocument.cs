@@ -102,6 +102,13 @@ public class ApplicationDocument : AuditDetails,
 
     #endregion
 
+    // Caption is referenced by ObjectCaptionFormat="{0:Caption}" in Model.DesignedDiffs.xafml.
+    // XAF uses it to set the tab/window title when this record is opened in a detail view,
+    // showing "Document - <CaseNumber>" instead of the DefaultProperty (FileName).
+    [NotMapped, Browsable(false)]
+    [VisibleInDetailView(false), VisibleInListView(false), VisibleInLookupListView(false)]
+    public string Caption => $"Document - {Application?.CaseNumber ?? Id.ToString()[..8]}";
+
     #region Document Details
 
     private DocumentType _documentType;

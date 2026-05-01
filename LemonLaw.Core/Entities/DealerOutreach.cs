@@ -103,6 +103,13 @@ public class DealerOutreach : AuditDetails,
 
     #endregion
 
+    // Caption is referenced by ObjectCaptionFormat="{0:Caption}" in Model.DesignedDiffs.xafml.
+    // XAF uses it to set the tab/window title when this record is opened in a detail view,
+    // showing "Outreach - <CaseNumber>" instead of the DefaultProperty (DealerName).
+    [NotMapped, Browsable(false)]
+    [VisibleInDetailView(false), VisibleInListView(false), VisibleInLookupListView(false)]
+    public string Caption => $"Outreach - {Application?.CaseNumber ?? Id.ToString()[..8]}";
+
     #region Outreach Details
 
     private string _dealerName = string.Empty;

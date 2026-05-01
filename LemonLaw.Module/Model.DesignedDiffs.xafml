@@ -13,6 +13,14 @@
   </Options>
   <Views>
     <ListView Id="ApplicationUser_ListView" Caption="Users" />
+    <DetailView Id="Defect_DetailView"          ObjectCaptionFormat="{0:Caption}" />
+    <DetailView Id="RepairAttempt_DetailView"   ObjectCaptionFormat="{0:Caption}" />
+    <DetailView Id="Expense_DetailView"         ObjectCaptionFormat="{0:Caption}" />
+    <DetailView Id="Hearing_DetailView"         ObjectCaptionFormat="{0:Caption}" />
+    <DetailView Id="ApplicationDocument_DetailView" ObjectCaptionFormat="{0:Caption}" />
+    <DetailView Id="Correspondence_DetailView"  ObjectCaptionFormat="{0:Caption}" />
+    <DetailView Id="DealerOutreach_DetailView"  ObjectCaptionFormat="{0:Caption}" />
+    <DetailView Id="CaseNote_DetailView"        ObjectCaptionFormat="{0:Caption}" />
     <DetailView Id="ReportDataV2_DetailView">
       <Layout>
         <LayoutGroup Id="Main" >

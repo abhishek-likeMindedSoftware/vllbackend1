@@ -103,6 +103,13 @@ public class Hearing : AuditDetails,
 
     #endregion
 
+    // Caption is referenced by ObjectCaptionFormat="{0:Caption}" in Model.DesignedDiffs.xafml.
+    // XAF uses it to set the tab/window title when this record is opened in a detail view,
+    // showing "Hearing - <CaseNumber>" instead of the DefaultProperty (HearingDate).
+    [NotMapped, Browsable(false)]
+    [VisibleInDetailView(false), VisibleInListView(false), VisibleInLookupListView(false)]
+    public string Caption => $"Hearing - {Application?.CaseNumber ?? Id.ToString()[..8]}";
+
     #region Hearing Details
 
     private DateTime _hearingDate;

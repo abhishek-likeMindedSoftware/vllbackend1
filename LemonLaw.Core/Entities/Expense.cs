@@ -101,6 +101,13 @@ public class Expense : AuditDetails,
 
     #endregion
 
+    // Caption is referenced by ObjectCaptionFormat="{0:Caption}" in Model.DesignedDiffs.xafml.
+    // XAF uses it to set the tab/window title when this record is opened in a detail view,
+    // showing "Expense - <CaseNumber>" instead of the DefaultProperty (ExpenseType).
+    [NotMapped, Browsable(false)]
+    [VisibleInDetailView(false), VisibleInListView(false), VisibleInLookupListView(false)]
+    public string Caption => $"Expense - {Application?.CaseNumber ?? Id.ToString()[..8]}";
+
     #region Expense Details
 
     private ExpenseType _expenseType;
