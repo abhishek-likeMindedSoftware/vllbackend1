@@ -41,6 +41,10 @@ namespace LemonLaw.Module.DatabaseUpdate
 
             ObjectSpace.CommitChanges();
 
+            // Seed pre-built report templates (idempotent — skips existing)
+            Reports.ReportSeeder.SeedReports(ObjectSpace);
+            ObjectSpace.CommitChanges();
+
 #if !RELEASE
             var userManager = ObjectSpace.ServiceProvider.GetRequiredService<UserManager>();
 

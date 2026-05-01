@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<XtraReportsLayoutSerializer SerializerVersion="25.2.3.0" Ref="1"
+  ControlType="DevExpress.XtraReports.UI.XtraReport, DevExpress.XtraReports.v25.2, Version=25.2.3.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a"
+  Name="DealerOutreachLog" DisplayName="Dealer Outreach Log"
+  PaperKind="Letter" Landscape="true" PageWidth="1100" PageHeight="850" Margins="30,30,30,30"
+  Version="25.2" DataSource="#Ref-0">
+  <Parameters>
+    <Item1 Ref="10" Name="pStatus" Description="Status (SENT / RESPONDED / OVERDUE — blank for all)" Type="System.String" ValueInfo="" Visible="true" />
+    <Item2 Ref="11" Name="pFrom"   Description="Sent From (leave blank for all)" Type="System.DateTime" ValueInfo="" Visible="true" />
+    <Item3 Ref="12" Name="pTo"     Description="Sent To (leave blank for all)"   Type="System.DateTime" ValueInfo="" Visible="true" />
+  </Parameters>
+  <FilterString>(IsNullOrEmpty(?pStatus) Or [Status] == ?pStatus) And (?pFrom == # # Or [SentAt] >= ?pFrom) And (?pTo == # # Or [SentAt] &lt;= ?pTo)</FilterString>
+  <Bands>
+    <Item1 Ref="2" ControlType="TopMarginBand"    Name="TopMargin"    HeightF="30" />
+    <Item2 Ref="3" ControlType="ReportHeaderBand" Name="ReportHeader" HeightF="60">
+      <Controls>
+        <Item1 Ref="4" ControlType="XRLabel" Name="lblTitle"    Text="Dealer Outreach Log"                                  SizeF="1040,36" LocationFloat="0,0"  Font="Arial,16pt,style=Bold" ForeColor="15,23,42" />
+        <Item2 Ref="5" ControlType="XRLabel" Name="lblSubtitle" Text="All dealer outreach records — filterable by status and date" SizeF="1040,20" LocationFloat="0,38" Font="Arial,9pt"           ForeColor="100,116,139" />
+      </Controls>
+    </Item2>
+    <Item3 Ref="6" ControlType="PageHeaderBand" Name="PageHeader" HeightF="26">
+      <Controls>
+        <Item1 Ref="7" ControlType="XRTable" Name="tblH" SizeF="1040,26" LocationFloat="0,0">
+          <Rows>
+            <Item1 Ref="8" ControlType="XRTableRow" Name="rH" Weight="1">
+              <Cells>
+                <Item1 Ref="20" ControlType="XRTableCell" Name="hDealer"   Text="Dealer Name"    Weight="2.0" Font="Arial,8pt,style=Bold" ForeColor="White" BackColor="2,101,163" Padding="5,5,3,3" />
+                <Item2 Ref="21" ControlType="XRTableCell" Name="hEmail"    Text="Dealer Email"   Weight="2.2" Font="Arial,8pt,style=Bold" ForeColor="White" BackColor="2,101,163" Padding="5,5,3,3" />
+                <Item3 Ref="22" ControlType="XRTableCell" Name="hType"     Text="Outreach Type"  Weight="1.3" Font="Arial,8pt,style=Bold" ForeColor="White" BackColor="2,101,163" Padding="5,5,3,3" />
+                <Item4 Ref="23" ControlType="XRTableCell" Name="hSent"     Text="Sent At"        Weight="1.2" Font="Arial,8pt,style=Bold" ForeColor="White" BackColor="2,101,163" Padding="5,5,3,3" />
+                <Item5 Ref="24" ControlType="XRTableCell" Name="hDeadline" Text="Deadline"       Weight="1.2" Font="Arial,8pt,style=Bold" ForeColor="White" BackColor="2,101,163" Padding="5,5,3,3" />
+                <Item6 Ref="25" ControlType="XRTableCell" Name="hStatus"   Text="Status"         Weight="1.2" Font="Arial,8pt,style=Bold" ForeColor="White" BackColor="2,101,163" Padding="5,5,3,3" />
+                <Item7 Ref="26" ControlType="XRTableCell" Name="hDelivery" Text="Delivery"       Weight="1.2" Font="Arial,8pt,style=Bold" ForeColor="White" BackColor="2,101,163" Padding="5,5,3,3" />
+              </Cells>
+            </Item1>
+          </Rows>
+        </Item1>
+      </Controls>
+    </Item3>
+    <Item4 Ref="9" ControlType="DetailBand" Name="Detail" HeightF="22">
+      <Controls>
+        <Item1 Ref="30" ControlType="XRTable" Name="tblD" SizeF="1040,22" LocationFloat="0,0">
+          <Rows>
+            <Item1 Ref="31" ControlType="XRTableRow" Name="rD" Weight="1">
+              <Cells>
+                <Item1 Ref="40" ControlType="XRTableCell" Name="dDealer"   Weight="2.0" Font="Arial,8pt" Padding="5,5,2,2" WordWrap="false">
+                  <ExpressionBindings><Item1 Ref="50" EventName="BeforePrint" PropertyName="Text" Expression="[DealerName]" /></ExpressionBindings>
+                </Item1>
+                <Item2 Ref="41" ControlType="XRTableCell" Name="dEmail"    Weight="2.2" Font="Arial,8pt" Padding="5,5,2,2" WordWrap="false">
+                  <ExpressionBindings><Item1 Ref="51" EventName="BeforePrint" PropertyName="Text" Expression="[DealerEmail]" /></ExpressionBindings>
+                </Item2>
+                <Item3 Ref="42" ControlType="XRTableCell" Name="dType"     Weight="1.3" Font="Arial,8pt" Padding="5,5,2,2">
+                  <ExpressionBindings><Item1 Ref="52" EventName="BeforePrint" PropertyName="Text" Expression="[OutreachType]" /></ExpressionBindings>
+                </Item3>
+                <Item4 Ref="43" ControlType="XRTableCell" Name="dSent"     Weight="1.2" Font="Arial,8pt" Padding="5,5,2,2">
+                  <ExpressionBindings><Item1 Ref="53" EventName="BeforePrint" PropertyName="Text" Expression="Iif([SentAt]==null,'—',Format('{0:MM/dd/yyyy}',[SentAt]))" /></ExpressionBindings>
+                </Item4>
+                <Item5 Ref="44" ControlType="XRTableCell" Name="dDeadline" Weight="1.2" Font="Arial,8pt" Padding="5,5,2,2">
+                  <ExpressionBindings><Item1 Ref="54" EventName="BeforePrint" PropertyName="Text" Expression="[ResponseDeadline]" /></ExpressionBindings>
+                </Item5>
+                <Item6 Ref="45" ControlType="XRTableCell" Name="dStatus"   Weight="1.2" Font="Arial,8pt" Padding="5,5,2,2">
+                  <ExpressionBindings><Item1 Ref="55" EventName="BeforePrint" PropertyName="Text" Expression="[Status]" /></ExpressionBindings>
+                </Item6>
+                <Item7 Ref="46" ControlType="XRTableCell" Name="dDelivery" Weight="1.2" Font="Arial,8pt" Padding="5,5,2,2">
+                  <ExpressionBindings><Item1 Ref="56" EventName="BeforePrint" PropertyName="Text" Expression="[DeliveryStatus]" /></ExpressionBindings>
+                </Item7>
+              </Cells>
+            </Item1>
+          </Rows>
+        </Item1>
+      </Controls>
+    </Item4>
+    <Item5 Ref="60" ControlType="PageFooterBand" Name="PageFooter" HeightF="24">
+      <Controls>
+        <Item1 Ref="61" ControlType="XRLabel"    Name="lblAgency" Text="OCABR — Vehicle Lemon Law Program" SizeF="500,16" LocationFloat="0,4"   Font="Arial,8pt" ForeColor="100,116,139" />
+        <Item2 Ref="62" ControlType="XRPageInfo" Name="pageInfo"  TextFormatString="Page {0} of {1}"       SizeF="150,16" LocationFloat="890,4" Font="Arial,8pt" ForeColor="100,116,139" TextAlignment="TopRight" />
+      </Controls>
+    </Item5>
+    <Item6 Ref="63" ControlType="BottomMarginBand" Name="BottomMargin" HeightF="30" />
+  </Bands>
+  <ComponentStorage>
+    <Item1 Ref="0" ObjectTypeName="LemonLaw.Core.Entities.DealerOutreach"
+      ObjectType="DevExpress.Persistent.Base.ReportsV2.CollectionDataSource,DevExpress.Persistent.Base.v25.2"
+      TopReturnedRecords="0">
+      <Sorting Ref="70" FieldName="SentAt" SortOrder="Descending" />
+    </Item1>
+  </ComponentStorage>
+</XtraReportsLayoutSerializer>

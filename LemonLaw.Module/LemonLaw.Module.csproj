@@ -15,6 +15,12 @@
 		<EmbeddedResource Include="Model.DesignedDiffs.xafml" />
 	</ItemGroup>
 	<ItemGroup>
+		<!-- Copy report templates to output so ReportSeeder can read them at startup -->
+		<None Update="Reports\*.repx">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+	<ItemGroup>
 		<PackageReference Include="DevExpress.ExpressApp" Version="25.2.*" />
 		<PackageReference Include="DevExpress.ExpressApp.AuditTrail.EFCore" Version="25.2.*" />
 		<PackageReference Include="DevExpress.ExpressApp.CodeAnalysis" Version="25.2.*" />

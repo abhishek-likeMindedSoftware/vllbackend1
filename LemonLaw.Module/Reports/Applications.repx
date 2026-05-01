@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<XtraReportsLayoutSerializer SerializerVersion="25.2.3.0" Ref="1"
+  ControlType="DevExpress.XtraReports.UI.XtraReport, DevExpress.XtraReports.v25.2, Version=25.2.3.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a"
+  Name="Applications" DisplayName="Applications"
+  PaperKind="Letter" Landscape="true" PageWidth="1100" PageHeight="850" Margins="30,30,30,30"
+  Version="25.2" DataSource="#Ref-0">
+  <Parameters>
+    <Item1 Ref="10" Name="pStatus" Description="Status (e.g. SUBMITTED — leave blank for all)" Type="System.String" ValueInfo="" Visible="true" />
+    <Item2 Ref="11" Name="pType"   Description="Type (NEW_CAR / USED_CAR / LEASED — blank for all)" Type="System.String" ValueInfo="" Visible="true" />
+    <Item3 Ref="12" Name="pFrom"   Description="Submitted From (leave blank for all)" Type="System.DateTime" ValueInfo="" Visible="true" />
+    <Item4 Ref="13" Name="pTo"     Description="Submitted To (leave blank for all)"   Type="System.DateTime" ValueInfo="" Visible="true" />
+  </Parameters>
+  <FilterString>(IsNullOrEmpty(?pStatus) Or [Status] == ?pStatus) And (IsNullOrEmpty(?pType) Or [ApplicationType] == ?pType) And (?pFrom == # # Or [SubmittedAt] >= ?pFrom) And (?pTo == # # Or [SubmittedAt] &lt;= ?pTo)</FilterString>
+  <Bands>
+    <Item1 Ref="2" ControlType="TopMarginBand"    Name="TopMargin"    HeightF="30" />
+    <Item2 Ref="3" ControlType="ReportHeaderBand" Name="ReportHeader" HeightF="60">
+      <Controls>
+        <Item1 Ref="4" ControlType="XRLabel" Name="lblTitle"    Text="Applications"                                       SizeF="1040,36" LocationFloat="0,0"  Font="Arial,16pt,style=Bold" ForeColor="15,23,42" />
+        <Item2 Ref="5" ControlType="XRLabel" Name="lblSubtitle" Text="All applications — filterable by status, type and date" SizeF="1040,20" LocationFloat="0,38" Font="Arial,9pt"           ForeColor="100,116,139" />
+      </Controls>
+    </Item2>
+    <Item3 Ref="6" ControlType="PageHeaderBand" Name="PageHeader" HeightF="26">
+      <Controls>
+        <Item1 Ref="7" ControlType="XRTable" Name="tblH" SizeF="1040,26" LocationFloat="0,0">
+          <Rows>
+            <Item1 Ref="8" ControlType="XRTableRow" Name="rH" Weight="1">
+              <Cells>
+                <Item1 Ref="20" ControlType="XRTableCell" Name="hCN"   Text="Case #"        Weight="1.2" Font="Arial,8pt,style=Bold" ForeColor="White" BackColor="2,101,163" Padding="5,5,3,3" />
+                <Item2 Ref="21" ControlType="XRTableCell" Name="hSt"   Text="Status"        Weight="1.6" Font="Arial,8pt,style=Bold" ForeColor="White" BackColor="2,101,163" Padding="5,5,3,3" />
+                <Item3 Ref="22" ControlType="XRTableCell" Name="hTy"   Text="Type"          Weight="1.2" Font="Arial,8pt,style=Bold" ForeColor="White" BackColor="2,101,163" Padding="5,5,3,3" />
+                <Item4 Ref="23" ControlType="XRTableCell" Name="hAs"   Text="Assigned To"   Weight="1.8" Font="Arial,8pt,style=Bold" ForeColor="White" BackColor="2,101,163" Padding="5,5,3,3" />
+                <Item5 Ref="24" ControlType="XRTableCell" Name="hSub"  Text="Submitted"     Weight="1.1" Font="Arial,8pt,style=Bold" ForeColor="White" BackColor="2,101,163" Padding="5,5,3,3" />
+                <Item6 Ref="25" ControlType="XRTableCell" Name="hAct"  Text="Last Activity" Weight="1.1" Font="Arial,8pt,style=Bold" ForeColor="White" BackColor="2,101,163" Padding="5,5,3,3" />
+                <Item7 Ref="26" ControlType="XRTableCell" Name="hDays" Text="Days Open"     Weight="0.8" Font="Arial,8pt,style=Bold" ForeColor="White" BackColor="2,101,163" Padding="5,5,3,3" />
+              </Cells>
+            </Item1>
+          </Rows>
+        </Item1>
+      </Controls>
+    </Item3>
+    <Item4 Ref="9" ControlType="DetailBand" Name="Detail" HeightF="22">
+      <Controls>
+        <Item1 Ref="30" ControlType="XRTable" Name="tblD" SizeF="1040,22" LocationFloat="0,0">
+          <Rows>
+            <Item1 Ref="31" ControlType="XRTableRow" Name="rD" Weight="1">
+              <Cells>
+                <Item1 Ref="40" ControlType="XRTableCell" Name="dCN"   Weight="1.2" Font="Arial,8pt" Padding="5,5,2,2" WordWrap="false">
+                  <ExpressionBindings><Item1 Ref="50" EventName="BeforePrint" PropertyName="Text" Expression="[CaseNumber]" /></ExpressionBindings>
+                </Item1>
+                <Item2 Ref="41" ControlType="XRTableCell" Name="dSt"   Weight="1.6" Font="Arial,8pt" Padding="5,5,2,2">
+                  <ExpressionBindings><Item1 Ref="51" EventName="BeforePrint" PropertyName="Text" Expression="[Status]" /></ExpressionBindings>
+                </Item2>
+                <Item3 Ref="42" ControlType="XRTableCell" Name="dTy"   Weight="1.2" Font="Arial,8pt" Padding="5,5,2,2">
+                  <ExpressionBindings><Item1 Ref="52" EventName="BeforePrint" PropertyName="Text" Expression="[ApplicationType]" /></ExpressionBindings>
+                </Item3>
+                <Item4 Ref="43" ControlType="XRTableCell" Name="dAs"   Weight="1.8" Font="Arial,8pt" Padding="5,5,2,2" WordWrap="false">
+                  <ExpressionBindings><Item1 Ref="53" EventName="BeforePrint" PropertyName="Text" Expression="Iif(IsNullOrEmpty([AssignedToName]),'Unassigned',[AssignedToName])" /></ExpressionBindings>
+                </Item4>
+                <Item5 Ref="44" ControlType="XRTableCell" Name="dSub"  Weight="1.1" Font="Arial,8pt" Padding="5,5,2,2">
+                  <ExpressionBindings><Item1 Ref="54" EventName="BeforePrint" PropertyName="Text" Expression="Format('{0:MM/dd/yyyy}',[SubmittedAt])" /></ExpressionBindings>
+                </Item5>
+                <Item6 Ref="45" ControlType="XRTableCell" Name="dAct"  Weight="1.1" Font="Arial,8pt" Padding="5,5,2,2">
+                  <ExpressionBindings><Item1 Ref="55" EventName="BeforePrint" PropertyName="Text" Expression="Format('{0:MM/dd/yyyy}',[LastActivityAt])" /></ExpressionBindings>
+                </Item6>
+                <Item7 Ref="46" ControlType="XRTableCell" Name="dDays" Weight="0.8" Font="Arial,8pt" Padding="5,5,2,2" TextAlignment="TopRight">
+                  <ExpressionBindings><Item1 Ref="56" EventName="BeforePrint" PropertyName="Text" Expression="DateDiffDay([SubmittedAt],Now())" /></ExpressionBindings>
+                </Item7>
+              </Cells>
+            </Item1>
+          </Rows>
+        </Item1>
+      </Controls>
+    </Item4>
+    <Item5 Ref="60" ControlType="PageFooterBand" Name="PageFooter" HeightF="24">
+      <Controls>
+        <Item1 Ref="61" ControlType="XRLabel"    Name="lblAgency" Text="OCABR — Vehicle Lemon Law Program" SizeF="500,16" LocationFloat="0,4"   Font="Arial,8pt" ForeColor="100,116,139" />
+        <Item2 Ref="62" ControlType="XRPageInfo" Name="pageInfo"  TextFormatString="Page {0} of {1}"       SizeF="150,16" LocationFloat="890,4" Font="Arial,8pt" ForeColor="100,116,139" TextAlignment="TopRight" />
+      </Controls>
+    </Item5>
+    <Item6 Ref="63" ControlType="BottomMarginBand" Name="BottomMargin" HeightF="30" />
+  </Bands>
+  <ComponentStorage>
+    <Item1 Ref="0" ObjectTypeName="LemonLaw.Core.Entities.Application"
+      ObjectType="DevExpress.Persistent.Base.ReportsV2.CollectionDataSource,DevExpress.Persistent.Base.v25.2"
+      TopReturnedRecords="0">
+      <Sorting Ref="70" FieldName="SubmittedAt" SortOrder="Descending" />
+    </Item1>
+  </ComponentStorage>
+</XtraReportsLayoutSerializer>
