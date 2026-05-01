@@ -3,11 +3,12 @@ using DevExpress.ExpressApp.Actions;
 using DevExpress.ExpressApp.SystemModule;
 using DevExpress.ExpressApp.Templates;
 using DevExpress.Persistent.Base;
+using LemonLaw.Application.Interfaces;
 using LemonLaw.Core.Enums;
 using LemonLaw.Module.BusinessObjects;
+using LemonLaw.Shared.DTOs;
+using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel;
-using System.Net.Http.Json;
-using System.Text.Json;
 
 using AppEntity  = LemonLaw.Core.Entities.Application;
 using XafAppUser = LemonLaw.Core.Entities.ApplicationUser;
@@ -15,54 +16,53 @@ using XafAppUser = LemonLaw.Core.Entities.ApplicationUser;
 namespace LemonLaw.Module.Controllers
 {
     /// <summary>
-    /// Replaces the previous 8 individual toolbar buttons with a single
-    /// "Case Actions" dropdown (SingleChoiceAction). The dropdown is populated
-    /// dynamically based on the current application status — only valid actions
-    /// for the current state are shown, per spec §3.4 transition matrix.
+    /// Provides the "Case Actions" dropdown on the Application detail view.
+    /// All business logic is delegated directly to IApplicationService and
+    /// IDealerOutreachService — no HTTP calls are made from this controller.
     ///
-    /// Actions included:
-    ///   SUBMITTED        → Accept Application | Mark Incomplete | Withdraw
-    ///   INCOMPLETE       → Withdraw
-    ///   ACCEPTED         → Send Dealer Outreach | Schedule Hearing | Withdraw
-    ///   DEALER_RESPONDED → Schedule Hearing | Withdraw
-    ///   HEARING_SCHEDULED→ Mark Hearing Complete | Withdraw
-    ///   HEARING_COMPLETE → Issue Decision
-    ///   DECISION_ISSUED  → Close Case
-    ///   (any open)       → Withdraw (always available unless terminal)
+    /// Actions per spec §3.4 transition matrix:
+    ///   SUBMITTED         → Accept | Mark Incomplete | Assign | Withdraw
+    ///   INCOMPLETE        → Assign | Withdraw
+    ///   ACCEPTED          → Send Dealer Outreach | Schedule Hearing | Assign | Withdraw
+    ///   DEALER_RESPONDED  → Schedule Hearing | Assign | Withdraw
+    ///   HEARING_SCHEDULED → Mark Hearing Complete | Assign | Withdraw
+    ///   HEARING_COMPLETE  → Issue Decision | Assign
+    ///   DECISION_ISSUED   → Close Case | Assign
     /// </summary>
     public class CaseActionsController : ViewController<DetailView>
     {
-        // Action item keys — used to identify which item was selected
         private const string KEY_ACCEPT           = "AcceptApplication";
-        private const string KEY_INCOMPLETE        = "MarkIncomplete";
-        private const string KEY_SEND_OUTREACH     = "SendDealerOutreach";
-        private const string KEY_SCHEDULE_HEARING  = "ScheduleHearing";
-        private const string KEY_HEARING_COMPLETE  = "MarkHearingComplete";
-        private const string KEY_ISSUE_DECISION    = "IssueDecision";
-        private const string KEY_CLOSE             = "CloseCase";
-        private const string KEY_WITHDRAW          = "WithdrawCase";
-        private const string KEY_ASSIGN                    = "AssignCase";
-        private const string DEFAULT_CASE_ACTIONS_CAPTION  = "Case Actions";
+        private const string KEY_INCOMPLETE       = "MarkIncomplete";
+        private const string KEY_SEND_OUTREACH    = "SendDealerOutreach";
+        private const string KEY_SCHEDULE_HEARING = "ScheduleHearing";
+        private const string KEY_HEARING_COMPLETE = "MarkHearingComplete";
+        private const string KEY_ISSUE_DECISION   = "IssueDecision";
+        private const string KEY_CLOSE            = "CloseCase";
+        private const string KEY_WITHDRAW         = "WithdrawCase";
+        private const string KEY_ASSIGN           = "AssignCase";
 
-        private SingleChoiceAction _caseActionsMenu;
-        private AppEntity? _trackedApplication;
+        private const string DEFAULT_CAPTION = "Case Actions";
+
+        private readonly SingleChoiceAction _caseActionsMenu;
+        private AppEntity?         _trackedApplication;
         private RefreshController? _refreshController;
-        private int _busyOperationCount;
+        private int                _busyCount;
 
         public CaseActionsController()
         {
-            // One dropdown button — "Case Actions ▾"
             _caseActionsMenu = new SingleChoiceAction(this, "CaseActionsMenu", PredefinedCategory.Edit)
             {
-                Caption = DEFAULT_CASE_ACTIONS_CAPTION,
-                ToolTip = "Available actions for this case based on its current status.",
-                ImageName = "Action_SimpleAction",
-                PaintStyle = ActionItemPaintStyle.CaptionAndImage,
+                Caption          = DEFAULT_CAPTION,
+                ToolTip          = "Available actions for this case based on its current status.",
+                ImageName        = "Action_SimpleAction",
+                PaintStyle       = ActionItemPaintStyle.CaptionAndImage,
                 ShowItemsOnClick = true,
-                ItemType = SingleChoiceActionItemType.ItemIsOperation
+                ItemType         = SingleChoiceActionItemType.ItemIsOperation
             };
             _caseActionsMenu.Execute += OnCaseActionSelected;
         }
+
+        // ── Lifecycle ─────────────────────────────────────────────────────────
 
         protected override void OnActivated()
         {
@@ -95,14 +95,11 @@ namespace LemonLaw.Module.Controllers
 
             UntrackCurrentApplication();
             _refreshController = null;
-
             base.OnDeactivated();
         }
 
-        /// <summary>
-        /// Rebuilds the dropdown items to show only the actions valid for the
-        /// current application status. Called on activation and on view change.
-        /// </summary>
+        // ── Menu building ─────────────────────────────────────────────────────
+
         private void RebuildMenuItems()
         {
             _caseActionsMenu.Items.Clear();
@@ -115,50 +112,48 @@ namespace LemonLaw.Module.Controllers
 
             _caseActionsMenu.Active.SetItemValue("IsApplicationView", true);
 
-            var s = app.Status;
-            var isTerminal = s == ApplicationStatus.CLOSED || s == ApplicationStatus.WITHDRAWN;
+            var status     = app.Status;
+            var isTerminal = status == ApplicationStatus.CLOSED || status == ApplicationStatus.WITHDRAWN;
 
             if (isTerminal)
             {
-                // No actions available on terminal states — hide the button entirely
                 _caseActionsMenu.Active.SetItemValue("IsApplicationView", false);
                 return;
             }
 
-            // Build items based on current status per spec §3.4
             var canAssign = CanCurrentUserAssign();
 
-            switch (s)
+            switch (status)
             {
                 case ApplicationStatus.SUBMITTED:
-                    AddItem(KEY_ACCEPT,      "Accept Application",  "State_Validation_Valid");
-                    AddItem(KEY_INCOMPLETE,  "Mark Incomplete",     "State_Validation_Warning");
+                    AddItem(KEY_ACCEPT,     "Accept Application", "State_Validation_Valid");
+                    AddItem(KEY_INCOMPLETE, "Mark Incomplete",    "State_Validation_Warning");
                     if (canAssign) AddItem(KEY_ASSIGN, "Assign Case", "BO_Employee");
-                    AddItem(KEY_WITHDRAW,    "Withdraw",            "Action_Cancel");
+                    AddItem(KEY_WITHDRAW,   "Withdraw",           "Action_Cancel");
                     break;
 
                 case ApplicationStatus.INCOMPLETE:
                     if (canAssign) AddItem(KEY_ASSIGN, "Assign Case", "BO_Employee");
-                    AddItem(KEY_WITHDRAW,    "Withdraw",            "Action_Cancel");
+                    AddItem(KEY_WITHDRAW, "Withdraw", "Action_Cancel");
                     break;
 
                 case ApplicationStatus.ACCEPTED:
                     AddItem(KEY_SEND_OUTREACH,    "Send Dealer Outreach", "BO_Supplier");
                     AddItem(KEY_SCHEDULE_HEARING, "Schedule Hearing",     "State_Priority_Normal");
                     if (canAssign) AddItem(KEY_ASSIGN, "Assign Case", "BO_Employee");
-                    AddItem(KEY_WITHDRAW,         "Withdraw",             "Action_Cancel");
+                    AddItem(KEY_WITHDRAW, "Withdraw", "Action_Cancel");
                     break;
 
                 case ApplicationStatus.DEALER_RESPONDED:
                     AddItem(KEY_SCHEDULE_HEARING, "Schedule Hearing", "State_Priority_Normal");
                     if (canAssign) AddItem(KEY_ASSIGN, "Assign Case", "BO_Employee");
-                    AddItem(KEY_WITHDRAW,         "Withdraw",         "Action_Cancel");
+                    AddItem(KEY_WITHDRAW, "Withdraw", "Action_Cancel");
                     break;
 
                 case ApplicationStatus.HEARING_SCHEDULED:
                     AddItem(KEY_HEARING_COMPLETE, "Mark Hearing Complete", "State_Validation_Valid");
                     if (canAssign) AddItem(KEY_ASSIGN, "Assign Case", "BO_Employee");
-                    AddItem(KEY_WITHDRAW,         "Withdraw",              "Action_Cancel");
+                    AddItem(KEY_WITHDRAW, "Withdraw", "Action_Cancel");
                     break;
 
                 case ApplicationStatus.HEARING_COMPLETE:
@@ -167,21 +162,16 @@ namespace LemonLaw.Module.Controllers
                     break;
 
                 case ApplicationStatus.DECISION_ISSUED:
-                    AddItem(KEY_CLOSE,  "Close Case",  "Action_Delete");
+                    AddItem(KEY_CLOSE, "Close Case", "Action_Delete");
                     if (canAssign) AddItem(KEY_ASSIGN, "Assign Case", "BO_Employee");
                     break;
             }
         }
 
-        private void AddItem(string key, string caption, string imageName)
-        {
-            var item = new ChoiceActionItem(caption, null)
-            {
-                Id = key,
-                ImageName = imageName
-            };
-            _caseActionsMenu.Items.Add(item);
-        }
+        private void AddItem(string key, string caption, string imageName) =>
+            _caseActionsMenu.Items.Add(new ChoiceActionItem(caption, null) { Id = key, ImageName = imageName });
+
+        // ── Event handlers ────────────────────────────────────────────────────
 
         private void OnCurrentObjectChanged(object? sender, EventArgs e)
         {
@@ -197,13 +187,11 @@ namespace LemonLaw.Module.Controllers
 
         private void TrackCurrentApplication()
         {
-            var currentApp = View?.CurrentObject as AppEntity;
-            if (ReferenceEquals(_trackedApplication, currentApp))
-                return;
+            var current = View?.CurrentObject as AppEntity;
+            if (ReferenceEquals(_trackedApplication, current)) return;
 
             UntrackCurrentApplication();
-            _trackedApplication = currentApp;
-
+            _trackedApplication = current;
             if (_trackedApplication != null)
                 _trackedApplication.PropertyChanged += OnTrackedApplicationPropertyChanged;
         }
@@ -212,7 +200,6 @@ namespace LemonLaw.Module.Controllers
         {
             if (_trackedApplication != null)
                 _trackedApplication.PropertyChanged -= OnTrackedApplicationPropertyChanged;
-
             _trackedApplication = null;
         }
 
@@ -222,507 +209,350 @@ namespace LemonLaw.Module.Controllers
                 RebuildMenuItems();
         }
 
-        // ── Dispatch selected action ──────────────────────────────────────────
+        // ── Busy state ────────────────────────────────────────────────────────
 
-        private void SetCaseActionBusy(bool isBusy, string? caption = null)
+        private void SetBusy(bool busy, string? caption = null)
         {
-            if (isBusy)
-            {
-                _busyOperationCount++;
-            }
-            else if (_busyOperationCount > 0)
-            {
-                _busyOperationCount--;
-            }
-
-            var isAnyOperationRunning = _busyOperationCount > 0;
-            _caseActionsMenu.Enabled.SetItemValue("CaseActionBusy", !isAnyOperationRunning);
-            _caseActionsMenu.Caption = isAnyOperationRunning
+            _busyCount = busy ? _busyCount + 1 : Math.Max(0, _busyCount - 1);
+            var running = _busyCount > 0;
+            _caseActionsMenu.Enabled.SetItemValue("CaseActionBusy", !running);
+            _caseActionsMenu.Caption = running
                 ? (string.IsNullOrWhiteSpace(caption) ? "Processing..." : caption)
-                : DEFAULT_CASE_ACTIONS_CAPTION;
+                : DEFAULT_CAPTION;
         }
+
+        // ── Dispatch ──────────────────────────────────────────────────────────
 
         private void OnCaseActionSelected(object sender, SingleChoiceActionExecuteEventArgs e)
         {
-            var key = e.SelectedChoiceActionItem?.Id;
-            if (key == null) return;
-
-            switch (key)
+            switch (e.SelectedChoiceActionItem?.Id)
             {
-                case KEY_ACCEPT:
-                    ConfirmAndRun(
-                        "Accept this application? The consumer will be notified and dealer outreach will be enabled.",
-                        () => ExecuteTransition("ACCEPTED", null));
-                    break;
-
-                case KEY_INCOMPLETE:
-                    ConfirmAndRun(
-                        "Mark this application as Incomplete? The consumer will be notified to provide missing information.",
-                        () => ExecuteTransition("INCOMPLETE", "Please log in to your portal to provide the missing information."));
-                    break;
-
-                case KEY_SEND_OUTREACH:
-                    ExecuteSendOutreach();
-                    break;
-
-                case KEY_SCHEDULE_HEARING:
-                    ConfirmAndRun(
-                        "Schedule a hearing for this case? A hearing notice will be sent to the consumer.",
-                        ExecuteScheduleHearing);
-                    break;
-
-                case KEY_HEARING_COMPLETE:
-                    ConfirmAndRun(
-                        "Mark the hearing as completed? The case will move to HEARING_COMPLETE.",
-                        () => ExecuteTransition("HEARING_COMPLETE", null));
-                    break;
-
-                case KEY_ISSUE_DECISION:
-                    ConfirmAndRun(
-                        "Issue a decision for this case? The consumer will be notified.",
-                        ExecuteIssueDecision);
-                    break;
-
-                case KEY_CLOSE:
-                    ConfirmAndRun(
-                        "Close this case? This action cannot be undone.",
-                        () => ExecuteTransition("CLOSED", null));
-                    break;
-
-                case KEY_WITHDRAW:
-                    ConfirmAndRun(
-                        "Withdraw this application? The consumer will be notified.",
-                        () => ExecuteTransition("WITHDRAWN", null));
-                    break;
-
-                case KEY_ASSIGN:
-                    ExecuteAssignCase();
-                    break;
+                case KEY_ACCEPT:           ExecuteTransition("ACCEPTED",        null); break;
+                case KEY_INCOMPLETE:       ExecuteTransition("INCOMPLETE",      "Please log in to your portal to provide the missing information."); break;
+                case KEY_HEARING_COMPLETE: ExecuteTransition("HEARING_COMPLETE", null); break;
+                case KEY_CLOSE:            ExecuteTransition("CLOSED",          null); break;
+                case KEY_WITHDRAW:         ExecuteTransition("WITHDRAWN",       null); break;
+                case KEY_SEND_OUTREACH:    ExecuteSendOutreach(); break;
+                case KEY_SCHEDULE_HEARING: ExecuteScheduleHearing(); break;
+                case KEY_ISSUE_DECISION:   ExecuteIssueDecision(); break;
+                case KEY_ASSIGN:           ExecuteAssignCase(); break;
             }
         }
 
-        /// <summary>
-        /// Shows a confirmation message then runs the action.
-        /// XAF Blazor doesn't have a built-in confirm dialog on SingleChoiceAction items,
-        /// so we use ShowMessage with a follow-up approach — for now we run directly
-        /// since the user already made a deliberate menu selection.
-        /// </summary>
-        private static void ConfirmAndRun(string message, Action action)
-        {
-            // The user explicitly selected the item from the dropdown — treat that as confirmation.
-            // The message is shown as a tooltip/description on the item itself.
-            action();
-        }
-
-        // ── Status Transition ─────────────────────────────────────────────────
+        // ── Status transition ─────────────────────────────────────────────────
 
         private async void ExecuteTransition(string newStatus, string? reason)
         {
             if (View?.CurrentObject is not AppEntity app) return;
 
-            var applicationId = app.Id;
-            var caseNumber = app.CaseNumber;
-
-            SetCaseActionBusy(true, "Updating...");
+            SetBusy(true, "Updating...");
             try
             {
-                    using var client = CreateHttpClient();
-                    var payload = new { newStatus, reason };
-                    var response = await client.PutAsJsonAsync($"api/cases/{applicationId}/status", payload);
-                    var body = await response.Content.ReadAsStringAsync();
+                var svc    = GetService<IApplicationService>();
+                var staffId = CurrentUserName();
+                var dto    = new StatusTransitionDto { NewStatus = newStatus, Reason = reason };
 
-                    if (response.IsSuccessStatusCode)
-                    {
-                        using var doc = JsonDocument.Parse(body);
-                        var success = doc.RootElement.TryGetProperty("success", out var sv) && sv.GetBoolean();
-                        if (success)
-                        {
-                            Application.ShowViewStrategy.ShowMessage(
-                                $"✓ Case {caseNumber} — status updated to {newStatus}.",
-                                InformationType.Success, 5000, InformationPosition.Top);
-                            RefreshCurrentView(newStatus);
-                        }
-                        else
-                        {
-                            var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Unknown error";
-                            Application.ShowViewStrategy.ShowMessage($"Status change failed: {msg}", InformationType.Error, 5000, InformationPosition.Top);
-                        }
-                    }
-                    else
-                    {
-                        Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
-                    }
+                var result = await svc.TransitionStatusAsync(app.Id, dto, staffId, staffId);
+
+                if (result.Success)
+                {
+                    ShowSuccess($"✓ Case {app.CaseNumber} — status updated to {newStatus}.");
+                    RefreshCurrentView(newStatus);
+                }
+                else
+                {
+                    ShowError($"Status change failed: {result.Message}");
+                }
             }
             catch (Exception ex)
             {
-                Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+                ShowError($"Error: {ex.Message}");
             }
             finally
             {
-                SetCaseActionBusy(false);
+                SetBusy(false);
             }
         }
 
-        // ── Send Dealer Outreach ──────────────────────────────────────────────
+        // ── Send dealer outreach ──────────────────────────────────────────────
 
         private async void ExecuteSendOutreach()
         {
             if (View?.CurrentObject is not AppEntity app) return;
 
+            // Resolve dealer email — prefer the loaded navigation property, fall back to ObjectSpace query
             var dealerEmail = app.Vehicle?.DealerEmail;
+            var dealerName  = app.Vehicle?.DealerName ?? string.Empty;
+
             if (string.IsNullOrWhiteSpace(dealerEmail))
             {
-                try
-                {
-                    var vehicle = ObjectSpace.GetObjects(typeof(LemonLaw.Core.Entities.Vehicle))
-                        .Cast<LemonLaw.Core.Entities.Vehicle>()
-                        .FirstOrDefault(v => v.ApplicationId == app.Id);
-                    dealerEmail = vehicle?.DealerEmail;
-                }
-                catch { }
+                var vehicle = ObjectSpace.GetObjects(typeof(LemonLaw.Core.Entities.Vehicle))
+                    .Cast<LemonLaw.Core.Entities.Vehicle>()
+                    .FirstOrDefault(v => v.ApplicationId == app.Id);
+                dealerEmail = vehicle?.DealerEmail;
+                dealerName  = vehicle?.DealerName ?? string.Empty;
             }
 
             if (string.IsNullOrWhiteSpace(dealerEmail))
             {
-                Application.ShowViewStrategy.ShowMessage(
-                    "No dealer email on the vehicle record. Edit the Vehicle, add the dealer email, then try again.",
-                    InformationType.Warning, 5000, InformationPosition.Top);
+                ShowWarning("No dealer email on the vehicle record. Edit the Vehicle, add the dealer email, then try again.");
                 return;
             }
 
-            var applicationId = app.Id;
-            var caseNumber = app.CaseNumber;
-            var responseDeadline = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(15));
-
-            var dealerName = app.Vehicle?.DealerName ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(dealerName))
-            {
-                try
-                {
-                    var vehicle = ObjectSpace.GetObjects(typeof(LemonLaw.Core.Entities.Vehicle))
-                        .Cast<LemonLaw.Core.Entities.Vehicle>()
-                        .FirstOrDefault(v => v.ApplicationId == app.Id);
-                    dealerName = vehicle?.DealerName ?? string.Empty;
-                }
-                catch { }
-            }
-
-            Application.ShowViewStrategy.ShowMessage(
-                $"Sending dealer outreach to {dealerEmail}…",
-                InformationType.Info, 2000, InformationPosition.Top);
-
-            SetCaseActionBusy(true, "Sending...");
+            SetBusy(true, "Sending...");
             try
             {
-                    using var client = CreateHttpClient();
-                    var payload = new
-                    {
-                        applicationId,
-                        dealerEmail,
-                        dealerName,
-                        templateCode = "DEALER_INITIAL_OUTREACH",
-                        responseDeadline = responseDeadline.ToString("yyyy-MM-dd")
-                    };
+                var svc = GetService<IDealerOutreachService>();
+                var dto = new CreateOutreachDto
+                {
+                    ApplicationId    = app.Id,
+                    DealerEmail      = dealerEmail,
+                    DealerName       = dealerName,
+                    TemplateCode     = "DEALER_INITIAL_OUTREACH",
+                    ResponseDeadline = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(15))
+                };
 
-                    var response = await client.PostAsJsonAsync("api/dealer-outreach", payload);
-                    var body = await response.Content.ReadAsStringAsync();
+                var result = await svc.CreateOutreachAsync(dto, CurrentUserName());
 
-                    if (response.IsSuccessStatusCode)
-                    {
-                        using var doc = JsonDocument.Parse(body);
-                        var success = doc.RootElement.TryGetProperty("success", out var sv) && sv.GetBoolean();
-                        if (success)
-                        {
-                            Application.ShowViewStrategy.ShowMessage(
-                                $"✓ Dealer outreach sent to {dealerEmail}. Deadline: {responseDeadline:MMMM d, yyyy}.",
-                                InformationType.Success, 6000, InformationPosition.Top);
-                            RefreshCurrentView();
-                        }
-                        else
-                        {
-                            var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Unknown error";
-                            Application.ShowViewStrategy.ShowMessage($"Outreach failed: {msg}", InformationType.Error, 5000, InformationPosition.Top);
-                        }
-                    }
-                    else
-                    {
-                        Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
-                    }
+                if (result.Success)
+                {
+                    ShowSuccess($"✓ Dealer outreach sent to {dealerEmail}. Deadline: {dto.ResponseDeadline:MMMM d, yyyy}.");
+                    RefreshCurrentView();
+                }
+                else
+                {
+                    ShowError($"Outreach failed: {result.Message}");
+                }
             }
             catch (Exception ex)
             {
-                Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+                ShowError($"Error: {ex.Message}");
             }
             finally
             {
-                SetCaseActionBusy(false);
+                SetBusy(false);
             }
         }
 
-        // ── Schedule Hearing ──────────────────────────────────────────────────
+        // ── Schedule hearing ──────────────────────────────────────────────────
 
         private void ExecuteScheduleHearing()
         {
             if (View?.CurrentObject is not AppEntity app) return;
 
-            var applicationId = app.Id;
-            var caseNumber = app.CaseNumber;
-
-            // Create a non-persistent input object and open it as a popup detail view.
-            // Staff fill in the hearing details; on Accept the API call is made.
-            var os = Application.CreateObjectSpace(typeof(ScheduleHearingInput));
+            var os    = Application.CreateObjectSpace(typeof(ScheduleHearingInput));
             var input = os.CreateObject<ScheduleHearingInput>();
 
             var detailView = Application.CreateDetailView(os, input);
-            detailView.Caption = $"Schedule Hearing — {caseNumber}";
+            detailView.Caption = $"Schedule Hearing — {app.CaseNumber}";
 
             var svp = new ShowViewParameters(detailView)
             {
-                Context = TemplateContext.PopupWindow,
-                TargetWindow = TargetWindow.NewModalWindow,
+                Context      = TemplateContext.PopupWindow,
+                TargetWindow = TargetWindow.NewModalWindow
             };
 
-            var dialogController = Application.CreateController<DialogController>();
-            dialogController.AcceptAction.Caption = "Schedule Hearing";
-            dialogController.CancelAction.Caption = "Cancel";
+            var dialog = Application.CreateController<DialogController>();
+            dialog.AcceptAction.Caption = "Schedule Hearing";
+            dialog.CancelAction.Caption = "Cancel";
 
-            dialogController.AcceptAction.Execute += async (_, _) =>
+            dialog.AcceptAction.Execute += async (_, _) =>
             {
-                // Validate: hearing date must be in the future
                 if (input.HearingDate <= DateTime.UtcNow)
                 {
-                    Application.ShowViewStrategy.ShowMessage(
-                        "Hearing date must be in the future.",
-                        InformationType.Warning, 4000, InformationPosition.Top);
+                    ShowWarning("Hearing date must be in the future.");
                     return;
                 }
 
-                var hearingDate = input.HearingDate;
-                var hearingFormat = input.HearingFormat.ToString();
-                var hearingLocation = input.HearingLocation ?? string.Empty;
-                var arbitratorName = input.ArbitratorName ?? string.Empty;
-
-                Application.ShowViewStrategy.ShowMessage(
-                    $"Scheduling hearing for case {caseNumber}…",
-                    InformationType.Info, 2000, InformationPosition.Top);
-
-                SetCaseActionBusy(true, "Scheduling...");
+                SetBusy(true, "Scheduling...");
                 try
                 {
-                        using var client = CreateHttpClient();
-                        var payload = new
-                        {
-                            hearingDate = hearingDate.ToString("o"),
-                            hearingFormat,
-                            hearingLocation,
-                            arbitratorName
-                        };
+                    var svc = GetService<IApplicationService>();
+                    var dto = new CreateHearingDto
+                    {
+                        HearingDate     = input.HearingDate,
+                        HearingFormat   = input.HearingFormat.ToString(),
+                        HearingLocation = input.HearingLocation ?? string.Empty,
+                        ArbitratorName  = input.ArbitratorName  ?? string.Empty
+                    };
 
-                        var response = await client.PostAsJsonAsync($"api/cases/{applicationId}/hearings", payload);
-                        var body = await response.Content.ReadAsStringAsync();
+                    var result = await svc.CreateHearingAsync(app.Id, dto, CurrentUserName());
 
-                        if (response.IsSuccessStatusCode)
-                        {
-                            using var doc = JsonDocument.Parse(body);
-                            var success = doc.RootElement.TryGetProperty("success", out var sv) && sv.GetBoolean();
-                            if (success)
-                            {
-                                Application.ShowViewStrategy.ShowMessage(
-                                    $"✓ Hearing scheduled for {hearingDate:MMMM d, yyyy h:mm tt}. Consumer notified.",
-                                    InformationType.Success, 6000, InformationPosition.Top);
-                                RefreshCurrentView(ApplicationStatus.HEARING_SCHEDULED.ToString());
-                            }
-                            else
-                            {
-                                var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Unknown error";
-                                Application.ShowViewStrategy.ShowMessage($"Schedule hearing failed: {msg}", InformationType.Error, 5000, InformationPosition.Top);
-                            }
-                        }
-                        else
-                        {
-                            Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
-                        }
+                    if (result.Success)
+                    {
+                        ShowSuccess($"✓ Hearing scheduled for {input.HearingDate:MMMM d, yyyy h:mm tt}. Consumer notified.");
+                        RefreshCurrentView(ApplicationStatus.HEARING_SCHEDULED.ToString());
+                    }
+                    else
+                    {
+                        ShowError($"Schedule hearing failed: {result.Message}");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+                    ShowError($"Error: {ex.Message}");
                 }
                 finally
                 {
-                    SetCaseActionBusy(false);
+                    SetBusy(false);
                 }
             };
 
-            svp.Controllers.Add(dialogController);
+            svp.Controllers.Add(dialog);
             Application.ShowViewStrategy.ShowView(svp, new ShowViewSource(null, null));
         }
 
-        // ── Issue Decision ────────────────────────────────────────────────────
+        // ── Issue decision ────────────────────────────────────────────────────
 
-        private async void ExecuteIssueDecision()
+        private void ExecuteIssueDecision()
         {
             if (View?.CurrentObject is not AppEntity app) return;
 
-            var applicationId = app.Id;
-            var caseNumber = app.CaseNumber;
-
-            // Open a popup form so staff can choose decision type, amount, deadline
-            var os = Application.CreateObjectSpace(typeof(IssueDecisionInput));
+            var os    = Application.CreateObjectSpace(typeof(IssueDecisionInput));
             var input = os.CreateObject<IssueDecisionInput>();
 
-            SetCaseActionBusy(true, "Issuing...");
-            try
+            var detailView = Application.CreateDetailView(os, input);
+            detailView.Caption = $"Issue Decision — {app.CaseNumber}";
+
+            var svp = new ShowViewParameters(detailView)
             {
-                using var client = CreateHttpClient();
-                var payload = new
-                {
-                    decisionType = input.DecisionType.ToString(),
-                    decisionDate = input.DecisionDate.ToString("yyyy-MM-dd"),
-                    refundAmount = input.RefundAmount,
-                    complianceDeadline = input.ComplianceDeadline?.ToString("yyyy-MM-dd"),
-                    decisionDocumentId = (Guid?)null
-                };
+                Context      = TemplateContext.PopupWindow,
+                TargetWindow = TargetWindow.NewModalWindow
+            };
 
-                var response = await client.PostAsJsonAsync($"api/cases/{applicationId}/decisions", payload);
-                var body = await response.Content.ReadAsStringAsync();
+            var dialog = Application.CreateController<DialogController>();
+            dialog.AcceptAction.Caption = "Issue Decision";
+            dialog.CancelAction.Caption = "Cancel";
 
-                if (response.IsSuccessStatusCode)
+            dialog.AcceptAction.Execute += async (_, _) =>
+            {
+                SetBusy(true, "Issuing...");
+                try
                 {
-                    using var doc = JsonDocument.Parse(body);
-                    var success = doc.RootElement.TryGetProperty("success", out var sv) && sv.GetBoolean();
-                    if (success)
+                    var svc = GetService<IApplicationService>();
+                    var dto = new IssueDecisionDto
                     {
-                        Application.ShowViewStrategy.ShowMessage(
-                            $"✓ Decision issued for case {caseNumber}. Consumer notified.",
-                            InformationType.Success, 6000, InformationPosition.Top);
+                        DecisionType       = input.DecisionType.ToString(),
+                        DecisionDate       = DateOnly.FromDateTime(input.DecisionDate),
+                        RefundAmount       = input.RefundAmount,
+                        ComplianceDeadline = input.ComplianceDeadline.HasValue
+                                                ? DateOnly.FromDateTime(input.ComplianceDeadline.Value)
+                                                : null,
+                        DecisionDocumentId = null
+                    };
+
+                    var result = await svc.IssueDecisionAsync(app.Id, dto, CurrentUserName());
+
+                    if (result.Success)
+                    {
+                        ShowSuccess($"✓ Decision issued for case {app.CaseNumber}. Consumer notified.");
                         RefreshCurrentView(ApplicationStatus.DECISION_ISSUED.ToString());
                     }
                     else
                     {
-                        var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Unknown error";
-                        Application.ShowViewStrategy.ShowMessage($"Issue decision failed: {msg}", InformationType.Error, 5000, InformationPosition.Top);
+                        ShowError($"Issue decision failed: {result.Message}");
                     }
                 }
-                else
+                catch (Exception ex)
                 {
-                    Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
+                    ShowError($"Error: {ex.Message}");
                 }
-            }
-            catch (Exception ex)
-            {
-                Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
-            }
-            finally
-            {
-                SetCaseActionBusy(false);
-            }
+                finally
+                {
+                    SetBusy(false);
+                }
+            };
+
+            svp.Controllers.Add(dialog);
+            Application.ShowViewStrategy.ShowView(svp, new ShowViewSource(null, null));
         }
 
-        // ── Assign Case ───────────────────────────────────────────────────────
+        // ── Assign case ───────────────────────────────────────────────────────
 
         private void ExecuteAssignCase()
         {
             if (View?.CurrentObject is not AppEntity app) return;
 
-            var applicationId = app.Id;
-            var caseNumber = app.CaseNumber;
-
-            // Open a ListView of ApplicationUser filtered to CASE_MANAGER role.
-            // This is the standard XAF pattern for a user picker — no non-persistent type needed.
-            var os = Application.CreateObjectSpace(typeof(XafAppUser));
-
-            var criteria = DevExpress.Data.Filtering.CriteriaOperator.Parse(
-                "Roles[Name = 'CASE_MANAGER']");
+            var os       = Application.CreateObjectSpace(typeof(XafAppUser));
+            var criteria = DevExpress.Data.Filtering.CriteriaOperator.Parse("Roles[Name = 'CASE_MANAGER']");
 
             var listView = Application.CreateListView(os, typeof(XafAppUser), true);
-            listView.Caption = $"Select Case Manager — {caseNumber}";
+            listView.Caption = $"Select Case Manager — {app.CaseNumber}";
             listView.CollectionSource.Criteria["CaseManagerOnly"] = criteria;
 
             var svp = new ShowViewParameters(listView)
             {
-                Context = TemplateContext.PopupWindow,
-                TargetWindow = TargetWindow.NewModalWindow,
+                Context      = TemplateContext.PopupWindow,
+                TargetWindow = TargetWindow.NewModalWindow
             };
 
-            var dialogController = Application.CreateController<DialogController>();
-            dialogController.AcceptAction.Caption = "Assign";
-            dialogController.CancelAction.Caption = "Cancel";
+            var dialog = Application.CreateController<DialogController>();
+            dialog.AcceptAction.Caption = "Assign";
+            dialog.CancelAction.Caption = "Cancel";
 
-            dialogController.AcceptAction.Execute += async (_, _) =>
+            dialog.AcceptAction.Execute += async (_, _) =>
             {
-                var selectedUser = listView.CurrentObject as XafAppUser;
-                if (selectedUser == null)
+                if (listView.CurrentObject is not XafAppUser selectedUser)
                 {
-                    Application.ShowViewStrategy.ShowMessage(
-                        "Please select a case manager from the list.",
-                        InformationType.Warning, 4000, InformationPosition.Top);
+                    ShowWarning("Please select a case manager from the list.");
                     return;
                 }
 
-                var staffId   = selectedUser.UserName;
-                var staffName = selectedUser.UserName;
-
-                SetCaseActionBusy(true, "Assigning...");
+                SetBusy(true, "Assigning...");
                 try
                 {
-                    using var client = CreateHttpClient();
-                    var payload = new { staffId, staffName };
-                    var response = await client.PutAsJsonAsync($"api/cases/{applicationId}/assign", payload);
-                    var body = await response.Content.ReadAsStringAsync();
-
-                    if (response.IsSuccessStatusCode)
+                    var svc = GetService<IApplicationService>();
+                    var dto = new AssignCaseDto
                     {
-                        using var doc = JsonDocument.Parse(body);
-                        var success = doc.RootElement.TryGetProperty("success", out var sv) && sv.GetBoolean();
-                        if (success)
-                        {
-                            Application.ShowViewStrategy.ShowMessage(
-                                $"✓ Case {caseNumber} assigned to {staffName}.",
-                                InformationType.Success, 5000, InformationPosition.Top);
-                            RefreshCurrentView();
-                        }
-                        else
-                        {
-                            var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Unknown error";
-                            Application.ShowViewStrategy.ShowMessage($"Assignment failed: {msg}", InformationType.Error, 5000, InformationPosition.Top);
-                        }
+                        StaffId     = selectedUser.UserName,
+                        StaffName   = selectedUser.UserName,
+                        StaffUserId = selectedUser.ID
+                    };
+
+                    var result = await svc.AssignCaseAsync(app.Id, dto, CurrentUserName());
+
+                    if (result.Success)
+                    {
+                        ShowSuccess($"✓ Case {app.CaseNumber} assigned to {selectedUser.UserName}.");
+                        RefreshCurrentView();
                     }
                     else
                     {
-                        Application.ShowViewStrategy.ShowMessage($"API error {(int)response.StatusCode}: {body}", InformationType.Error, 5000, InformationPosition.Top);
+                        ShowError($"Assignment failed: {result.Message}");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Application.ShowViewStrategy.ShowMessage($"Error: {ex.Message}", InformationType.Error, 6000, InformationPosition.Top);
+                    ShowError($"Error: {ex.Message}");
                 }
                 finally
                 {
-                    SetCaseActionBusy(false);
+                    SetBusy(false);
                 }
             };
 
-            svp.Controllers.Add(dialogController);
+            svp.Controllers.Add(dialog);
             Application.ShowViewStrategy.ShowView(svp, new ShowViewSource(null, null));
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Only OCABR_ADMIN and SUPERVISOR can assign cases.
-        /// CASE_MANAGER works their own queue — they cannot reassign.
+        /// Resolves a service from the XAF application's DI container.
+        /// LemonLaw.Application services are registered in Startup.cs via AddApplication().
         /// </summary>
+        private T GetService<T>() where T : notnull =>
+            Application.ServiceProvider!.GetRequiredService<T>();
+
+        private string CurrentUserName() =>
+            (Application.Security?.User as XafAppUser)?.UserName ?? "Staff";
+
         private bool CanCurrentUserAssign()
         {
             try
             {
-                var security = Application.Security;
-                if (security == null) return true; // fallback: allow if security not configured
-
-                var user = security.User as XafAppUser;
+                var user = Application.Security?.User as XafAppUser;
                 if (user == null) return true;
-
-                // Check if the user has any of the admin/supervisor roles
                 return user.Roles.Any(r =>
                     r.Name == "OCABR_ADMIN" ||
                     r.Name == "Administrators" ||
@@ -730,45 +560,98 @@ namespace LemonLaw.Module.Controllers
             }
             catch
             {
-                return true; // fail open — don't block the action if role check fails
+                return true; // fail open
             }
-        }
-
-        private HttpClient CreateHttpClient()
-        {
-            var handler = new HttpClientHandler
-            {
-                ServerCertificateCustomValidationCallback = (_, _, _, _) => true
-            };
-            return new HttpClient(handler) { BaseAddress = new Uri(GetApiBaseUrl()) };
         }
 
         private void RefreshCurrentView(string? newStatus = null)
         {
+            if (View?.CurrentObject is not AppEntity app) return;
+
+            // Update the in-memory entity so XAF's change tracking reflects the new state
             if (!string.IsNullOrWhiteSpace(newStatus)
-                && View?.CurrentObject is AppEntity app
-                && Enum.TryParse(newStatus, true, out ApplicationStatus parsedStatus))
+                && Enum.TryParse(newStatus, true, out ApplicationStatus parsed))
             {
-                app.Status = parsedStatus;
+                app.Status         = parsed;
                 app.LastActivityAt = DateTime.UtcNow;
             }
 
             RebuildMenuItems();
-            Frame.GetController<RefreshController>()?.RefreshAction.DoExecute();
+
+            // Reload any open Application list views so the status column updates immediately
+            RefreshApplicationListViews();
+
+            // The Application detail view uses a custom Blazor component (ApplicationDetailView.razor)
+            // that holds its own _app state loaded from IApplicationRepository. Simply refreshing
+            // the XAF ObjectSpace doesn't notify the component. The reliable fix is to close and
+            // reopen the detail view — this forces the component to reload from DB with fresh data.
+            var applicationId = app.Id;
+            var caseNumber    = app.CaseNumber;
+
+            // Close the current detail view tab
+            if (Frame is NestedFrame nestedFrame)
+            {
+                // Nested frame — just refresh the object space
+                ObjectSpace.Refresh();
+                return;
+            }
+
+            // Top-level frame — close and reopen the detail view
+            try
+            {
+                // Navigate to the list view first, then reopen the detail view
+                var listViewId = Application.FindDetailViewId(typeof(AppEntity))
+                    ?.Replace("_DetailView", "_ListView") ?? "Application_ListView";
+
+                var os         = Application.CreateObjectSpace(typeof(AppEntity));
+                var freshApp   = os.GetObjectByKey<AppEntity>(applicationId);
+
+                if (freshApp != null)
+                {
+                    var detailView = Application.CreateDetailView(os, freshApp, true);
+                    detailView.Caption = caseNumber;
+
+                    var svp = new ShowViewParameters(detailView)
+                    {
+                        TargetWindow = TargetWindow.Current
+                    };
+                    Application.ShowViewStrategy.ShowView(svp, new ShowViewSource(Frame, null));
+                }
+                else
+                {
+                    // Fallback: just refresh the object space
+                    ObjectSpace.Refresh();
+                }
+            }
+            catch
+            {
+                // Fallback: refresh object space if navigation fails
+                ObjectSpace.Refresh();
+            }
         }
 
-        private string GetApiBaseUrl()
+        private void ShowSuccess(string msg) =>
+            Application.ShowViewStrategy.ShowMessage(msg, InformationType.Success, 5000, InformationPosition.Top);
+
+        private void ShowError(string msg) =>
+            Application.ShowViewStrategy.ShowMessage(msg, InformationType.Error, 5000, InformationPosition.Top);
+
+        private void ShowWarning(string msg) =>
+            Application.ShowViewStrategy.ShowMessage(msg, InformationType.Warning, 4000, InformationPosition.Top);
+
+        /// <summary>
+        /// Reloads the collection source on any open Application list view so the
+        /// status column updates immediately without requiring manual navigation.
+        /// </summary>
+        private void RefreshApplicationListViews()
         {
             try
             {
-                var config = Application.ServiceProvider?
-                    .GetService(typeof(Microsoft.Extensions.Configuration.IConfiguration))
-                    as Microsoft.Extensions.Configuration.IConfiguration;
-                var url = config?["LemonLawApi:BaseUrl"];
-                if (!string.IsNullOrWhiteSpace(url)) return url;
+                // The main window's view may itself be a list view, or child frames may contain one.
+                // Use the RefreshController on the main window to trigger a reload.
+                Application.MainWindow?.GetController<RefreshController>()?.RefreshAction.DoExecute();
             }
-            catch { }
-            return "https://localhost:7229/";
+            catch { /* non-critical */ }
         }
     }
 }

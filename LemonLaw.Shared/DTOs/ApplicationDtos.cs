@@ -249,6 +249,8 @@ public class AssignCaseDto
 {
     public string StaffId { get; set; } = string.Empty;
     public string StaffName { get; set; } = string.Empty;
+    /// <summary>XAF user Guid — used for object-level security (AssignedToUserId).</summary>
+    public Guid? StaffUserId { get; set; }
 }
 
 public class DocumentReviewDto

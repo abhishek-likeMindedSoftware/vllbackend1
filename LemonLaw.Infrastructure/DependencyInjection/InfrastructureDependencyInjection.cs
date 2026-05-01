@@ -17,9 +17,16 @@ public static class InfrastructureDependencyInjection
     {
         // LemonLawAPIDbContext — API's window into the shared database.
         // No MigrationsAssembly — schema is owned and managed by LemonLawDbContext (XAF).
+        // Resolves connection string from "LemonLawDb" (API project) or falls back to
+        // "ConnectionString" (Blazor server project) — both point to the same database.
+        var connectionString =
+            configuration.GetConnectionString("LemonLawDb") ??
+            configuration.GetConnectionString("ConnectionString") ??
+            throw new InvalidOperationException(
+                "No database connection string found. Add 'LemonLawDb' or 'ConnectionString' to appsettings.json.");
+
         services.AddDbContext<LemonLawAPIDbContext>(options =>
-            options.UseSqlServer(
-                configuration.GetConnectionString("LemonLawDb")));
+            options.UseSqlServer(connectionString));
 
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
