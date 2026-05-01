@@ -124,11 +124,11 @@
                     </div>
                     <div>
                         <p class="ll-field-label">Consumer Notified</p>
-                        <p class="ll-field-value">@(_decision.ConsumerNotified ? "Yes" : "No")</p>
+                        <p class="ll-field-value">@EnumHelper.BoolBadge(_decision.ConsumerNotified)</p>
                     </div>
                     <div>
                         <p class="ll-field-label">Dealer Notified</p>
-                        <p class="ll-field-value">@(_decision.DealerNotified ? "Yes" : "No")</p>
+                        <p class="ll-field-value">@EnumHelper.BoolBadge(_decision.DealerNotified)</p>
                     </div>
                 </div>
             </div>

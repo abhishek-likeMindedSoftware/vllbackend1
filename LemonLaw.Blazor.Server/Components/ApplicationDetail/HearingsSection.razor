@@ -14,16 +14,20 @@
     else
     {
         <table class="ll-table">
-            <thead><tr><th>Date</th><th>Format</th><th>Location / URL</th><th>Arbitrator</th><th>Outcome</th></tr></thead>
+            <thead><tr><th>Date</th><th>Format</th><th>Location / URL</th><th>Arbitrator</th><th>Outcome</th><th style="width:70px;"></th></tr></thead>
             <tbody>
                 @foreach (var item in _filtered.OrderByDescending(h => h.HearingDate))
                 {
-                    <tr class="ll-row-clickable" @onclick="() => OnOpenDetail.InvokeAsync(item.Id)">
+                    <tr>
                         <td>@item.HearingDate.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt")</td>
                         <td>@EnumHelper.GetDescription(item.HearingFormat)</td>
                         <td>@(item.HearingLocation ?? "—")</td>
                         <td>@(item.ArbitratorName ?? "—")</td>
                         <td>@EnumHelper.GetDescription(item.Outcome)</td>
+                        <td class="ll-action-cell">
+                            <button class="ll-row-edit-btn" type="button" title="Edit" @onclick="() => OpenEdit(item)"><EditIcon Size="13" /></button>
+                            <button class="ll-row-view-btn" type="button" title="View detail" @onclick="() => OnOpenDetail.InvokeAsync(item.Id)">&#128065;</button>
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -85,6 +89,7 @@
     [Parameter] public IEnumerable<Hearing>? InitialData { get; set; }
     [Parameter] public EventCallback<int> OnCountChanged { get; set; }
     [Parameter] public EventCallback<Guid> OnOpenDetail { get; set; }
+    [Parameter] public int RefreshKey { get; set; }
 
     private List<Hearing> _items = new();
     private string _search = string.Empty;
@@ -101,10 +106,16 @@
     private bool _showEdit, _saving;
     private string? _saveError;
     private bool _initialized;
+    private int _lastRefreshKey = -1;
 
     protected override void OnParametersSet()
     {
-        if (!_initialized) { _items = InitialData?.ToList() ?? new(); _initialized = true; }
+        if (!_initialized || RefreshKey != _lastRefreshKey)
+        {
+            _items = InitialData?.ToList() ?? new();
+            _initialized = true;
+            _lastRefreshKey = RefreshKey;
+        }
     }
 
     private void OpenNew() { _editId = null; _form = new(); _saveError = null; _showEdit = true; }
