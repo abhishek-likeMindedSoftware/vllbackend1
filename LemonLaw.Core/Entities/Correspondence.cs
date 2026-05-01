@@ -219,6 +219,7 @@ public class Correspondence : AuditDetails,
 
     [XafDisplayName("Sent At")]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
+    [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     public virtual DateTime? SentAt
     {
         get => _sentAt;
@@ -289,6 +290,7 @@ public class Correspondence : AuditDetails,
     [XafDisplayName("Delivery Updated")]
     [VisibleInListView(false)]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
+    [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     public virtual DateTime? DeliveryUpdatedAt
     {
         get => _deliveryUpdatedAt;

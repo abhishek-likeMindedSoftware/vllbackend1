@@ -203,6 +203,7 @@ public class ApplicationDocument : AuditDetails,
     [XafDisplayName("Uploaded At")]
     [ModelDefault("AllowEdit", "False")]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
+    [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     public virtual DateTime UploadedAt
     {
         get => _uploadedAt;

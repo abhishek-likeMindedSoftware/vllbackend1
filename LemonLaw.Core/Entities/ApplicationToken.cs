@@ -138,6 +138,7 @@ public class ApplicationToken : INotifyPropertyChanging, INotifyPropertyChanged,
 
     [XafDisplayName("Expires At")]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
+    [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     [VisibleInListView(false)]
     public virtual DateTime ExpiresAt
     {
@@ -157,6 +158,7 @@ public class ApplicationToken : INotifyPropertyChanging, INotifyPropertyChanged,
 
     [XafDisplayName("Last Used")]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
+    [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     [VisibleInListView(false)]
     public virtual DateTime? LastUsedAt
     {

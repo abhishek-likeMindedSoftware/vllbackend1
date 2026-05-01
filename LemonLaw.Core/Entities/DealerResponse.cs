@@ -349,6 +349,7 @@ public class DealerResponse : AuditDetails,
     [ReadOnly(true)]
     [ModelDefault("AllowEdit", "False")]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
+    [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     public virtual DateTime SubmittedAt
     {
         get => _submittedAt;

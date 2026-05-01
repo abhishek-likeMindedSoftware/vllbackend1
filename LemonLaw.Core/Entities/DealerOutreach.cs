@@ -185,6 +185,7 @@ public class DealerOutreach : AuditDetails,
 
     [XafDisplayName("Sent At")]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
+    [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     public virtual DateTime? SentAt
     {
         get => _sentAt;
@@ -396,6 +397,8 @@ public class DealerOutreach : AuditDetails,
     private DateTime? _finalNoticeSentAt;
 
     [XafDisplayName("Final Notice Sent")]
+    [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
+    [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     [VisibleInListView(false)]
     public virtual DateTime? FinalNoticeSentAt
     {
