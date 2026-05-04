@@ -1,0 +1,104 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Core.Enums
+
+<div class="ll-wrap">
+
+    @if (_loading)
+    {
+        <div class="ll-loading"><span class="ll-spinner"></span><span>Loading expense…</span></div>
+    }
+    else if (_loadError != null)
+    {
+        <div class="ll-error-box">@_loadError</div>
+    }
+    else if (_expense != null)
+    {
+        var app = _expense.Application;
+
+        @* ── Case Header ──────────────────────────────────────────────────────── *@
+        @if (app != null)
+        {
+            <div class="ll-header">
+                <div class="ll-header-left">
+                    <p class="ll-case-number">Case @app.CaseNumber</p>
+                    <div class="ll-meta-row">
+                        <span class="ll-badge ll-badge-@app.Status.ToString().ToLower()">@app.Status.ToString().Replace("_", " ")</span>
+                        <span class="ll-meta-item"><span class="ll-meta-label">Type:</span> @app.ApplicationType.ToString().Replace("_", " ")</span>
+                        @if (app.SubmittedAt != default)
+                        {
+                            <span class="ll-meta-item"><span class="ll-meta-label">Submitted:</span> @app.SubmittedAt.ToLocalTime().ToString("MM/dd/yyyy")</span>
+                        }
+                        <span class="ll-meta-item"><span class="ll-meta-label">Last Activity:</span> @app.LastActivityAt.ToLocalTime().ToString("MM/dd/yyyy")</span>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* ── Expense Details ──────────────────────────────────────────────────── *@
+        <div class="ll-card">
+            <div class="ll-card-head">
+                <p class="ll-card-title">Expense</p>
+                <button class="ll-edit-btn" type="button" @onclick="OpenEdit"><EditIcon /> Edit</button>
+            </div>
+            <div class="ll-card-body">
+                <div class="ll-fields ll-fields-3">
+                    <div>
+                        <p class="ll-field-label">Expense Type</p>
+                        <p class="ll-field-value">@EnumHelper.GetDescription(_expense.ExpenseType)</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Date</p>
+                        <p class="ll-field-value @(_expense.ExpenseDate == null ? "ll-field-empty" : "")">@(_expense.ExpenseDate?.ToString("MM/dd/yyyy") ?? "—")</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Amount</p>
+                        <p class="ll-field-value">@_expense.Amount.ToString("C")</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Receipt Uploaded</p>
+                        <p class="ll-field-value">@EnumHelper.BoolBadge(_expense.ReceiptUploaded)</p>
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_expense.Description))
+                {
+                    <div style="margin-top:12px;">
+                        <p class="ll-field-label">Description</p>
+                        <p style="font-size:.875rem;color:#1e293b;line-height:1.6;margin:4px 0 0;">@_expense.Description</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* ── Audit Details ────────────────────────────────────────────────────── *@
+        <AuditSection Entity="_expense" />
+    }
+</div>
+
+@* ── Edit Popup ───────────────────────────────────────────────────────────── *@
+<DxPopup @bind-Visible="_showEdit" HeaderText="Edit Expense" Width="520px" ShowFooter="true" CloseOnOutsideClick="false">
+    <BodyContentTemplate>
+        @if (_form != null)
+        {
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Expense Type *</label>
+                    <select class="ll-select" @bind="_form.ExpenseType">
+                        @foreach (var v in Enum.GetValues<ExpenseType>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
+                    </select>
+                </div>
+                <div class="ll-form-group"><label class="ll-form-label">Date</label><input class="ll-input" type="date" @bind="_form.ExpenseDate" /></div>
+            </div>
+            <div class="ll-form-row"><div class="ll-form-group"><label class="ll-form-label">Amount ($) *</label><input class="ll-input" type="number" step="0.01" @bind="_form.Amount" /></div></div>
+            <div class="ll-form-row"><div class="ll-form-group"><label class="ll-form-label">Description</label><textarea class="ll-textarea" @bind="_form.Description"></textarea></div></div>
+            <div class="ll-checkbox-row" style="margin-top:4px;">
+                <input type="checkbox" id="expense-receipt" @bind="_form.ReceiptUploaded" />
+                <label for="expense-receipt">Receipt uploaded</label>
+            </div>
+            @if (_saveError != null) { <div class="ll-alert ll-alert-error" style="margin-top:10px;">@_saveError</div> }
+        }
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <button class="ll-btn ll-btn-ghost" type="button" @onclick="CloseEdit" disabled="@_saving">Cancel</button>
+        <button class="ll-btn ll-btn-primary" type="button" @onclick="SaveAsync" disabled="@_saving">@(_saving ? "Saving…" : "Save")</button>
+    </FooterContentTemplate>
+</DxPopup>

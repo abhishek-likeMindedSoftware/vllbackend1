@@ -7,10 +7,13 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+using LemonLaw.Core.Attributes;
+
 namespace LemonLaw.Core.Entities;
 
 [DefaultProperty(nameof(NoteText))]
 [XafDisplayName("Case Note")]
+[HideXafAuditFields]
 public class CaseNote : AuditDetails,
         INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {
@@ -84,6 +87,7 @@ public class CaseNote : AuditDetails,
 
     [ForeignKey("ApplicationId")]
     [DevExpress.Xpo.Association("Application-Notes")]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual VllApplication? Application
     {
         get => _application;
@@ -113,6 +117,7 @@ public class CaseNote : AuditDetails,
     private string _noteText = string.Empty;
 
     [XafDisplayName("Note")]
+    [VisibleInDetailView(false)]
     public virtual string NoteText
     {
         get => _noteText;
@@ -147,6 +152,7 @@ public class CaseNote : AuditDetails,
     private string _createdByName = string.Empty;
 
     [XafDisplayName("Created By")]
+    [VisibleInDetailView(false)]
     [ReadOnly(true)]
     [ModelDefault("AllowEdit", "False")]
     public virtual string CreatedByName
@@ -166,6 +172,7 @@ public class CaseNote : AuditDetails,
     private DateTime _createdAt = DateTime.UtcNow;
 
     [XafDisplayName("Created At")]
+    [VisibleInDetailView(false)]
     [ReadOnly(true)]
     [ModelDefault("AllowEdit", "False")]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
@@ -187,6 +194,7 @@ public class CaseNote : AuditDetails,
     private bool _isPinned;
 
     [XafDisplayName("Pinned")]
+    [VisibleInDetailView(false)]
     public virtual bool IsPinned
     {
         get => _isPinned;
@@ -200,6 +208,15 @@ public class CaseNote : AuditDetails,
             }
         }
     }
+
+    #endregion
+
+    #region Custom Detail View Hook
+
+    [NotMapped]
+    [XafDisplayName("Note Detail")]
+    [VisibleInDetailView(true), VisibleInListView(false)]
+    public object? DetailPanel => this;
 
     #endregion
 }

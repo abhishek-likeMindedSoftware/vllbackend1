@@ -527,3 +527,66 @@
     .ll-form-row-2, .ll-form-row-3 { grid-template-columns: 1fr !important; }
     .ll-header { flex-direction: column !important; }
 }
+
+/* ── Custom detail slide-in panel ─────────────────────────────────────────── */
+.ll-detail-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(15, 23, 42, 0.45) !important;
+    z-index: 1200 !important;
+    display: flex !important;
+    align-items: stretch !important;
+    justify-content: flex-end !important;
+}
+
+.ll-detail-panel {
+    width: min(860px, 100vw) !important;
+    height: 100% !important;
+    background: #f8fafc !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: -4px 0 24px rgba(15, 23, 42, 0.18) !important;
+    overflow: hidden !important;
+    animation: ll-panel-slide-in 0.22s ease-out !important;
+}
+
+@keyframes ll-panel-slide-in {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+
+.ll-detail-panel-header {
+    padding: 12px 16px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    background: #fff !important;
+    flex-shrink: 0 !important;
+}
+
+.ll-detail-panel-body {
+    flex: 1 !important;
+    overflow-y: auto !important;
+}
+
+.ll-detail-panel-body .ll-wrap {
+    padding: 16px 20px !important;
+    background: #f8fafc !important;
+    min-height: 100% !important;
+}
+
+/* ── Follow-Up action button (sequential, light orange) ──────────────────── */
+.ll-btn-followup {
+    background: #fff7ed !important;
+    color: #c2410c !important;
+    border: 1px solid #fed7aa !important;
+}
+.ll-btn-followup:hover:not(:disabled) {
+    background: #ffedd5 !important;
+    border-color: #fb923c !important;
+    color: #9a3412 !important;
+    box-shadow: 0 2px 8px rgba(234,88,12,.18) !important;
+    transform: translateY(-1px) !important;
+}
+.ll-btn-followup:disabled {
+    opacity: .55 !important;
+    cursor: not-allowed !important;
+}

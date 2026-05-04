@@ -8,10 +8,13 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+using LemonLaw.Core.Attributes;
+
 namespace LemonLaw.Core.Entities;
 
 [DefaultProperty(nameof(FileName))]
 [XafDisplayName("Document")]
+[HideXafAuditFields]
 public class ApplicationDocument : AuditDetails,
         INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {
@@ -85,6 +88,7 @@ public class ApplicationDocument : AuditDetails,
 
     [ForeignKey("ApplicationId")]
     [DevExpress.Xpo.Association("Application-Documents")]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual VllApplication? Application
     {
         get => _application;
@@ -114,6 +118,7 @@ public class ApplicationDocument : AuditDetails,
     private DocumentType _documentType;
 
     [XafDisplayName("Document Type")]
+    [VisibleInDetailView(false)]
     public virtual DocumentType DocumentType
     {
         get => _documentType;
@@ -131,6 +136,7 @@ public class ApplicationDocument : AuditDetails,
     private string _fileName = string.Empty;
 
     [XafDisplayName("File Name")]
+    [VisibleInDetailView(false)]
     public virtual string FileName
     {
         get => _fileName;
@@ -165,7 +171,7 @@ public class ApplicationDocument : AuditDetails,
     private long _fileSizeBytes;
 
     [XafDisplayName("File Size (bytes)")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual long FileSizeBytes
     {
         get => _fileSizeBytes;
@@ -183,7 +189,7 @@ public class ApplicationDocument : AuditDetails,
     private string _mimeType = string.Empty;
 
     [XafDisplayName("MIME Type")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual string MimeType
     {
         get => _mimeType;
@@ -201,6 +207,7 @@ public class ApplicationDocument : AuditDetails,
     private DateTime _uploadedAt = DateTime.UtcNow;
 
     [XafDisplayName("Uploaded At")]
+    [VisibleInDetailView(false)]
     [ModelDefault("AllowEdit", "False")]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
     [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
@@ -221,6 +228,7 @@ public class ApplicationDocument : AuditDetails,
     private UploadedByRole _uploadedByRole;
 
     [XafDisplayName("Uploaded By")]
+    [VisibleInDetailView(false)]
     public virtual UploadedByRole UploadedByRole
     {
         get => _uploadedByRole;
@@ -238,6 +246,7 @@ public class ApplicationDocument : AuditDetails,
     private DocumentStatus _status = DocumentStatus.PENDING_REVIEW;
 
     [XafDisplayName("Status")]
+    [VisibleInDetailView(false)]
     public virtual DocumentStatus Status
     {
         get => _status;
@@ -255,7 +264,7 @@ public class ApplicationDocument : AuditDetails,
     private string? _staffNotes;
 
     [XafDisplayName("Staff Notes")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual string? StaffNotes
     {
         get => _staffNotes;
@@ -273,7 +282,7 @@ public class ApplicationDocument : AuditDetails,
     private VirusScanResult _virusScanResult = VirusScanResult.PENDING;
 
     [XafDisplayName("Virus Scan")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual VirusScanResult VirusScanResult
     {
         get => _virusScanResult;
@@ -291,7 +300,7 @@ public class ApplicationDocument : AuditDetails,
     private bool _isVisibleConsumer = true;
 
     [XafDisplayName("Visible to Consumer")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual bool IsVisible_Consumer
     {
         get => _isVisibleConsumer;
@@ -309,7 +318,7 @@ public class ApplicationDocument : AuditDetails,
     private bool _isVisibleDealer;
 
     [XafDisplayName("Visible to Dealer")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual bool IsVisible_Dealer
     {
         get => _isVisibleDealer;
@@ -323,6 +332,15 @@ public class ApplicationDocument : AuditDetails,
             }
         }
     }
+
+    #endregion
+
+    #region Custom Detail View Hook
+
+    [NotMapped]
+    [XafDisplayName("Document Detail")]
+    [VisibleInDetailView(true), VisibleInListView(false)]
+    public object? DetailPanel => this;
 
     #endregion
 }

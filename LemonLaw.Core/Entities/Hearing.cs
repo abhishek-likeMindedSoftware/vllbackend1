@@ -8,11 +8,14 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+using LemonLaw.Core.Attributes;
+
 namespace LemonLaw.Core.Entities;
 
 [DefaultProperty(nameof(HearingDate))]
 [NavigationItem("Hearings")]
 [XafDisplayName("Hearing")]
+[HideXafAuditFields]
 public class Hearing : AuditDetails,
         INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {
@@ -86,6 +89,7 @@ public class Hearing : AuditDetails,
 
     [ForeignKey("ApplicationId")]
     [DevExpress.Xpo.Association("Application-Hearings")]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual VllApplication? Application
     {
         get => _application;
@@ -115,6 +119,7 @@ public class Hearing : AuditDetails,
     private DateTime _hearingDate;
 
     [XafDisplayName("Hearing Date")]
+    [VisibleInDetailView(false)]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
     [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     public virtual DateTime HearingDate
@@ -134,6 +139,7 @@ public class Hearing : AuditDetails,
     private HearingFormat _hearingFormat;
 
     [XafDisplayName("Format")]
+    [VisibleInDetailView(false)]
     public virtual HearingFormat HearingFormat
     {
         get => _hearingFormat;
@@ -151,7 +157,7 @@ public class Hearing : AuditDetails,
     private string? _hearingLocation;
 
     [XafDisplayName("Location / URL")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual string? HearingLocation
     {
         get => _hearingLocation;
@@ -169,7 +175,7 @@ public class Hearing : AuditDetails,
     private string? _arbitratorName;
 
     [XafDisplayName("Arbitrator")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual string? ArbitratorName
     {
         get => _arbitratorName;
@@ -187,7 +193,7 @@ public class Hearing : AuditDetails,
     private bool _consumerNoticesSent;
 
     [XafDisplayName("Consumer Notified")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual bool ConsumerNoticesSent
     {
         get => _consumerNoticesSent;
@@ -205,7 +211,7 @@ public class Hearing : AuditDetails,
     private bool _dealerNoticesSent;
 
     [XafDisplayName("Dealer Notified")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual bool DealerNoticesSent
     {
         get => _dealerNoticesSent;
@@ -223,6 +229,7 @@ public class Hearing : AuditDetails,
     private HearingOutcome _outcome = HearingOutcome.PENDING;
 
     [XafDisplayName("Outcome")]
+    [VisibleInDetailView(false)]
     public virtual HearingOutcome Outcome
     {
         get => _outcome;
@@ -240,7 +247,7 @@ public class Hearing : AuditDetails,
     private string? _outcomeNotes;
 
     [XafDisplayName("Outcome Notes")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual string? OutcomeNotes
     {
         get => _outcomeNotes;
@@ -258,7 +265,7 @@ public class Hearing : AuditDetails,
     private DateTime? _continuedTo;
 
     [XafDisplayName("Continued To")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
     [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     public virtual DateTime? ContinuedTo
@@ -274,6 +281,15 @@ public class Hearing : AuditDetails,
             }
         }
     }
+
+    #endregion
+
+    #region Custom Detail View Hook
+
+    [NotMapped]
+    [XafDisplayName("Hearing Detail")]
+    [VisibleInDetailView(true), VisibleInListView(false)]
+    public object? DetailPanel => this;
 
     #endregion
 }

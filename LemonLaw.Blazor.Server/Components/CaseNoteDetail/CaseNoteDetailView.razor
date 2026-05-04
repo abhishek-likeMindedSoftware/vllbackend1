@@ -1,0 +1,87 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Core.Enums
+
+<div class="ll-wrap">
+
+    @if (_loading)
+    {
+        <div class="ll-loading"><span class="ll-spinner"></span><span>Loading note…</span></div>
+    }
+    else if (_loadError != null)
+    {
+        <div class="ll-error-box">@_loadError</div>
+    }
+    else if (_note != null)
+    {
+        var app = _note.Application;
+
+        @* ── Case Header ──────────────────────────────────────────────────────── *@
+        @if (app != null)
+        {
+            <div class="ll-header">
+                <div class="ll-header-left">
+                    <p class="ll-case-number">Case @app.CaseNumber</p>
+                    <div class="ll-meta-row">
+                        <span class="ll-badge ll-badge-@app.Status.ToString().ToLower()">@app.Status.ToString().Replace("_", " ")</span>
+                        <span class="ll-meta-item"><span class="ll-meta-label">Type:</span> @app.ApplicationType.ToString().Replace("_", " ")</span>
+                        @if (app.SubmittedAt != default)
+                        {
+                            <span class="ll-meta-item"><span class="ll-meta-label">Submitted:</span> @app.SubmittedAt.ToLocalTime().ToString("MM/dd/yyyy")</span>
+                        }
+                        <span class="ll-meta-item"><span class="ll-meta-label">Last Activity:</span> @app.LastActivityAt.ToLocalTime().ToString("MM/dd/yyyy")</span>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* ── Note Details ─────────────────────────────────────────────────────── *@
+        <div class="ll-card">
+            <div class="ll-card-head">
+                <p class="ll-card-title">Case Note @(_note.IsPinned ? "📌" : "")</p>
+                <button class="ll-edit-btn" type="button" @onclick="OpenEdit"><EditIcon /> Edit</button>
+            </div>
+            <div class="ll-card-body">
+                <div class="ll-fields ll-fields-3">
+                    <div>
+                        <p class="ll-field-label">Created By</p>
+                        <p class="ll-field-value">@_note.CreatedByName</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Created At</p>
+                        <p class="ll-field-value">@_note.CreatedAt.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt")</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Pinned</p>
+                        <p class="ll-field-value">@EnumHelper.BoolBadge(_note.IsPinned)</p>
+                    </div>
+                </div>
+                <div style="margin-top:12px;">
+                    <p class="ll-field-label">Note</p>
+                    <p style="font-size:.875rem;color:#1e293b;line-height:1.6;margin:4px 0 0;white-space:pre-wrap;">@_note.NoteText</p>
+                </div>
+            </div>
+        </div>
+
+        @* ── Audit Details ────────────────────────────────────────────────────── *@
+        <AuditSection Entity="_note" />
+    }
+</div>
+
+@* ── Edit Popup ───────────────────────────────────────────────────────────── *@
+<DxPopup @bind-Visible="_showEdit" HeaderText="Edit Note" Width="520px" ShowFooter="true" CloseOnOutsideClick="false">
+    <BodyContentTemplate>
+        @if (_form != null)
+        {
+            <div class="ll-form-row"><div class="ll-form-group"><label class="ll-form-label">Note *</label><textarea class="ll-textarea" style="min-height:120px;" @bind="_form.NoteText"></textarea></div></div>
+            <div class="ll-checkbox-row" style="margin-top:4px;">
+                <input type="checkbox" id="note-pinned" @bind="_form.IsPinned" />
+                <label for="note-pinned">Pin this note</label>
+            </div>
+            @if (_saveError != null) { <div class="ll-alert ll-alert-error" style="margin-top:10px;">@_saveError</div> }
+        }
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <button class="ll-btn ll-btn-ghost" type="button" @onclick="CloseEdit" disabled="@_saving">Cancel</button>
+        <button class="ll-btn ll-btn-primary" type="button" @onclick="SaveAsync" disabled="@_saving">@(_saving ? "Saving…" : "Save")</button>
+    </FooterContentTemplate>
+</DxPopup>

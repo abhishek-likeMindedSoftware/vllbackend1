@@ -8,10 +8,13 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+using LemonLaw.Core.Attributes;
+
 namespace LemonLaw.Core.Entities;
 
 [DefaultProperty(nameof(Subject))]
 [XafDisplayName("Correspondence")]
+[HideXafAuditFields]
 public class Correspondence : AuditDetails,
         INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {
@@ -85,6 +88,7 @@ public class Correspondence : AuditDetails,
 
     [ForeignKey("ApplicationId")]
     [DevExpress.Xpo.Association("Application-Correspondences")]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual VllApplication? Application
     {
         get => _application;
@@ -114,6 +118,7 @@ public class Correspondence : AuditDetails,
     private CorrespondenceDirection _direction;
 
     [XafDisplayName("Direction")]
+    [VisibleInDetailView(false)]
     public virtual CorrespondenceDirection Direction
     {
         get => _direction;
@@ -131,6 +136,7 @@ public class Correspondence : AuditDetails,
     private CorrespondenceRecipientType _recipientType;
 
     [XafDisplayName("Recipient Type")]
+    [VisibleInDetailView(false)]
     public virtual CorrespondenceRecipientType RecipientType
     {
         get => _recipientType;
@@ -148,6 +154,7 @@ public class Correspondence : AuditDetails,
     private string _recipientEmail = string.Empty;
 
     [XafDisplayName("Recipient Email")]
+    [VisibleInDetailView(false)]
     public virtual string RecipientEmail
     {
         get => _recipientEmail;
@@ -165,6 +172,7 @@ public class Correspondence : AuditDetails,
     private string _subject = string.Empty;
 
     [XafDisplayName("Subject")]
+    [VisibleInDetailView(false)]
     public virtual string Subject
     {
         get => _subject;
@@ -182,7 +190,7 @@ public class Correspondence : AuditDetails,
     private string? _bodyPreview;
 
     [XafDisplayName("Preview")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual string? BodyPreview
     {
         get => _bodyPreview;
@@ -200,7 +208,7 @@ public class Correspondence : AuditDetails,
     private string? _templateUsed;
 
     [XafDisplayName("Template Used")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual string? TemplateUsed
     {
         get => _templateUsed;
@@ -218,6 +226,7 @@ public class Correspondence : AuditDetails,
     private DateTime? _sentAt;
 
     [XafDisplayName("Sent At")]
+    [VisibleInDetailView(false)]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
     [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     public virtual DateTime? SentAt
@@ -271,6 +280,7 @@ public class Correspondence : AuditDetails,
     private EmailDeliveryStatus _deliveryStatus = EmailDeliveryStatus.PENDING;
 
     [XafDisplayName("Delivery Status")]
+    [VisibleInDetailView(false)]
     public virtual EmailDeliveryStatus DeliveryStatus
     {
         get => _deliveryStatus;
@@ -288,7 +298,7 @@ public class Correspondence : AuditDetails,
     private DateTime? _deliveryUpdatedAt;
 
     [XafDisplayName("Delivery Updated")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
     [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     public virtual DateTime? DeliveryUpdatedAt
@@ -304,6 +314,15 @@ public class Correspondence : AuditDetails,
             }
         }
     }
+
+    #endregion
+
+    #region Custom Detail View Hook
+
+    [NotMapped]
+    [XafDisplayName("Correspondence Detail")]
+    [VisibleInDetailView(true), VisibleInListView(false)]
+    public object? DetailPanel => this;
 
     #endregion
 }

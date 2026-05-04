@@ -26,6 +26,8 @@ public class ApplicationRepository(LemonLawAPIDbContext context)
             .Include(a => a.DealerOutreaches)
             .Include(a => a.Hearings)
             .Include(a => a.Decision)
+            .Include(a => a.CreatedBy)
+            .Include(a => a.ModifiedBy)
             .FirstOrDefaultAsync(a => a.Id == applicationId);
     }
 

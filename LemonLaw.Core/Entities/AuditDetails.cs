@@ -32,7 +32,7 @@ namespace LemonLaw.Core.Entities
         [ModelDefault("AllowEdit", "False")]
         [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
         [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
-        [VisibleInListView(false)]
+        [VisibleInDetailView(false), VisibleInListView(false)]
         public virtual DateTime CreatedDate
         {
             get => _createdDate;
@@ -67,7 +67,7 @@ namespace LemonLaw.Core.Entities
         [XafDisplayName("Created By")]
         [ReadOnly(true)]
         [ModelDefault("AllowEdit", "False")]
-        [VisibleInListView(false)]
+        [VisibleInDetailView(false), VisibleInListView(false)]
         public virtual ApplicationUser? CreatedBy { get; set; }
 
         // ── Modified ──────────────────────────────────────────────────────────
@@ -78,7 +78,7 @@ namespace LemonLaw.Core.Entities
         [ModelDefault("AllowEdit", "False")]
         [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
         [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
-        [VisibleInListView(false)]
+        [VisibleInDetailView(false), VisibleInListView(false)]
         public virtual DateTime? ModifiedDate
         {
             get => _modifiedDate;
@@ -113,7 +113,7 @@ namespace LemonLaw.Core.Entities
         [XafDisplayName("Modified By")]
         [ReadOnly(true)]
         [ModelDefault("AllowEdit", "False")]
-        [VisibleInListView(false)]
+        [VisibleInDetailView(false), VisibleInListView(false)]
         public virtual ApplicationUser? ModifiedBy { get; set; }
 
         // ── Soft delete ───────────────────────────────────────────────────────
@@ -122,6 +122,7 @@ namespace LemonLaw.Core.Entities
         [XafDisplayName("Is Deleted")]
         [ReadOnly(true)]
         [ModelDefault("AllowEdit", "False")]
+        [VisibleInDetailView(false)]
         public virtual bool IsDeleted
         {
             get => _isDeleted;

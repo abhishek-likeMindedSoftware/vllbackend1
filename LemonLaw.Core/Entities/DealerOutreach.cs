@@ -8,11 +8,14 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+using LemonLaw.Core.Attributes;
+
 namespace LemonLaw.Core.Entities;
 
 [DefaultProperty(nameof(DealerName))]
 [NavigationItem("Dealer Portal Activity")]
 [XafDisplayName("Dealer Outreach")]
+[HideXafAuditFields]
 public class DealerOutreach : AuditDetails,
         INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {
@@ -86,6 +89,7 @@ public class DealerOutreach : AuditDetails,
 
     [ForeignKey("ApplicationId")]
     [DevExpress.Xpo.Association("Application-DealerOutreaches")]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual VllApplication? Application
     {
         get => _application;
@@ -115,6 +119,7 @@ public class DealerOutreach : AuditDetails,
     private string _dealerName = string.Empty;
 
     [XafDisplayName("Dealer Name")]
+    [VisibleInDetailView(false)]
     public virtual string DealerName
     {
         get => _dealerName;
@@ -132,6 +137,7 @@ public class DealerOutreach : AuditDetails,
     private string _dealerEmail = string.Empty;
 
     [XafDisplayName("Dealer Email")]
+    [VisibleInDetailView(false)]
     public virtual string DealerEmail
     {
         get => _dealerEmail;
@@ -149,7 +155,7 @@ public class DealerOutreach : AuditDetails,
     private string? _dealerPhone;
 
     [XafDisplayName("Dealer Phone")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual string? DealerPhone
     {
         get => _dealerPhone;
@@ -167,6 +173,7 @@ public class DealerOutreach : AuditDetails,
     private OutreachType _outreachType;
 
     [XafDisplayName("Outreach Type")]
+    [VisibleInDetailView(false)]
     public virtual OutreachType OutreachType
     {
         get => _outreachType;
@@ -184,6 +191,7 @@ public class DealerOutreach : AuditDetails,
     private DateTime? _sentAt;
 
     [XafDisplayName("Sent At")]
+    [VisibleInDetailView(false)]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
     [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     public virtual DateTime? SentAt
@@ -288,6 +296,7 @@ public class DealerOutreach : AuditDetails,
     private DateOnly _responseDeadline;
 
     [XafDisplayName("Response Deadline")]
+    [VisibleInDetailView(false)]
     public virtual DateOnly ResponseDeadline
     {
         get => _responseDeadline;
@@ -322,7 +331,7 @@ public class DealerOutreach : AuditDetails,
     private EmailDeliveryStatus _deliveryStatus = EmailDeliveryStatus.PENDING;
 
     [XafDisplayName("Delivery Status")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual EmailDeliveryStatus DeliveryStatus
     {
         get => _deliveryStatus;
@@ -340,6 +349,7 @@ public class DealerOutreach : AuditDetails,
     private OutreachStatus _status = OutreachStatus.PENDING;
 
     [XafDisplayName("Status")]
+    [VisibleInDetailView(false)]
     public virtual OutreachStatus Status
     {
         get => _status;
@@ -361,7 +371,7 @@ public class DealerOutreach : AuditDetails,
     private DateTime? _followUp1SentAt;
 
     [XafDisplayName("Follow-Up 1 Sent")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual DateTime? FollowUp1SentAt
     {
         get => _followUp1SentAt;
@@ -379,7 +389,7 @@ public class DealerOutreach : AuditDetails,
     private DateTime? _followUp2SentAt;
 
     [XafDisplayName("Follow-Up 2 Sent")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual DateTime? FollowUp2SentAt
     {
         get => _followUp2SentAt;
@@ -397,6 +407,7 @@ public class DealerOutreach : AuditDetails,
     private DateTime? _finalNoticeSentAt;
 
     [XafDisplayName("Final Notice Sent")]
+    [VisibleInDetailView(false)]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
     [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     [VisibleInListView(false)]
@@ -417,7 +428,7 @@ public class DealerOutreach : AuditDetails,
     private bool _escalatedToHearing;
 
     [XafDisplayName("Escalated to Hearing")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual bool EscalatedToHearing
     {
         get => _escalatedToHearing;
@@ -435,7 +446,7 @@ public class DealerOutreach : AuditDetails,
     private string? _escalationNotes;
 
     [XafDisplayName("Escalation Notes")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual string? EscalationNotes
     {
         get => _escalationNotes;
@@ -474,6 +485,7 @@ public class DealerOutreach : AuditDetails,
     private DealerResponse? _response;
 
     [XafDisplayName("Response")]
+    [VisibleInDetailView(false)]
     public virtual DealerResponse? Response
     {
         get => _response;
@@ -488,6 +500,15 @@ public class DealerOutreach : AuditDetails,
             }
         }
     }
+
+    #endregion
+
+    #region Custom Detail View Hook
+
+    [NotMapped]
+    [XafDisplayName("Dealer Outreach Detail")]
+    [VisibleInDetailView(true), VisibleInListView(false)]
+    public object? DetailPanel => this;
 
     #endregion
 }

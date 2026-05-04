@@ -7,10 +7,13 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+using LemonLaw.Core.Attributes;
+
 namespace LemonLaw.Core.Entities;
 
 [DefaultProperty(nameof(ExpenseType))]
 [XafDisplayName("Expense")]
+[HideXafAuditFields]
 public class Expense : AuditDetails,
         INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {
@@ -84,6 +87,7 @@ public class Expense : AuditDetails,
 
     [ForeignKey("ApplicationId")]
     [DevExpress.Xpo.Association("Application-Expenses")]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual VllApplication? Application
     {
         get => _application;
@@ -113,6 +117,7 @@ public class Expense : AuditDetails,
     private ExpenseType _expenseType;
 
     [XafDisplayName("Expense Type")]
+    [VisibleInDetailView(false)]
     public virtual ExpenseType ExpenseType
     {
         get => _expenseType;
@@ -130,7 +135,7 @@ public class Expense : AuditDetails,
     private DateOnly? _expenseDate;
 
     [XafDisplayName("Date")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual DateOnly? ExpenseDate
     {
         get => _expenseDate;
@@ -148,6 +153,7 @@ public class Expense : AuditDetails,
     private decimal _amount;
 
     [XafDisplayName("Amount ($)")]
+    [VisibleInDetailView(false)]
     public virtual decimal Amount
     {
         get => _amount;
@@ -165,7 +171,7 @@ public class Expense : AuditDetails,
     private string? _description;
 
     [XafDisplayName("Description")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual string? Description
     {
         get => _description;
@@ -183,7 +189,7 @@ public class Expense : AuditDetails,
     private bool _receiptUploaded;
 
     [XafDisplayName("Receipt Uploaded")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual bool ReceiptUploaded
     {
         get => _receiptUploaded;
@@ -197,6 +203,15 @@ public class Expense : AuditDetails,
             }
         }
     }
+
+    #endregion
+
+    #region Custom Detail View Hook
+
+    [NotMapped]
+    [XafDisplayName("Expense Detail")]
+    [VisibleInDetailView(true), VisibleInListView(false)]
+    public object? DetailPanel => this;
 
     #endregion
 }

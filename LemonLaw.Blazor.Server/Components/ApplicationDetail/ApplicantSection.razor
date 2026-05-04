@@ -100,7 +100,11 @@
             using var scope = ServiceProvider.CreateScope();
             var repo = scope.ServiceProvider.GetRequiredService<IGenericRepository<Applicant>>();
             if (_applicant == null) { _applicant = new Applicant { ApplicationId = ApplicationId }; _form.ApplyTo(_applicant); await repo.AddAsync(_applicant); }
-            else { _form.ApplyTo(_applicant); repo.Update(_applicant); }
+            else
+            {
+                var fresh = await repo.GetByIdAsync(_applicant.Id);
+                if (fresh != null) { _form.ApplyTo(fresh); repo.Update(fresh); _applicant = fresh; }
+            }
             await repo.SaveChangesAsync();
             _showEdit = false;
             await OnSaved.InvokeAsync();
