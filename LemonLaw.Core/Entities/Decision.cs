@@ -1,6 +1,7 @@
 using DevExpress.ExpressApp;
 using DevExpress.ExpressApp.DC;
 using DevExpress.ExpressApp.Editors;
+using DevExpress.ExpressApp.Model;
 using DevExpress.Persistent.Base;
 using LemonLaw.Core.Attributes;
 using LemonLaw.Core.Enums;
@@ -128,6 +129,7 @@ public class Decision : AuditDetails,
     private DateOnly _decisionDate;
 
     [XafDisplayName("Decision Date")]
+    [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy}")]
     [VisibleInDetailView(false)]
     public virtual DateOnly DecisionDate
     {
