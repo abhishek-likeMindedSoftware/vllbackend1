@@ -87,6 +87,7 @@ public enum DocumentType
     [XafDisplayName("Repair Order")] [Description("Repair Order")] REPAIR_ORDER,
     [XafDisplayName("Dealer Statement")] [Description("Dealer Statement")] DEALER_STATEMENT,
     [XafDisplayName("Purchase Record")] [Description("Purchase Record")] PURCHASE_RECORD,
+    [XafDisplayName("Official Letter")] [Description("Official Letter")] LETTER,
     [XafDisplayName("Other")] [Description("Other")] OTHER
 }
 

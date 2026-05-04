@@ -24,6 +24,10 @@ public static class ApplicationDependencyInjection
         services.AddScoped<IDealerOutreachService, DealerOutreachService>();
         services.AddScoped<IReportingService, ReportingService>();
         services.AddScoped<IDocumentService, DocumentService>();
+        
+        // Letter generation services
+        services.AddScoped<ILetterTemplateService, LetterTemplateService>();
+        services.AddScoped<HearingLetterService>();
 
         // Background service for overdue dealer outreach detection (spec §4.4)
         services.AddHostedService<OverdueOutreachBackgroundService>();

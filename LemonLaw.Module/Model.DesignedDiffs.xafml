@@ -6,6 +6,12 @@
   <NavigationItems>
     <Items>
       <Item Id="Default" Caption="Admin" />
+      <Item Id="Documents" Caption="Documents" ImageName="BO_FileAttachment" Index="3" IsNewNode="True">
+        <Items IsNewNode="True">
+          <Item Id="ApplicationDocument_ListView" Caption="All Documents" ViewId="ApplicationDocument_ListView" IsNewNode="True" />
+          <Item Id="ApplicationDocument_Letters_ListView" Caption="Letters" ViewId="ApplicationDocument_Letters_ListView" IsNewNode="True" />
+        </Items>
+      </Item>
     </Items>
   </NavigationItems>
   <Options>
@@ -13,6 +19,17 @@
   </Options>
   <Views>
     <ListView Id="ApplicationUser_ListView" Caption="Users" />
+    <ListView Id="ApplicationDocument_Letters_ListView" Caption="Letters" ClassName="LemonLaw.Core.Entities.ApplicationDocument" Criteria="[DocumentType] = 'LETTER'" IsNewNode="True">
+      <Columns>
+        <ColumnInfo Id="FileName" Index="0" Width="200" />
+        <ColumnInfo Id="DocumentType" Index="1" Width="120" />
+        <ColumnInfo Id="UploadedAt" Index="2" Width="150" />
+        <ColumnInfo Id="UploadedByRole" Index="3" Width="100" />
+        <ColumnInfo Id="Status" Index="4" Width="100" />
+        <ColumnInfo Id="FileSizeBytes" Index="5" Width="100" />
+        <ColumnInfo Id="Application" Index="6" Width="150" />
+      </Columns>
+    </ListView>
     <DetailView Id="Defect_DetailView"          ObjectCaptionFormat="{0:Caption}" />
     <DetailView Id="RepairAttempt_DetailView"   ObjectCaptionFormat="{0:Caption}" />
     <DetailView Id="Expense_DetailView"         ObjectCaptionFormat="{0:Caption}" />

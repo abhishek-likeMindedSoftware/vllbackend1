@@ -24,6 +24,7 @@ public class ApplicationService(
     IGenericRepository<Expense> expenseRepository,
     IGenericRepository<Correspondence> correspondenceRepository,
     IEmailService emailService,
+    HearingLetterService hearingLetterService,
     IMemoryCache cache,
     IConfiguration configuration,
     ILogger<ApplicationService> logger) : IApplicationService
@@ -976,6 +977,21 @@ public class ApplicationService(
                         SentAt = DateTime.UtcNow
                     });
                     await correspondenceRepository.SaveChangesAsync();
+
+                    // Generate hearing notice letter
+                    try
+                    {
+                        await hearingLetterService.GenerateHearingNoticeAsync(
+                            applicationId, hearing.Id, "SYSTEM");
+                        
+                        logger.LogInformation("Generated hearing notice letter for application {ApplicationId}, hearing {HearingId}", 
+                            applicationId, hearing.Id);
+                    }
+                    catch (Exception docEx)
+                    {
+                        logger.LogError(docEx, "Failed to generate hearing notice letter for {ApplicationId}", applicationId);
+                        // Don't fail the entire operation if document generation fails
+                    }
                 }
                 catch (Exception emailEx)
                 {

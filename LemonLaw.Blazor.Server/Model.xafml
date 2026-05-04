@@ -9,14 +9,20 @@
         </Items>
       </Item>
       <Item Id="Dealer Portal Activity" ImageName="BO_StateMachine" Index="2" />
-      <Item Id="Default" ImageName="BO_Role" Index="3" />
-      <Item Id="Hearings" ImageName="State_Priority_Normal" Index="4" />
-      <Item Id="Reports" ImageName="BO_Report" Index="5">
+      <Item Id="Documents" ImageName="BO_FileAttachment" Index="3">
+        <Items>
+          <Item Id="ApplicationDocument_ListView" Index="0" Caption="All Documents" />
+          <Item Id="ApplicationDocument_Letters_ListView" Index="1" Caption="Letters" ViewId="ApplicationDocument_Letters_ListView" IsNewNode="True" />
+        </Items>
+      </Item>
+      <Item Id="Default" ImageName="BO_Role" Index="4" />
+      <Item Id="Hearings" ImageName="State_Priority_Normal" Index="5" />
+      <Item Id="Reports" ImageName="BO_Report" Index="6">
         <Items>
           <Item Id="Dashboards" Visible="False" />
         </Items>
       </Item>
-      <Item Id="Utility" ImageName="LayoutCustomization_Item" Index="6" />
+      <Item Id="Utility" ImageName="LayoutCustomization_Item" Index="7" />
       <Item Id="Administration" Visible="False" />
     </Items>
   </NavigationItems>

@@ -9,6 +9,8 @@ public static class DatabaseSeeder
 {
     public static async Task SeedAsync(LemonLawAPIDbContext context, ILogger logger)
     {
+        logger.LogInformation("=== DatabaseSeeder.SeedAsync STARTED ===");
+        
         // Schema is owned by LemonLawDbContext (XAF) — no migrations run here.
         // Just seed reference data if not already present.
         if (!await context.CorrespondenceTemplates.AnyAsync())
@@ -18,6 +20,28 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
             logger.LogInformation("Correspondence templates seeded.");
         }
+        else
+        {
+            logger.LogInformation("Correspondence templates already exist, skipping.");
+        }
+
+        // Seed one new test application each time for development/testing
+        try
+        {
+            logger.LogInformation("=== Starting test application seeding ===");
+            await SeedOneTestApplicationAsync(context, logger);
+            logger.LogInformation("=== Test application seeding completed ===");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to seed test application. Error: {Message}", ex.Message);
+            if (ex.InnerException != null)
+            {
+                logger.LogError(ex.InnerException, "Inner exception: {InnerMessage}", ex.InnerException.Message);
+            }
+        }
+        
+        logger.LogInformation("=== DatabaseSeeder.SeedAsync COMPLETED ===");
     }
 
     private static async Task SeedTemplatesAsync(LemonLawAPIDbContext context)
@@ -300,5 +324,213 @@ public static class DatabaseSeeder
         };
 
         await context.CorrespondenceTemplates.AddRangeAsync(templates);
+    }
+
+    private static async Task SeedOneTestApplicationAsync(LemonLawAPIDbContext context, ILogger logger)
+    {
+        try
+        {
+            logger.LogInformation("Querying for last case number...");
+            
+            // Get the next case number - use IgnoreQueryFilters to see ALL records including soft-deleted
+            var lastCaseNumber = await context.VllApplications
+                .IgnoreQueryFilters()  // ← See all records, not just non-deleted ones
+                .Where(a => a.CaseNumber.StartsWith("LL-2026-"))
+                .OrderByDescending(a => a.CaseNumber)
+                .Select(a => a.CaseNumber)
+                .FirstOrDefaultAsync();
+
+            logger.LogInformation("Last case number found: {LastCaseNumber}", lastCaseNumber ?? "None");
+
+            int nextNumber = 1001;
+            if (!string.IsNullOrEmpty(lastCaseNumber))
+            {
+                var numberPart = lastCaseNumber.Split('-').Last();
+                if (int.TryParse(numberPart, out int lastNumber))
+                {
+                    nextNumber = lastNumber + 1;
+                }
+            }
+            
+            var newCaseNumber = $"LL-2026-{nextNumber:D5}";
+            logger.LogInformation("Next case number will be: {CaseNumber}", newCaseNumber);
+
+            var random = new Random();
+            var makes = new[] { "Toyota", "Honda", "Ford", "Chevrolet", "Nissan", "BMW", "Mercedes-Benz", "Volkswagen", "Hyundai", "Kia" };
+            var models = new Dictionary<string, string[]>
+            {
+                ["Toyota"] = new[] { "Camry", "Corolla", "RAV4", "Highlander", "Tacoma" },
+                ["Honda"] = new[] { "Civic", "Accord", "CR-V", "Pilot", "Odyssey" },
+                ["Ford"] = new[] { "F-150", "Escape", "Explorer", "Mustang", "Edge" },
+                ["Chevrolet"] = new[] { "Silverado", "Equinox", "Malibu", "Traverse", "Tahoe" },
+                ["Nissan"] = new[] { "Altima", "Rogue", "Sentra", "Pathfinder", "Murano" },
+                ["BMW"] = new[] { "3 Series", "5 Series", "X3", "X5", "7 Series" },
+                ["Mercedes-Benz"] = new[] { "C-Class", "E-Class", "GLC", "GLE", "S-Class" },
+                ["Volkswagen"] = new[] { "Jetta", "Passat", "Tiguan", "Atlas", "Golf" },
+                ["Hyundai"] = new[] { "Elantra", "Sonata", "Tucson", "Santa Fe", "Palisade" },
+                ["Kia"] = new[] { "Forte", "Optima", "Sportage", "Sorento", "Telluride" }
+            };
+
+            var defectCategories = new[] { 
+                (Name: "Engine", Enum: Core.Enums.DefectCategory.ENGINE),
+                (Name: "Transmission", Enum: Core.Enums.DefectCategory.TRANSMISSION),
+                (Name: "Electrical", Enum: Core.Enums.DefectCategory.ELECTRICAL),
+                (Name: "Brakes", Enum: Core.Enums.DefectCategory.BRAKES),
+                (Name: "Steering", Enum: Core.Enums.DefectCategory.STEERING)
+            };
+            
+            var defectDescriptions = new Dictionary<string, string[]>
+            {
+                ["Engine"] = new[] { "Engine stalls while driving", "Check engine light constantly on", "Engine makes loud knocking noise", "Loss of power during acceleration" },
+                ["Transmission"] = new[] { "Transmission slips between gears", "Delayed shifting", "Grinding noise when shifting", "Transmission fluid leaking" },
+                ["Electrical"] = new[] { "Battery drains overnight", "Dashboard lights flickering", "Power windows not working", "Infotainment system freezes" },
+                ["Brakes"] = new[] { "Brake pedal goes to floor", "Grinding noise when braking", "ABS light stays on", "Brake fluid leaking" },
+                ["Steering"] = new[] { "Steering wheel vibrates", "Power steering failure", "Steering pulls to one side", "Loose steering" }
+            };
+
+            var make = makes[random.Next(makes.Length)];
+            var model = models[make][random.Next(models[make].Length)];
+            var year = (short)(2021 + random.Next(4)); // 2021-2024
+            var vin = $"1HGBH41JXMN{random.Next(100000, 999999)}";
+            
+            var defectCategoryTuple = defectCategories[random.Next(defectCategories.Length)];
+            var defectCategoryName = defectCategoryTuple.Name;
+            var defectCategoryEnum = defectCategoryTuple.Enum;
+            var defectDesc = defectDescriptions[defectCategoryName][random.Next(defectDescriptions[defectCategoryName].Length)];
+
+            logger.LogInformation("Creating test application entity for {Year} {Make} {Model}...", year, make, model);
+
+            // Create application first WITHOUT related entities
+            var application = new VllApplication
+            {
+                CaseNumber = newCaseNumber,
+                ApplicationType = nextNumber % 3 == 0 ? Core.Enums.ApplicationType.NEW_CAR : Core.Enums.ApplicationType.USED_CAR,
+                Status = Core.Enums.ApplicationStatus.SUBMITTED,
+                SubmittedAt = DateTime.UtcNow.AddDays(-random.Next(1, 30)),
+                LastActivityAt = DateTime.UtcNow.AddDays(-random.Next(1, 5)),
+                NarrativeStatement = $"I purchased this {year} {make} {model} and have experienced recurring issues with the {defectCategoryName.ToLower()}. Despite multiple repair attempts, the problem persists and significantly affects the vehicle's safety and usability.",
+                PriorContactDealer = true,
+                PriorContactMfr = nextNumber % 2 == 0,
+                PriorContactNotes = "Contacted dealer multiple times. They acknowledged the issue but have been unable to fix it permanently.",
+                DesiredResolution = nextNumber % 3 == 0 ? Core.Enums.DesiredResolution.REFUND : Core.Enums.DesiredResolution.REPLACEMENT
+            };
+
+            // Add application and save to generate ID
+            context.VllApplications.Add(application);
+            logger.LogInformation("Saving application to generate ID...");
+            await context.SaveChangesAsync();
+            logger.LogInformation("Application saved with ID: {ApplicationId}", application.Id);
+            
+            // Now create related entities with the generated ApplicationId
+            logger.LogInformation("Creating related entities...");
+            
+            var applicant = new Applicant
+            {
+                ApplicationId = application.Id,
+                FirstName = $"Test{nextNumber}",
+                LastName = "User",
+                EmailAddress = "test.vll@yopmail.com",
+                PhoneNumber = $"617-555-{random.Next(1000, 9999):D4}",
+                PhoneType = Core.Enums.PhoneType.MOBILE,
+                AddressLine1 = $"{random.Next(100, 999)} Main Street",
+                City = "Boston",
+                AddressState = "MA",
+                ZipCode = "02110",
+                PreferredContact = Core.Enums.PreferredContactMethod.EMAIL
+            };
+            context.Applicants.Add(applicant);
+
+            var vehicle = new Vehicle
+            {
+                ApplicationId = application.Id,
+                VIN = vin,
+                VehicleYear = year,
+                VehicleMake = make,
+                VehicleModel = model,
+                VehicleColor = new[] { "Black", "White", "Silver", "Blue", "Red" }[random.Next(5)],
+                LicensePlate = $"{random.Next(100, 999)}ABC",
+                LicensePlateState = "MA",
+                PurchaseDate = DateOnly.FromDateTime(DateTime.Now.AddMonths(-random.Next(6, 24))),
+                PurchasePrice = 25000 + random.Next(5000, 30000),
+                MileageAtPurchase = random.Next(10, 100),
+                CurrentMileage = random.Next(1000, 15000),
+                DealerName = $"{make} of Boston",
+                DealerAddressLine1 = $"{random.Next(100, 999)} Commonwealth Avenue",
+                DealerCity = "Boston",
+                DealerState = "MA",
+                DealerZip = "02215",
+                DealerPhone = "617-555-0100",
+                DealerEmail = "dealer.vll@yopmail.com",
+                ManufacturerName = make,
+                WarrantyType = Core.Enums.WarrantyType.MANUFACTURERS_WARRANTY,
+                WarrantyStartDate = DateOnly.FromDateTime(DateTime.Now.AddMonths(-random.Next(6, 24))),
+                WarrantyExpiryDate = DateOnly.FromDateTime(DateTime.Now.AddMonths(random.Next(12, 36)))
+            };
+            context.Vehicles.Add(vehicle);
+
+            // Add defect
+            logger.LogInformation("Adding defect...");
+            var defect = new Defect
+            {
+                ApplicationId = application.Id,
+                DefectDescription = defectDesc,
+                DefectCategory = defectCategoryEnum,
+                FirstOccurrenceDate = DateOnly.FromDateTime(DateTime.Now.AddMonths(-random.Next(3, 12))),
+                IsOngoing = true,
+                SortOrder = 1
+            };
+            context.Defects.Add(defect);
+
+            // Add 2-3 repair attempts
+            var repairCount = random.Next(2, 4);
+            logger.LogInformation("Adding {RepairCount} repair attempts...", repairCount);
+            for (int r = 1; r <= repairCount; r++)
+            {
+                var repair = new RepairAttempt
+                {
+                    ApplicationId = application.Id,
+                    RepairDate = DateOnly.FromDateTime(DateTime.Now.AddMonths(-random.Next(1, 10))),
+                    RepairFacilityName = $"{make} Service Center",
+                    RepairFacilityAddr = $"{random.Next(100, 999)} Service Road, Boston, MA 02215",
+                    RoNumber = $"RO-{random.Next(10000, 99999)}",
+                    MileageAtRepair = random.Next(500, 10000),
+                    DefectsAddressed = defectDesc,
+                    RepairSuccessful = false,
+                    DaysOutOfService = random.Next(1, 5),
+                    SortOrder = r
+                };
+                context.RepairAttempts.Add(repair);
+            }
+
+            // Add 1-2 expenses
+            var expenseCount = random.Next(1, 3);
+            logger.LogInformation("Adding {ExpenseCount} expenses...", expenseCount);
+            for (int e = 1; e <= expenseCount; e++)
+            {
+                var expense = new Expense
+                {
+                    ApplicationId = application.Id,
+                    ExpenseType = e == 1 ? Core.Enums.ExpenseType.RENTAL_CAR : Core.Enums.ExpenseType.TOWING,
+                    ExpenseDate = DateOnly.FromDateTime(DateTime.Now.AddMonths(-random.Next(1, 8))),
+                    Amount = e == 1 ? random.Next(200, 500) : random.Next(75, 150),
+                    Description = e == 1 ? "Rental car while vehicle in shop" : "Towing to repair facility",
+                    ReceiptUploaded = false
+                };
+                context.Expenses.Add(expense);
+            }
+
+            logger.LogInformation("Saving all related entities...");
+            await context.SaveChangesAsync();
+            logger.LogInformation("Test application {CaseNumber} and all related entities saved successfully", newCaseNumber);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Exception in SeedOneTestApplicationAsync: {Message}", ex.Message);
+            if (ex.InnerException != null)
+            {
+                logger.LogError(ex.InnerException, "Inner exception in SeedOneTestApplicationAsync: {InnerMessage}", ex.InnerException.Message);
+            }
+            throw; // Re-throw to be caught by outer try-catch
+        }
     }
 }
