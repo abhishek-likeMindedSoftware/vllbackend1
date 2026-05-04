@@ -194,6 +194,7 @@ public class CorrespondenceTemplate : AuditDetails,
     [ReadOnly(true)]
     [ModelDefault("AllowEdit", "False")]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
+    [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     [VisibleInListView(false)]
     public virtual DateTime LastModifiedAt
     {

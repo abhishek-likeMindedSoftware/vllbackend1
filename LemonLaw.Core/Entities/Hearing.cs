@@ -116,6 +116,7 @@ public class Hearing : AuditDetails,
 
     [XafDisplayName("Hearing Date")]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
+    [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     public virtual DateTime HearingDate
     {
         get => _hearingDate;
@@ -259,6 +260,7 @@ public class Hearing : AuditDetails,
     [XafDisplayName("Continued To")]
     [VisibleInListView(false)]
     [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
+    [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     public virtual DateTime? ContinuedTo
     {
         get => _continuedTo;

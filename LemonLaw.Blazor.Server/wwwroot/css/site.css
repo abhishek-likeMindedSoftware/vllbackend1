@@ -76,3 +76,21 @@ button[data-action-name="Follow-Up Actions"]:hover {
 button[data-action-name="Follow-Up Actions"] .xaf-toolbar-item-icon {
     display: none !important;
 }
+
+/* ── Grid list view — Status column no-wrap ─────────────────────────────────
+   Applied via ListViewLayoutController.CssClass on the Status column.
+   Prevents status values like "HEARING_SCHEDULED" from wrapping inside the cell.
+   The !important overrides DevExpress grid cell default styles. */
+.ll-col-nowrap .dxbl-grid-cell-content {
+    white-space: nowrap !important;
+}
+
+/* Targets all inner elements inside a Status column cell rendered by XAF/DxGrid.
+   The td gets white-space:nowrap via CustomizeElement; this ensures child spans
+   (badge wrappers, property editor output) also respect it. */
+.dxbl-grid td[style*="white-space: nowrap"] *,
+.dxbl-grid td[style*="white-space: nowrap"] {
+    white-space: nowrap !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

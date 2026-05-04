@@ -2,6 +2,8 @@ using DevExpress.Blazor;
 using DevExpress.ExpressApp;
 using DevExpress.ExpressApp.Blazor.Editors;
 using LemonLaw.Core.Entities;
+using DevExpress.ExpressApp.Blazor.Editors.Models;
+using Microsoft.AspNetCore.Components;
 
 
 namespace LemonLaw.Module.Controllers
@@ -54,11 +56,34 @@ namespace LemonLaw.Module.Controllers
                 int charCount = string.IsNullOrEmpty(column.Caption) ? 10 : column.Caption.Length;
                 int calculatedWidth = (charCount * 9) + 40;
                 column.MinWidth = Math.Max(100, calculatedWidth);
+
+                // Give the Status column enough fixed width to never need wrapping
+                if (string.Equals(column.FieldName, "Status", StringComparison.OrdinalIgnoreCase))
+                    column.Width = "160px";
             }
 
             // ── 2. Selection column width ──────────────────────────────────────
             if (adapter.GridSelectionColumnModel != null)
                 adapter.GridSelectionColumnModel.Width = "40px";
+
+            // ── 3. Enable column resizing at the grid level ────────────────────
+            // ColumnsContainer mode expands the total columns container width when a
+            // column is dragged wider, so MinWidth on other columns never blocks resizing.
+            adapter.GridModel.ColumnResizeMode = GridColumnResizeMode.ColumnsContainer;
+
+            // ── 4. Prevent text wrapping in the Status column ──────────────────
+            // Status values like "HEARING_SCHEDULED" must stay on one line.
+            // We apply nowrap on the cell AND on the header for that column.
+            adapter.GridModel.CustomizeElement = (args) =>
+            {
+                if (args.Column is DxGridDataColumnModel dataCol &&
+                    string.Equals(dataCol.FieldName, "Status", StringComparison.OrdinalIgnoreCase) &&
+                    (args.ElementType == GridElementType.DataCell ||
+                     args.ElementType == GridElementType.HeaderCell))
+                {
+                    args.Style = "white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";
+                }
+            };
 
             // ── 3. Column freezing ─────────────────────────────────────────────
             var entityType = View.ObjectTypeInfo.Type;

@@ -165,6 +165,8 @@ public class VllApplication : AuditDetails,
     private DateTime? _assignedAt;
 
     [XafDisplayName("Assigned At")]
+    [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
+    [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     [VisibleInListView(false), VisibleInDetailView(false)]
     public virtual DateTime? AssignedAt
     {
@@ -302,6 +304,8 @@ public class VllApplication : AuditDetails,
     private DateTime? _signatureTimestamp;
 
     [VisibleInListView(false), VisibleInDetailView(false)]
+    [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
+    [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     public virtual DateTime? SignatureTimestamp
     {
         get => _signatureTimestamp;
