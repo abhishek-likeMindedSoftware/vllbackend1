@@ -12,7 +12,6 @@
       <Item Id="Documents" ImageName="BO_FileAttachment" Index="3">
         <Items>
           <Item Id="ApplicationDocument_ListView" Index="0" Caption="All Documents" />
-          <Item Id="ApplicationDocument_Letters_ListView" Index="1" Caption="Letters" ViewId="ApplicationDocument_Letters_ListView" IsNewNode="True" />
         </Items>
       </Item>
       <Item Id="Default" ImageName="BO_Role" Index="4" />
