@@ -7,7 +7,6 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-using AppEntity = LemonLaw.Core.Entities.Application;
 
 namespace LemonLaw.Application.Services;
 
@@ -40,7 +39,7 @@ public class ApplicationService(
             var tokenCleartext = GenerateSecureToken();
             var tokenHash = HashToken(tokenCleartext);
 
-            var application = new AppEntity
+            var application = new VllApplication
             {
                 CaseNumber = caseNumber,
                 ApplicationType = dto.ApplicationType,
@@ -507,7 +506,7 @@ public class ApplicationService(
         }
     }
 
-    private CommonResponseDto<PortalStatusDto> BuildPortalStatusDto(AppEntity application)
+    private CommonResponseDto<PortalStatusDto> BuildPortalStatusDto(VllApplication application)
     {
         var milestones = BuildMilestones(application);
 
@@ -698,7 +697,7 @@ public class ApplicationService(
     }
 
     private async Task SendStatusChangeNotificationAsync(
-        AppEntity application, ApplicationStatus newStatus, string? reason)
+        VllApplication application, ApplicationStatus newStatus, string? reason)
     {
         var applicant = application.Applicant;
         if (applicant == null || string.IsNullOrWhiteSpace(applicant.EmailAddress)) return;
@@ -1381,7 +1380,7 @@ public class ApplicationService(
         CurrentMileage = v.CurrentMileage
     };
 
-    private static List<MilestoneDto> BuildMilestones(AppEntity a)
+    private static List<MilestoneDto> BuildMilestones(VllApplication a)
     {
         var statuses = new[]
         {

@@ -82,11 +82,11 @@ public class Hearing : AuditDetails,
         }
     }
 
-    private Application? _application;
+    private VllApplication? _application;
 
     [ForeignKey("ApplicationId")]
     [DevExpress.Xpo.Association("Application-Hearings")]
-    public virtual Application? Application
+    public virtual VllApplication? Application
     {
         get => _application;
         set

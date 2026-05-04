@@ -4,13 +4,13 @@ using DevExpress.ExpressApp.SystemModule;
 using DevExpress.ExpressApp.Templates;
 using DevExpress.Persistent.Base;
 using LemonLaw.Application.Interfaces;
+using LemonLaw.Core.Entities;
 using LemonLaw.Core.Enums;
 using LemonLaw.Module.BusinessObjects;
 using LemonLaw.Shared.DTOs;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel;
 
-using AppEntity  = LemonLaw.Core.Entities.Application;
 using XafAppUser = LemonLaw.Core.Entities.ApplicationUser;
 
 namespace LemonLaw.Module.Controllers
@@ -44,7 +44,7 @@ namespace LemonLaw.Module.Controllers
         private const string DEFAULT_CAPTION = "Case Actions";
 
         private readonly SingleChoiceAction _caseActionsMenu;
-        private AppEntity?         _trackedApplication;
+        private VllApplication?         _trackedApplication;
         private RefreshController? _refreshController;
         private int                _busyCount;
 
@@ -104,7 +104,7 @@ namespace LemonLaw.Module.Controllers
         {
             _caseActionsMenu.Items.Clear();
 
-            if (View?.CurrentObject is not AppEntity app)
+            if (View?.CurrentObject is not VllApplication app)
             {
                 _caseActionsMenu.Active.SetItemValue("IsApplicationView", false);
                 return;
@@ -187,7 +187,7 @@ namespace LemonLaw.Module.Controllers
 
         private void TrackCurrentApplication()
         {
-            var current = View?.CurrentObject as AppEntity;
+            var current = View?.CurrentObject as VllApplication;
             if (ReferenceEquals(_trackedApplication, current)) return;
 
             UntrackCurrentApplication();
@@ -205,7 +205,7 @@ namespace LemonLaw.Module.Controllers
 
         private void OnTrackedApplicationPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (string.IsNullOrEmpty(e.PropertyName) || e.PropertyName == nameof(AppEntity.Status))
+            if (string.IsNullOrEmpty(e.PropertyName) || e.PropertyName == nameof(VllApplication.Status))
                 RebuildMenuItems();
         }
 
@@ -243,7 +243,7 @@ namespace LemonLaw.Module.Controllers
 
         private async void ExecuteTransition(string newStatus, string? reason)
         {
-            if (View?.CurrentObject is not AppEntity app) return;
+            if (View?.CurrentObject is not VllApplication app) return;
 
             SetBusy(true, "Updating...");
             try
@@ -278,7 +278,7 @@ namespace LemonLaw.Module.Controllers
 
         private async void ExecuteSendOutreach()
         {
-            if (View?.CurrentObject is not AppEntity app) return;
+            if (View?.CurrentObject is not VllApplication app) return;
 
             // Resolve dealer email — prefer the loaded navigation property, fall back to ObjectSpace query
             var dealerEmail = app.Vehicle?.DealerEmail;
@@ -338,7 +338,7 @@ namespace LemonLaw.Module.Controllers
 
         private void ExecuteScheduleHearing()
         {
-            if (View?.CurrentObject is not AppEntity app) return;
+            if (View?.CurrentObject is not VllApplication app) return;
 
             var os    = Application.CreateObjectSpace(typeof(ScheduleHearingInput));
             var input = os.CreateObject<ScheduleHearingInput>();
@@ -406,7 +406,7 @@ namespace LemonLaw.Module.Controllers
 
         private void ExecuteIssueDecision()
         {
-            if (View?.CurrentObject is not AppEntity app) return;
+            if (View?.CurrentObject is not VllApplication app) return;
 
             var os    = Application.CreateObjectSpace(typeof(IssueDecisionInput));
             var input = os.CreateObject<IssueDecisionInput>();
@@ -471,7 +471,7 @@ namespace LemonLaw.Module.Controllers
 
         private void ExecuteAssignCase()
         {
-            if (View?.CurrentObject is not AppEntity app) return;
+            if (View?.CurrentObject is not VllApplication app) return;
 
             var os       = Application.CreateObjectSpace(typeof(XafAppUser));
             var criteria = DevExpress.Data.Filtering.CriteriaOperator.Parse("Roles[Name = 'CASE_MANAGER']");
@@ -566,7 +566,7 @@ namespace LemonLaw.Module.Controllers
 
         private void RefreshCurrentView(string? newStatus = null)
         {
-            if (View?.CurrentObject is not AppEntity app) return;
+            if (View?.CurrentObject is not VllApplication app) return;
 
             // Update the in-memory entity so XAF's change tracking reflects the new state
             if (!string.IsNullOrWhiteSpace(newStatus)
@@ -600,11 +600,11 @@ namespace LemonLaw.Module.Controllers
             try
             {
                 // Navigate to the list view first, then reopen the detail view
-                var listViewId = Application.FindDetailViewId(typeof(AppEntity))
-                    ?.Replace("_DetailView", "_ListView") ?? "Application_ListView";
+                var listViewId = Application.FindDetailViewId(typeof(VllApplication))
+                    ?.Replace("_DetailView", "_ListView") ?? "VllApplication_ListView";
 
-                var os         = Application.CreateObjectSpace(typeof(AppEntity));
-                var freshApp   = os.GetObjectByKey<AppEntity>(applicationId);
+                var os         = Application.CreateObjectSpace(typeof(VllApplication));
+                var freshApp   = os.GetObjectByKey<VllApplication>(applicationId);
 
                 if (freshApp != null)
                 {

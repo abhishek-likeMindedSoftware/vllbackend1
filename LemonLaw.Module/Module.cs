@@ -1,10 +1,9 @@
-﻿using DevExpress.ExpressApp;
+using DevExpress.ExpressApp;
 using DevExpress.ExpressApp.Updating;
 using DevExpress.Persistent.Base;
 using LemonLaw.Core.Entities;
 using LemonLaw.Core.Entities.Faq;
 using System.ComponentModel;
-using AppEntity = LemonLaw.Core.Entities.Application;
 
 namespace LemonLaw.Module
 {
@@ -12,7 +11,7 @@ namespace LemonLaw.Module
     {
         public LemonLawModule()
         {
-            // ── XAF framework types ───────────────────────────────────────────
+            // -- XAF framework types -------------------------------------------
             AdditionalExportedTypes.Add(typeof(ApplicationUser));
             AdditionalExportedTypes.Add(typeof(ApplicationUserLoginInfo));
             AdditionalExportedTypes.Add(typeof(DevExpress.Persistent.BaseImpl.EF.PermissionPolicy.PermissionPolicyRole));
@@ -21,8 +20,8 @@ namespace LemonLaw.Module
             AdditionalExportedTypes.Add(typeof(DevExpress.Persistent.BaseImpl.EF.DashboardData));
             AdditionalExportedTypes.Add(typeof(DevExpress.Persistent.BaseImpl.EF.ReportDataV2));
 
-            // ── Lemon Law business entities ───────────────────────────────────
-            AdditionalExportedTypes.Add(typeof(AppEntity));
+            // -- Lemon Law business entities -----------------------------------
+            AdditionalExportedTypes.Add(typeof(VllApplication));
             AdditionalExportedTypes.Add(typeof(Applicant));
             AdditionalExportedTypes.Add(typeof(Vehicle));
             AdditionalExportedTypes.Add(typeof(Defect));
@@ -47,7 +46,7 @@ namespace LemonLaw.Module
             AdditionalExportedTypes.Add(typeof(LemonLaw.Module.BusinessObjects.ScheduleHearingInput));
             AdditionalExportedTypes.Add(typeof(LemonLaw.Module.BusinessObjects.IssueDecisionInput));
 
-            // ── Required modules ──────────────────────────────────────────────
+            // -- Required modules ----------------------------------------------
             RequiredModuleTypes.Add(typeof(DevExpress.ExpressApp.SystemModule.SystemModule));
             RequiredModuleTypes.Add(typeof(DevExpress.ExpressApp.Security.SecurityModule));
             RequiredModuleTypes.Add(typeof(DevExpress.ExpressApp.AuditTrail.EFCore.AuditTrailModule));
@@ -67,7 +66,7 @@ namespace LemonLaw.Module
             // Register all business entities with XAF's type system.
             // This is required for XAF ORM to fully resolve relationships,
             // lazy loading, and detail view navigation.
-            application.TypesInfo.RegisterEntity(typeof(AppEntity));
+            application.TypesInfo.RegisterEntity(typeof(VllApplication));
             application.TypesInfo.RegisterEntity(typeof(Applicant));
             application.TypesInfo.RegisterEntity(typeof(Vehicle));
             application.TypesInfo.RegisterEntity(typeof(Defect));

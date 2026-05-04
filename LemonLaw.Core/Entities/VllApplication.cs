@@ -3,6 +3,7 @@ using DevExpress.ExpressApp.DC;
 using DevExpress.ExpressApp.Editors;
 using DevExpress.ExpressApp.Model;
 using DevExpress.Persistent.Base;
+using LemonLaw.Core.Attributes;
 using LemonLaw.Core.Enums;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -14,7 +15,8 @@ namespace LemonLaw.Core.Entities;
 [DefaultProperty(nameof(CaseNumber))]
 [NavigationItem("Case Management")]
 [XafDisplayName("Applications")]
-public class Application : AuditDetails,
+[HideXafAuditFields]
+public class VllApplication : AuditDetails,
      INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {
     #region XAF & INotify
@@ -44,7 +46,7 @@ public class Application : AuditDetails,
     }
     #endregion
 
-    public Application() { }
+    public VllApplication() { }
 
     private Guid _id = Guid.NewGuid();
 

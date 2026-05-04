@@ -1,7 +1,6 @@
-﻿
+
 using LemonLaw.Core.Entities;
 using LemonLaw.Core.Entities.Faq;
-using AppEntity = LemonLaw.Core.Entities.Application;
 
 namespace LemonLaw.Module.Helpers
 {
@@ -18,7 +17,7 @@ namespace LemonLaw.Module.Helpers
 
         private static void ApplyApplication(object parent, object child)
         {
-            if (parent is not AppEntity application)
+            if (parent is not VllApplication application)
                 return;
 
             switch (child)

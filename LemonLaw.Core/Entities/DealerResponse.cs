@@ -122,12 +122,12 @@ public class DealerResponse : AuditDetails,
         }
     }
 
-    private Application? _application;
+    private VllApplication? _application;
 
     [ForeignKey("ApplicationId")]
     [DevExpress.Xpo.Association("Application-DealerResponses")]
     [VisibleInDetailView(false), VisibleInListView(false)]
-    public virtual Application? Application
+    public virtual VllApplication? Application
     {
         get => _application;
         set

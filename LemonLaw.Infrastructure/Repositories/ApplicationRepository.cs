@@ -5,16 +5,15 @@ using LemonLaw.Infrastructure.Data;
 using LemonLaw.Shared.DTOs;
 using Microsoft.EntityFrameworkCore;
 
-using AppEntity = LemonLaw.Core.Entities.Application;
 
 namespace LemonLaw.Infrastructure.Repositories;
 
 public class ApplicationRepository(LemonLawAPIDbContext context)
-    : GenericRepository<AppEntity>(context), IApplicationRepository
+    : GenericRepository<VllApplication>(context), IApplicationRepository
 {
-    public async Task<AppEntity?> GetWithFullDetailsAsync(Guid applicationId)
+    public async Task<VllApplication?> GetWithFullDetailsAsync(Guid applicationId)
     {
-        return await _context.Applications
+        return await _context.VllApplications
             .Include(a => a.Applicant)
             .Include(a => a.Vehicle)
             .Include(a => a.Defects.OrderBy(d => d.SortOrder))
@@ -30,9 +29,9 @@ public class ApplicationRepository(LemonLawAPIDbContext context)
             .FirstOrDefaultAsync(a => a.Id == applicationId);
     }
 
-    public async Task<(IEnumerable<AppEntity> Items, int Total)> GetPagedAsync(CaseListFilterDto filter)
+    public async Task<(IEnumerable<VllApplication> Items, int Total)> GetPagedAsync(CaseListFilterDto filter)
     {
-        var query = _context.Applications
+        var query = _context.VllApplications
             .Include(a => a.Applicant)
             .Include(a => a.Vehicle)
             .AsQueryable();
@@ -79,14 +78,14 @@ public class ApplicationRepository(LemonLawAPIDbContext context)
     public async Task<string> GenerateCaseNumberAsync()
     {
         var year = DateTime.UtcNow.Year;
-        var count = await _context.Applications
+        var count = await _context.VllApplications
             .CountAsync(a => a.SubmittedAt.Year == year);
         return $"LL-{year}-{(count + 1):D5}";
     }
 
     public async Task<bool> VinHasActiveApplicationAsync(string vin, Guid? excludeApplicationId = null)
     {
-        var query = _context.Applications
+        var query = _context.VllApplications
             .Include(a => a.Vehicle)
             .Where(a => a.Vehicle != null
                         && a.Vehicle.VIN == vin
@@ -101,7 +100,7 @@ public class ApplicationRepository(LemonLawAPIDbContext context)
 
     public async Task<List<string>> GetActiveApplicationCaseNumbersByVinAsync(string vin)
     {
-        return await _context.Applications
+        return await _context.VllApplications
             .Include(a => a.Vehicle)
             .Where(a => a.Vehicle != null
                         && a.Vehicle.VIN == vin
@@ -111,9 +110,9 @@ public class ApplicationRepository(LemonLawAPIDbContext context)
             .ToListAsync();
     }
 
-    public async Task<AppEntity?> GetByCaseNumberAsync(string caseNumber)
+    public async Task<VllApplication?> GetByCaseNumberAsync(string caseNumber)
     {
-        return await _context.Applications
+        return await _context.VllApplications
             .Include(a => a.Applicant)
             .Include(a => a.Vehicle)
             .Include(a => a.Token)

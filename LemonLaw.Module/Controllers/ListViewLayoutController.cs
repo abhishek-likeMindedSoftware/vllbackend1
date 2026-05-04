@@ -1,8 +1,8 @@
 using DevExpress.Blazor;
 using DevExpress.ExpressApp;
 using DevExpress.ExpressApp.Blazor.Editors;
+using LemonLaw.Core.Entities;
 
-using AppEntity = LemonLaw.Core.Entities.Application;
 
 namespace LemonLaw.Module.Controllers
 {
@@ -23,7 +23,7 @@ namespace LemonLaw.Module.Controllers
         /// </summary>
         private readonly Dictionary<Type, int> _frozenColumnCounts = new()
         {
-            { typeof(AppEntity), 3 },   // Case Number, Application Type, Status
+            { typeof(VllApplication), 3 },   // Case Number, Application Type, Status
             // Add more entities here as needed:
             // { typeof(LemonLaw.Core.Entities.Hearing), 2 },
         };

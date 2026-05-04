@@ -1,4 +1,4 @@
-﻿using DevExpress.ExpressApp;
+using DevExpress.ExpressApp;
 using DevExpress.ExpressApp.Security;
 using DevExpress.ExpressApp.Updating;
 using DevExpress.Persistent.Base;
@@ -8,22 +8,21 @@ using DevExpress.Persistent.BaseImpl.EFCore.AuditTrail;
 using LemonLaw.Core.Entities;
 using Microsoft.Extensions.DependencyInjection;
 
-using AppEntity  = LemonLaw.Core.Entities.Application;
 using XafAppUser = LemonLaw.Core.Entities.ApplicationUser;
 
 namespace LemonLaw.Module.DatabaseUpdate
 {
     /// <summary>
-    /// Seeds the four OCABR roles defined in spec §3.1 and one demo user per role.
+    /// Seeds the four OCABR roles defined in spec �3.1 and one demo user per role.
     ///
-    /// Roles are idempotent — if a role already exists it is left untouched.
+    /// Roles are idempotent � if a role already exists it is left untouched.
     /// To reprovision permissions on an existing DB, delete the role rows and restart.
     ///
-    /// Roles per spec §3.1:
-    ///   OCABR_ADMIN  — Full access (IsAdministrative = true)
-    ///   CASE_MANAGER — Only sees cases assigned to them; cannot assign/reassign
-    ///   SUPERVISOR   — All cases + reporting + can assign
-    ///   REVIEWER     — Read-only + can add notes
+    /// Roles per spec �3.1:
+    ///   OCABR_ADMIN  � Full access (IsAdministrative = true)
+    ///   CASE_MANAGER � Only sees cases assigned to them; cannot assign/reassign
+    ///   SUPERVISOR   � All cases + reporting + can assign
+    ///   REVIEWER     � Read-only + can add notes
     /// </summary>
     public class Updater : ModuleUpdater
     {
@@ -74,7 +73,7 @@ namespace LemonLaw.Module.DatabaseUpdate
             base.UpdateDatabaseBeforeUpdateSchema();
         }
 
-        // ── Role factories ────────────────────────────────────────────────────
+        // -- Role factories ----------------------------------------------------
 
         private PermissionPolicyRole EnsureAdminRole()
         {
@@ -88,7 +87,7 @@ namespace LemonLaw.Module.DatabaseUpdate
         }
 
         /// <summary>
-        /// CASE_MANAGER — sees only cases assigned to them.
+        /// CASE_MANAGER � sees only cases assigned to them.
         /// Object-level permission scoped to AssignedToStaffId = CurrentUserId().
         /// Cannot assign or reassign cases.
         /// </summary>
@@ -101,17 +100,17 @@ namespace LemonLaw.Module.DatabaseUpdate
             role.Name = "CASE_MANAGER";
             role.IsAdministrative = false;
 
-            // Applications — only those assigned to the current user.
+            // Applications � only those assigned to the current user.
             // AssignedToStaffId stores UserName (string).
             // NOTE: We rely on CaseManagerListFilterController for UI-layer filtering.
             // The object-level permission here uses the user's Guid ID as XAF requires,
             // but since AssignedToStaffId is a string field we cannot use CurrentUserId().
             // The controller handles the actual data scoping for this role.
-            role.AddTypePermissionsRecursively<AppEntity>(
+            role.AddTypePermissionsRecursively<VllApplication>(
                 SecurityOperations.ReadWriteAccess,
                 SecurityPermissionState.Allow);
 
-            // Related entities — full access
+            // Related entities � full access
             GrantFullAccess<Applicant>(role);
             GrantFullAccess<Vehicle>(role);
             GrantFullAccess<Defect>(role);
@@ -127,7 +126,7 @@ namespace LemonLaw.Module.DatabaseUpdate
             GrantFullAccess<Decision>(role);
             GrantFullAccess<ApplicationToken>(role);
 
-            // Own user profile — read + change password only
+            // Own user profile � read + change password only
             role.AddObjectPermission<XafAppUser>(
                 SecurityOperations.Read,
                 "ID = CurrentUserId()",
@@ -153,7 +152,7 @@ namespace LemonLaw.Module.DatabaseUpdate
         }
 
         /// <summary>
-        /// SUPERVISOR — all cases, reporting, and case assignment.
+        /// SUPERVISOR � all cases, reporting, and case assignment.
         /// </summary>
         private PermissionPolicyRole EnsureSupervisorRole()
         {
@@ -164,7 +163,7 @@ namespace LemonLaw.Module.DatabaseUpdate
             role.Name = "SUPERVISOR";
             role.IsAdministrative = false;
 
-            GrantFullAccess<AppEntity>(role);
+            GrantFullAccess<VllApplication>(role);
             GrantFullAccess<Applicant>(role);
             GrantFullAccess<Vehicle>(role);
             GrantFullAccess<Defect>(role);
@@ -199,7 +198,7 @@ namespace LemonLaw.Module.DatabaseUpdate
         }
 
         /// <summary>
-        /// REVIEWER — read-only on all cases; can add internal notes.
+        /// REVIEWER � read-only on all cases; can add internal notes.
         /// </summary>
         private PermissionPolicyRole EnsureReviewerRole()
         {
@@ -210,7 +209,7 @@ namespace LemonLaw.Module.DatabaseUpdate
             role.Name = "REVIEWER";
             role.IsAdministrative = false;
 
-            GrantReadOnly<AppEntity>(role);
+            GrantReadOnly<VllApplication>(role);
             GrantReadOnly<Applicant>(role);
             GrantReadOnly<Vehicle>(role);
             GrantReadOnly<Defect>(role);
@@ -224,7 +223,7 @@ namespace LemonLaw.Module.DatabaseUpdate
             GrantReadOnly<Hearing>(role);
             GrantReadOnly<Decision>(role);
 
-            // Notes — read + create only (no edit/delete)
+            // Notes � read + create only (no edit/delete)
             role.AddTypePermissionsRecursively<CaseNote>(SecurityOperations.Read,   SecurityPermissionState.Allow);
             role.AddTypePermissionsRecursively<CaseNote>(SecurityOperations.Create, SecurityPermissionState.Allow);
 
@@ -245,7 +244,7 @@ namespace LemonLaw.Module.DatabaseUpdate
             return role;
         }
 
-        // ── Helpers ───────────────────────────────────────────────────────────
+        // -- Helpers -----------------------------------------------------------
 
         private static void GrantFullAccess<T>(PermissionPolicyRole role) where T : class
         {

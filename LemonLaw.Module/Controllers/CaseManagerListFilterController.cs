@@ -2,7 +2,6 @@ using DevExpress.Data.Filtering;
 using DevExpress.ExpressApp;
 using LemonLaw.Core.Entities;
 
-using AppEntity    = LemonLaw.Core.Entities.Application;
 using XafAppUser   = LemonLaw.Core.Entities.ApplicationUser;
 
 namespace LemonLaw.Module.Controllers
@@ -19,7 +18,7 @@ namespace LemonLaw.Module.Controllers
     /// in the FILIR project) and cleaned up on deactivation.
     /// </summary>
     public sealed class CaseManagerApplicationFilterController
-        : ObjectViewController<ListView, AppEntity>
+        : ObjectViewController<ListView, VllApplication>
     {
         private const string FilterKey = "CaseManagerFilter";
 

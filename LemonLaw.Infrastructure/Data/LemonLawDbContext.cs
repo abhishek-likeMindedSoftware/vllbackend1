@@ -1,4 +1,4 @@
-﻿using DevExpress.ExpressApp;
+using DevExpress.ExpressApp;
 using DevExpress.ExpressApp.Design;
 using DevExpress.ExpressApp.EFCore.DesignTime;
 using DevExpress.ExpressApp.EFCore.Updating;
@@ -11,7 +11,6 @@ using LemonLaw.Core.Entities;
 using LemonLaw.Core.Entities.Faq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using AppEntity = LemonLaw.Core.Entities.Application;
 
 namespace LemonLaw.Infrastructure.Data
 {
@@ -32,7 +31,7 @@ namespace LemonLaw.Infrastructure.Data
         public DbSet<AuditDataItemPersistent> AuditData { get; set; }
         public DbSet<AuditEFCoreWeakReference> AuditEFCoreWeakReferences { get; set; }
 
-        public DbSet<AppEntity> Applications => Set<AppEntity>();
+        public DbSet<VllApplication> VllApplications => Set<VllApplication>();
         public DbSet<Applicant> Applicants => Set<Applicant>();
         public DbSet<Vehicle> Vehicles => Set<Vehicle>();
         public DbSet<Defect> Defects => Set<Defect>();
@@ -51,7 +50,7 @@ namespace LemonLaw.Infrastructure.Data
         public DbSet<FaqQuestion> FaqQuestions => Set<FaqQuestion>();
         public DbSet<FaqAnswer> FaqAnswers => Set<FaqAnswer>();
 
-        // ── SaveChanges overrides ─────────────────────────────────────────────
+        // -- SaveChanges overrides ---------------------------------------------
 
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
@@ -67,7 +66,7 @@ namespace LemonLaw.Infrastructure.Data
             return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
 
-        // ── Soft delete — uses XAF SecuritySystem.CurrentUser ─────────────────
+        // -- Soft delete � uses XAF SecuritySystem.CurrentUser -----------------
 
         private void HandleSoftDeletes()
         {
@@ -84,7 +83,7 @@ namespace LemonLaw.Infrastructure.Data
             }
         }
 
-        // ── Audit fields — uses XAF SecuritySystem.CurrentUser ────────────────
+        // -- Audit fields � uses XAF SecuritySystem.CurrentUser ----------------
 
         private void UpdateAuditFields()
         {
@@ -141,7 +140,7 @@ namespace LemonLaw.Infrastructure.Data
             base.OnModelCreating(modelBuilder);
 
             // Application
-            modelBuilder.Entity<AppEntity>(e =>
+            modelBuilder.Entity<VllApplication>(e =>
             {
                 e.HasKey(x => x.Id);
                 e.Property(x => x.Id).HasDefaultValueSql("NEWSEQUENTIALID()");
@@ -238,7 +237,7 @@ namespace LemonLaw.Infrastructure.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // CaseEvent — append-only, no soft delete
+            // CaseEvent � append-only, no soft delete
             modelBuilder.Entity<CaseEvent>(e =>
             {
                 e.HasKey(x => x.CaseEventId);
