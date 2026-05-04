@@ -5,17 +5,15 @@
   PaperKind="Letter" Landscape="true" PageWidth="1100" PageHeight="850" Margins="30,30,30,30"
   Version="25.2" DataSource="#Ref-0">
   <Parameters>
-    <Item1 Ref="10" Name="pType" Description="Decision Type (REFUND_ORDERED / CLAIM_DENIED / etc. — blank for all)" Type="System.String" ValueInfo="" Visible="true" />
-    <Item2 Ref="11" Name="pFrom" Description="Decision Date From (leave blank for all)" Type="System.DateTime" ValueInfo="" Visible="true" />
-    <Item3 Ref="12" Name="pTo"   Description="Decision Date To (leave blank for all)"   Type="System.DateTime" ValueInfo="" Visible="true" />
+    <Item1 Ref="10" Name="pType" Description="Decision Type" Type="System.String" ValueInfo="" Visible="true" />
   </Parameters>
-  <FilterString>(IsNullOrEmpty(?pType) Or [DecisionType] == ?pType) And (?pFrom == # # Or [DecisionDate] >= ?pFrom) And (?pTo == # # Or [DecisionDate] &lt;= ?pTo)</FilterString>
+  <FilterString>(IsNullOrEmpty(?pType) Or [DecisionType] == ?pType)</FilterString>
   <Bands>
     <Item1 Ref="2" ControlType="TopMarginBand"    Name="TopMargin"    HeightF="30" />
     <Item2 Ref="3" ControlType="ReportHeaderBand" Name="ReportHeader" HeightF="60">
       <Controls>
         <Item1 Ref="4" ControlType="XRLabel" Name="lblTitle"    Text="Decisions"                                              SizeF="1040,36" LocationFloat="0,0"  Font="Arial,16pt,style=Bold" ForeColor="15,23,42" />
-        <Item2 Ref="5" ControlType="XRLabel" Name="lblSubtitle" Text="All issued decisions — filterable by type and decision date" SizeF="1040,20" LocationFloat="0,38" Font="Arial,9pt"           ForeColor="100,116,139" />
+        <Item2 Ref="5" ControlType="XRLabel" Name="lblSubtitle" Text="All issued decisions — filterable by type" SizeF="1040,20" LocationFloat="0,38" Font="Arial,9pt"           ForeColor="100,116,139" />
       </Controls>
     </Item2>
     <Item3 Ref="6" ControlType="PageHeaderBand" Name="PageHeader" HeightF="26">
