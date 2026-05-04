@@ -38,36 +38,26 @@
         <div class="ll-card">
             <div class="ll-card-head">
                 <p class="ll-card-title">Dealer Outreach</p>
-                @* ── Send Follow-Up dropdown ──────────────────────────────────── *@
-                <div class="ll-action-dropdown-wrap">
-                    <button class="ll-btn ll-btn-ghost ll-btn-sm" type="button" @onclick="ToggleFollowUpMenu"
-                            disabled="@(_outreach.Status == OutreachStatus.RESPONDED || _outreach.Status == OutreachStatus.CLOSED)">
-                        Send Follow-Up &#9660;
+
+                @* ── Send Follow-Up — shows only the next step in sequence ──── *@
+                @{
+                    var nextFollowUp = GetNextFollowUp(_outreach);
+                }
+                @if (nextFollowUp != null)
+                {
+                    <button class="ll-btn ll-btn-followup ll-btn-sm" type="button"
+                            @onclick='() => SendFollowUpAsync(nextFollowUp.Value.code)'
+                            disabled="@_sendingFollowUp">
+                        @if (_sendingFollowUp)
+                        {
+                            <span>Sending…</span>
+                        }
+                        else
+                        {
+                            <span>@nextFollowUp.Value.label</span>
+                        }
                     </button>
-                    @if (_showFollowUpMenu)
-                    {
-                        <div class="ll-action-dropdown" @onclick:stopPropagation="true">
-                            <button class="ll-action-dropdown-item" type="button"
-                                    disabled="@(_outreach.FollowUp1SentAt != null)"
-                                    @onclick='() => SendFollowUpAsync("DEALER_FOLLOW_UP_1")'>
-                                Follow-Up 1
-                                @if (_outreach.FollowUp1SentAt != null) { <span class="ll-action-dropdown-sent">Sent</span> }
-                            </button>
-                            <button class="ll-action-dropdown-item" type="button"
-                                    disabled="@(_outreach.FollowUp2SentAt != null)"
-                                    @onclick='() => SendFollowUpAsync("DEALER_FOLLOW_UP_2")'>
-                                Follow-Up 2
-                                @if (_outreach.FollowUp2SentAt != null) { <span class="ll-action-dropdown-sent">Sent</span> }
-                            </button>
-                            <button class="ll-action-dropdown-item" type="button"
-                                    disabled="@(_outreach.FinalNoticeSentAt != null)"
-                                    @onclick='() => SendFollowUpAsync("DEALER_FINAL_NOTICE")'>
-                                Final Notice
-                                @if (_outreach.FinalNoticeSentAt != null) { <span class="ll-action-dropdown-sent">Sent</span> }
-                            </button>
-                        </div>
-                    }
-                </div>
+                }
             </div>
             <div class="ll-card-body">
                 <div class="ll-fields ll-fields-3">
@@ -180,19 +170,31 @@
 
         @* ── Audit Details ────────────────────────────────────────────────────── *@
         <AuditSection Entity="_outreach" />
-
-        @if (_followUpSuccess != null)
-        {
-            <div class="ll-alert ll-alert-success" style="margin-top:8px;">@_followUpSuccess</div>
-        }
-        @if (_followUpError != null)
-        {
-            <div class="ll-alert ll-alert-error" style="margin-top:8px;">@_followUpError</div>
-        }
     }
 </div>
 
 @code {
+    // ── Returns the single next follow-up action in sequence, or null if none ─
+    private static (string code, string label)? GetNextFollowUp(DealerOutreach o)
+    {
+        // No action if initial email not yet sent, dealer already responded, or closed
+        if (!o.SentAt.HasValue
+            || o.Status == OutreachStatus.RESPONDED
+            || o.Status == OutreachStatus.CLOSED)
+            return null;
+
+        if (o.FollowUp1SentAt == null)
+            return ("FOLLOW_UP_1", "Send Follow-Up 1");
+
+        if (o.FollowUp2SentAt == null)
+            return ("FOLLOW_UP_2", "Send Follow-Up 2");
+
+        if (o.FinalNoticeSentAt == null)
+            return ("FINAL_NOTICE", "Send Final Notice");
+
+        return null; // all follow-ups already sent
+    }
+
     private string GetStatusClass(OutreachStatus s) => s switch
     {
         OutreachStatus.RESPONDED => "ll-badge-decision_issued",

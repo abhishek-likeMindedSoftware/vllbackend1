@@ -1,7 +1,9 @@
+using DevExpress.ExpressApp;
+using DevExpress.ExpressApp.Blazor.Services;
+using DevExpress.Persistent.Base;
 using LemonLaw.Application.Interfaces;
 using LemonLaw.Application.Repositories;
 using LemonLaw.Core.Entities;
-using LemonLaw.Core.Enums;
 using LemonLaw.Shared.DTOs;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +13,7 @@ namespace LemonLaw.Blazor.Server.Components.DealerOutreachDetail;
 public partial class DealerOutreachDetailView : ComponentBase
 {
     [Inject] private IServiceProvider ServiceProvider { get; set; } = default!;
+    [Inject] private IXafApplicationProvider XafAppProvider { get; set; } = default!;
 
     [Parameter] public DealerOutreach? CurrentObject { get; set; }
 
@@ -20,10 +23,7 @@ public partial class DealerOutreachDetailView : ComponentBase
     private bool _loading = true;
     private string? _loadError;
 
-    private bool _showFollowUpMenu;
     private bool _sendingFollowUp;
-    private string? _followUpSuccess;
-    private string? _followUpError;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -80,23 +80,13 @@ public partial class DealerOutreachDetailView : ComponentBase
         StateHasChanged();
     }
 
-    // ── Follow-Up dropdown ────────────────────────────────────────────────────
-
-    private void ToggleFollowUpMenu()
-    {
-        _showFollowUpMenu = !_showFollowUpMenu;
-        _followUpSuccess  = null;
-        _followUpError    = null;
-    }
+    // ── Send follow-up ────────────────────────────────────────────────────────
 
     private async Task SendFollowUpAsync(string outreachType)
     {
         if (_outreach == null) return;
 
-        _showFollowUpMenu = false;
-        _sendingFollowUp  = true;
-        _followUpSuccess  = null;
-        _followUpError    = null;
+        _sendingFollowUp = true;
 
         try
         {
@@ -108,30 +98,44 @@ public partial class DealerOutreachDetailView : ComponentBase
                 new SendFollowUpDto { OutreachType = outreachType },
                 "staff");
 
+            var label = outreachType switch
+            {
+                "FOLLOW_UP_1"  => "Follow-Up 1",
+                "FOLLOW_UP_2"  => "Follow-Up 2",
+                "FINAL_NOTICE" => "Final Notice",
+                _              => outreachType
+            };
+
             if (result.Success)
             {
-                var label = outreachType switch
-                {
-                    "DEALER_FOLLOW_UP_1"  => "Follow-Up 1",
-                    "DEALER_FOLLOW_UP_2"  => "Follow-Up 2",
-                    "DEALER_FINAL_NOTICE" => "Final Notice",
-                    _                     => outreachType
-                };
-                _followUpSuccess = $"{label} sent successfully.";
+                ShowXafMessage($"✓ {label} sent successfully.", InformationType.Success);
+                // Reload from DB so timestamps and button state update immediately
                 await RefreshAsync();
             }
             else
             {
-                _followUpError = result.Message ?? "Failed to send follow-up.";
+                ShowXafMessage($"{label} failed: {result.Message ?? "Unknown error."}", InformationType.Error);
             }
         }
         catch (Exception ex)
         {
-            _followUpError = ex.Message;
+            ShowXafMessage($"Error: {ex.Message}", InformationType.Error);
         }
         finally
         {
             _sendingFollowUp = false;
         }
+    }
+
+    // ── XAF toast helper ──────────────────────────────────────────────────────
+
+    private void ShowXafMessage(string message, InformationType type)
+    {
+        try
+        {
+            var xafApp = XafAppProvider.GetApplication();
+            xafApp.ShowViewStrategy.ShowMessage(message, type, 5000, InformationPosition.Top);
+        }
+        catch { /* non-critical — swallow if XAF context unavailable */ }
     }
 }

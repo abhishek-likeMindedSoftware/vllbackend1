@@ -573,63 +573,20 @@
     min-height: 100% !important;
 }
 
-/* ── Action dropdown (e.g. Send Follow-Up on DealerOutreach) ──────────────── */
-.ll-action-dropdown-wrap {
-    position: relative !important;
-    display: inline-block !important;
+/* ── Follow-Up action button (sequential, light orange) ──────────────────── */
+.ll-btn-followup {
+    background: #fff7ed !important;
+    color: #c2410c !important;
+    border: 1px solid #fed7aa !important;
 }
-
-.ll-action-dropdown {
-    position: absolute !important;
-    top: calc(100% + 4px) !important;
-    right: 0 !important;
-    min-width: 180px !important;
-    background: #fff !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 8px !important;
-    box-shadow: 0 8px 24px rgba(15,23,42,.12) !important;
-    z-index: 200 !important;
-    overflow: hidden !important;
+.ll-btn-followup:hover:not(:disabled) {
+    background: #ffedd5 !important;
+    border-color: #fb923c !important;
+    color: #9a3412 !important;
+    box-shadow: 0 2px 8px rgba(234,88,12,.18) !important;
+    transform: translateY(-1px) !important;
 }
-
-.ll-action-dropdown-item {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    width: 100% !important;
-    padding: 9px 14px !important;
-    background: none !important;
-    border: none !important;
-    font-size: .875rem !important;
-    color: #1e293b !important;
-    cursor: pointer !important;
-    text-align: left !important;
-    gap: 8px !important;
-}
-
-.ll-action-dropdown-item:hover:not(:disabled) {
-    background: #f0f4ff !important;
-}
-
-.ll-action-dropdown-item:disabled {
-    color: #94a3b8 !important;
+.ll-btn-followup:disabled {
+    opacity: .55 !important;
     cursor: not-allowed !important;
-}
-
-.ll-action-dropdown-sent {
-    font-size: .75rem !important;
-    color: #16a34a !important;
-    font-weight: 600 !important;
-    background: #dcfce7 !important;
-    padding: 1px 6px !important;
-    border-radius: 4px !important;
-}
-
-.ll-alert-success {
-    background: #dcfce7 !important;
-    color: #15803d !important;
-    border: 1px solid #bbf7d0 !important;
-    border-radius: 6px !important;
-    padding: 10px 14px !important;
-    font-size: .875rem !important;
 }
