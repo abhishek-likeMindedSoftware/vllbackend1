@@ -120,7 +120,7 @@ public class Hearing : AuditDetails,
 
     [XafDisplayName("Hearing Date")]
     [VisibleInDetailView(false)]
-    [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy hh:mm tt}")]
+    [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy}")]
     [ModelDefault("EditMask", "MM/dd/yyyy hh:mm tt")]
     public virtual DateTime HearingDate
     {

@@ -20,13 +20,11 @@
       <Item Id="Administration" Visible="False" />
     </Items>
   </NavigationItems>
-  <Options UIType="TabbedMDI" FormStyle="Standard" RestoreTabbedMdiLayout="False" ShowTabImage="True" VirtualScrollingEnabled="True" />
+  <Options UIType="TabbedMDI" FormStyle="Standard" RestoreTabbedMdiLayout="False" ShowTabImage="True" VirtualScrollingEnabled="False" />
   <SchemaModules>
     <SchemaModule Name="SystemModule" Version="25.2.6.0" IsNewNode="True" />
   </SchemaModules>
   <Views>
-
-    <!-- ── Dashboard ──────────────────────────────────────────────────────── -->
     <DetailView Id="AdminDashboard_DetailView" Caption="Dashboard" IsNewNode="True">
       <Actions Id="Actions" IsNewNode="True" />
       <Items IsNewNode="True">
@@ -42,8 +40,31 @@
         </LayoutGroup>
       </Layout>
     </DetailView>
-
-    <!-- ── DealerResponse (pre-existing, keep as-is) ──────────────────────── -->
+    <DetailView Id="ApplicationDocument_DetailView" IsNewNode="True">
+      <Items IsNewNode="True">
+        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.DocumentDetailPropertyEditor" Caption="" IsNewNode="True" />
+      </Items>
+    </DetailView>
+    <DetailView Id="CaseNote_DetailView" IsNewNode="True">
+      <Items IsNewNode="True">
+        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.CaseNoteDetailPropertyEditor" Caption="" IsNewNode="True" />
+      </Items>
+    </DetailView>
+    <DetailView Id="Correspondence_DetailView" IsNewNode="True">
+      <Items IsNewNode="True">
+        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.CorrespondenceDetailPropertyEditor" Caption="" IsNewNode="True" />
+      </Items>
+    </DetailView>
+    <DetailView Id="DealerOutreach_DetailView" IsNewNode="True">
+      <Items IsNewNode="True">
+        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.DealerOutreachDetailPropertyEditor" Caption="" IsNewNode="True" />
+      </Items>
+    </DetailView>
+    <ListView Id="DealerOutreach_ListView">
+      <Columns>
+        <ColumnInfo Id="Response" PropertyEditorType="DevExpress.ExpressApp.Editors.DetailPropertyEditor" />
+      </Columns>
+    </ListView>
     <DetailView Id="DealerResponse_DetailView" IsNewNode="True">
       <Actions Id="Actions" IsNewNode="True" />
       <Items IsNewNode="True">
@@ -61,71 +82,46 @@
         <PropertyEditor Id="SubmittedAt" PropertyName="SubmittedAt" IsNewNode="True" />
       </Items>
     </DetailView>
-
-    <!-- ── Custom Blazor detail views — Items only, Layout auto-generated ─── -->
-    <!-- XAF auto-lays out the single visible DetailPanel property at 100%.    -->
-    <!-- The explicit Layout blocks are not needed since all other properties  -->
-    <!-- are marked [VisibleInDetailView(false)] on the entity classes.        -->
-
-    <DetailView Id="VllApplication_DetailView" IsNewNode="True">
-      <Items IsNewNode="True">
-        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.ApplicationDetailPropertyEditor" Caption="" IsNewNode="True" />
-      </Items>
-    </DetailView>
-
     <DetailView Id="Decision_DetailView" IsNewNode="True">
       <Items IsNewNode="True">
         <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.DecisionDetailPropertyEditor" Caption="" IsNewNode="True" />
       </Items>
     </DetailView>
-
+    <ListView Id="Decision_ListView">
+      <Columns>
+        <ColumnInfo Id="Application" PropertyEditorType="DevExpress.ExpressApp.Editors.DetailPropertyEditor" />
+      </Columns>
+    </ListView>
     <DetailView Id="Defect_DetailView" IsNewNode="True">
       <Items IsNewNode="True">
         <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.DefectDetailPropertyEditor" Caption="" IsNewNode="True" />
       </Items>
     </DetailView>
-
-    <DetailView Id="RepairAttempt_DetailView" IsNewNode="True">
-      <Items IsNewNode="True">
-        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.RepairAttemptDetailPropertyEditor" Caption="" IsNewNode="True" />
-      </Items>
-    </DetailView>
-
     <DetailView Id="Expense_DetailView" IsNewNode="True">
       <Items IsNewNode="True">
         <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.ExpenseDetailPropertyEditor" Caption="" IsNewNode="True" />
       </Items>
     </DetailView>
-
     <DetailView Id="Hearing_DetailView" IsNewNode="True">
       <Items IsNewNode="True">
         <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.HearingDetailPropertyEditor" Caption="" IsNewNode="True" />
       </Items>
     </DetailView>
-
-    <DetailView Id="ApplicationDocument_DetailView" IsNewNode="True">
+    <DetailView Id="RepairAttempt_DetailView" IsNewNode="True">
       <Items IsNewNode="True">
-        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.DocumentDetailPropertyEditor" Caption="" IsNewNode="True" />
+        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.RepairAttemptDetailPropertyEditor" Caption="" IsNewNode="True" />
       </Items>
     </DetailView>
-
-    <DetailView Id="Correspondence_DetailView" IsNewNode="True">
+    <DetailView Id="VllApplication_DetailView" IsNewNode="True">
       <Items IsNewNode="True">
-        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.CorrespondenceDetailPropertyEditor" Caption="" IsNewNode="True" />
+        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.ApplicationDetailPropertyEditor" Caption="" IsNewNode="True" />
       </Items>
     </DetailView>
-
-    <DetailView Id="DealerOutreach_DetailView" IsNewNode="True">
-      <Items IsNewNode="True">
-        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.DealerOutreachDetailPropertyEditor" Caption="" IsNewNode="True" />
-      </Items>
-    </DetailView>
-
-    <DetailView Id="CaseNote_DetailView" IsNewNode="True">
-      <Items IsNewNode="True">
-        <PropertyEditor Id="DetailPanel" PropertyName="DetailPanel" PropertyEditorType="LemonLaw.Blazor.Server.Editors.CaseNoteDetailPropertyEditor" Caption="" IsNewNode="True" />
-      </Items>
-    </DetailView>
-
+    <ListView Id="VllApplication_ListView" PageSize="20">
+      <Columns>
+        <ColumnInfo Id="Applicant" PropertyEditorType="DevExpress.ExpressApp.Editors.DetailPropertyEditor" />
+        <ColumnInfo Id="Vehicle" PropertyEditorType="DevExpress.ExpressApp.Editors.DetailPropertyEditor" />
+      </Columns>
+    </ListView>
   </Views>
 </Application>

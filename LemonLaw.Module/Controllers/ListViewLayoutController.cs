@@ -71,6 +71,10 @@ namespace LemonLaw.Module.Controllers
             // column is dragged wider, so MinWidth on other columns never blocks resizing.
             adapter.GridModel.ColumnResizeMode = GridColumnResizeMode.ColumnsContainer;
 
+            // ── 4. Enable pager ────────────────────────────────────────────────
+            adapter.GridModel.PagerPosition = GridPagerPosition.Bottom;
+            adapter.GridModel.ShowAllRows = false;
+
             // ── 4. Prevent text wrapping in the Status column ──────────────────
             // Status values like "HEARING_SCHEDULED" must stay on one line.
             // We apply nowrap on the cell AND on the header for that column.

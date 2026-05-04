@@ -37,6 +37,23 @@ namespace LemonLaw.Module.Controllers
                     // Decision is a navigation property — badge reads DecisionType off the entity
                     column.PropertyEditorType = typeof(DecisionTypeBadgePropertyEditor);
                 }
+                else if (memberType == typeof(DecisionType))
+                {
+                    // DecisionType enum column — used in the Decision list view directly
+                    column.PropertyEditorType = typeof(DecisionTypeEnumBadgePropertyEditor);
+                }
+                else if (memberType == typeof(OutreachStatus))
+                {
+                    column.PropertyEditorType = typeof(OutreachStatusBadgePropertyEditor);
+                }
+                else if (memberType == typeof(OutreachType))
+                {
+                    column.PropertyEditorType = typeof(OutreachTypeBadgePropertyEditor);
+                }
+                else if (memberType == typeof(HearingOutcome))
+                {
+                    column.PropertyEditorType = typeof(HearingOutcomeBadgePropertyEditor);
+                }
             }
         }
     }

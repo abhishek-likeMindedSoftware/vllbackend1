@@ -296,6 +296,7 @@ public class DealerOutreach : AuditDetails,
     private DateOnly _responseDeadline;
 
     [XafDisplayName("Response Deadline")]
+    [ModelDefault("DisplayFormat", "{0:MM/dd/yyyy}")]
     [VisibleInDetailView(false)]
     public virtual DateOnly ResponseDeadline
     {
