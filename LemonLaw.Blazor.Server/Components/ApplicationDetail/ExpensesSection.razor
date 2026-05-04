@@ -109,7 +109,11 @@
             using var scope = ServiceProvider.CreateScope();
             var repo = scope.ServiceProvider.GetRequiredService<IGenericRepository<Expense>>();
             if (_editId == null) { var e = new Expense { ApplicationId = ApplicationId }; _form.ApplyTo(e); await repo.AddAsync(e); await repo.SaveChangesAsync(); _items.Add(e); }
-            else { var e = _items.First(x => x.Id == _editId); _form.ApplyTo(e); repo.Update(e); await repo.SaveChangesAsync(); }
+            else
+            {
+                var fresh = await repo.GetByIdAsync(_editId.Value);
+                if (fresh != null) { _form.ApplyTo(fresh); repo.Update(fresh); await repo.SaveChangesAsync(); var local = _items.FirstOrDefault(x => x.Id == _editId); if (local != null) _form.ApplyTo(local); }
+            }
             _showEdit = false;
             await OnCountChanged.InvokeAsync(_items.Count);
         }

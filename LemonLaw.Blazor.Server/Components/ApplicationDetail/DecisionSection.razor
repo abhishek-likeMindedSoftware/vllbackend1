@@ -77,7 +77,16 @@
     private bool _showEdit, _saving;
     private string? _saveError;
 
-    protected override void OnParametersSet() => _decision = InitialData;
+    protected override void OnParametersSet()
+    {
+        // Only update _decision from InitialData if we don't already have a saved one.
+        // This prevents a race where RefreshAsync hasn't completed yet and InitialData
+        // is momentarily null, which would reset _decision and cause a duplicate INSERT.
+        if (InitialData != null)
+            _decision = InitialData;
+        else if (_decision == null)
+            _decision = null; // genuinely no decision yet
+    }
 
     private void OpenEdit() { _form = _decision != null ? new(_decision) : new(); _saveError = null; _showEdit = true; }
     private void CloseEdit() { _showEdit = false; _form = null; }
@@ -90,8 +99,44 @@
         {
             using var scope = ServiceProvider.CreateScope();
             var repo = scope.ServiceProvider.GetRequiredService<IGenericRepository<Decision>>();
-            if (_decision == null) { _decision = new Decision { ApplicationId = ApplicationId }; _form.ApplyTo(_decision); await repo.AddAsync(_decision); await repo.SaveChangesAsync(); }
-            else { _form.ApplyTo(_decision); repo.Update(_decision); await repo.SaveChangesAsync(); }
+
+            if (_decision == null || _decision.Id == Guid.Empty)
+            {
+                // Check DB including soft-deleted rows — the unique index is now filtered
+                // (WHERE IsDeleted = 0) so a new insert is safe, but if a soft-deleted
+                // record exists we restore it rather than creating a duplicate.
+                var existing = await repo.FindOneIncludingDeletedAsync(
+                    d => d.ApplicationId == ApplicationId);
+
+                if (existing != null)
+                {
+                    // Restore the soft-deleted record and apply new values
+                    existing.IsDeleted = false;
+                    _form.ApplyTo(existing);
+                    repo.Update(existing);
+                    await repo.SaveChangesAsync();
+                    _decision = existing;
+                }
+                else
+                {
+                    // Genuinely new — insert
+                    _decision = new Decision { ApplicationId = ApplicationId };
+                    _form.ApplyTo(_decision);
+                    await repo.AddAsync(_decision);
+                    await repo.SaveChangesAsync();
+                }
+            }
+            else
+            {
+                // Edit — re-fetch from this scope's DbContext so EF tracks it correctly
+                var fresh = await repo.GetByIdAsync(_decision.Id);
+                if (fresh == null) { _saveError = "Decision record not found."; return; }
+                _form.ApplyTo(fresh);
+                repo.Update(fresh);
+                await repo.SaveChangesAsync();
+                _decision = fresh;
+            }
+
             _showEdit = false;
             await OnSaved.InvokeAsync();
         }

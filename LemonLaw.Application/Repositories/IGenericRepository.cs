@@ -8,6 +8,8 @@ public interface IGenericRepository<T> where T : class
     Task<IEnumerable<T>> GetAllAsync();
     Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate);
     Task<T?> FindOneAsync(Expression<Func<T, bool>> predicate);
+    /// <summary>Finds a single entity matching the predicate, bypassing any global query filters (e.g. soft-delete).</summary>
+    Task<T?> FindOneIncludingDeletedAsync(Expression<Func<T, bool>> predicate);
     Task AddAsync(T entity);
     void Update(T entity);
     void Delete(T entity);

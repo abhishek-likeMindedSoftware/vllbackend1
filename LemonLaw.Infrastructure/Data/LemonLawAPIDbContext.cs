@@ -331,6 +331,10 @@ public class LemonLawAPIDbContext : DbContext
             e.HasOne(x => x.Application).WithOne(x => x.Decision)
                 .HasForeignKey<Decision>(x => x.ApplicationId)
                 .OnDelete(DeleteBehavior.NoAction);
+            // Filtered unique index — allows a new decision after the previous one is soft-deleted
+            e.HasIndex(x => x.ApplicationId)
+             .IsUnique()
+             .HasFilter("[IsDeleted] = 0");
             e.HasQueryFilter(x => !x.IsDeleted);
         });
 

@@ -127,7 +127,11 @@
             using var scope = ServiceProvider.CreateScope();
             var repo = scope.ServiceProvider.GetRequiredService<IGenericRepository<Vehicle>>();
             if (_vehicle == null) { _vehicle = new Vehicle { ApplicationId = ApplicationId }; _form.ApplyTo(_vehicle); await repo.AddAsync(_vehicle); }
-            else { _form.ApplyTo(_vehicle); repo.Update(_vehicle); }
+            else
+            {
+                var fresh = await repo.GetByIdAsync(_vehicle.Id);
+                if (fresh != null) { _form.ApplyTo(fresh); repo.Update(fresh); _vehicle = fresh; }
+            }
             await repo.SaveChangesAsync();
             _showEdit = false;
             await OnSaved.InvokeAsync();

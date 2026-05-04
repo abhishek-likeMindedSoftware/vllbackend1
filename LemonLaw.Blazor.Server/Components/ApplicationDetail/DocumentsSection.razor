@@ -117,8 +117,8 @@
         {
             using var scope = ServiceProvider.CreateScope();
             var repo = scope.ServiceProvider.GetRequiredService<IGenericRepository<ApplicationDocument>>();
-            var e = _items.First(x => x.Id == _editId);
-            _form.ApplyTo(e); repo.Update(e); await repo.SaveChangesAsync();
+            var fresh = await repo.GetByIdAsync(_editId!.Value);
+            if (fresh != null) { _form.ApplyTo(fresh); repo.Update(fresh); await repo.SaveChangesAsync(); var local = _items.FirstOrDefault(x => x.Id == _editId); if (local != null) _form.ApplyTo(local); }
             _showEdit = false;
             await OnCountChanged.InvokeAsync(_items.Count);
         }

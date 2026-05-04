@@ -23,6 +23,9 @@ public class GenericRepository<T>(LemonLawAPIDbContext context) : IGenericReposi
     public async Task<T?> FindOneAsync(Expression<Func<T, bool>> predicate) =>
         await _dbSet.FirstOrDefaultAsync(predicate);
 
+    public async Task<T?> FindOneIncludingDeletedAsync(Expression<Func<T, bool>> predicate) =>
+        await _dbSet.IgnoreQueryFilters().FirstOrDefaultAsync(predicate);
+
     public async Task AddAsync(T entity) =>
         await _dbSet.AddAsync(entity);
 
