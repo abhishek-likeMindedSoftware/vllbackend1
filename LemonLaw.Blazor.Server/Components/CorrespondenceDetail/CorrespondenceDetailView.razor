@@ -1,0 +1,104 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Core.Enums
+
+<div class="ll-wrap">
+
+    @if (_loading)
+    {
+        <div class="ll-loading"><span class="ll-spinner"></span><span>Loading correspondence…</span></div>
+    }
+    else if (_loadError != null)
+    {
+        <div class="ll-error-box">@_loadError</div>
+    }
+    else if (_correspondence != null)
+    {
+        var app = _correspondence.Application;
+
+        @* ── Case Header ──────────────────────────────────────────────────────── *@
+        @if (app != null)
+        {
+            <div class="ll-header">
+                <div class="ll-header-left">
+                    <p class="ll-case-number">Case @app.CaseNumber</p>
+                    <div class="ll-meta-row">
+                        <span class="ll-badge ll-badge-@app.Status.ToString().ToLower()">@app.Status.ToString().Replace("_", " ")</span>
+                        <span class="ll-meta-item"><span class="ll-meta-label">Type:</span> @app.ApplicationType.ToString().Replace("_", " ")</span>
+                        @if (app.SubmittedAt != default)
+                        {
+                            <span class="ll-meta-item"><span class="ll-meta-label">Submitted:</span> @app.SubmittedAt.ToLocalTime().ToString("MM/dd/yyyy")</span>
+                        }
+                        <span class="ll-meta-item"><span class="ll-meta-label">Last Activity:</span> @app.LastActivityAt.ToLocalTime().ToString("MM/dd/yyyy")</span>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* ── Correspondence Details ───────────────────────────────────────────── *@
+        <div class="ll-card">
+            <div class="ll-card-head">
+                <p class="ll-card-title">Correspondence</p>
+            </div>
+            <div class="ll-card-body">
+                <div class="ll-fields ll-fields-3">
+                    <div>
+                        <p class="ll-field-label">Direction</p>
+                        <p class="ll-field-value">@EnumHelper.GetDescription(_correspondence.Direction)</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Recipient Type</p>
+                        <p class="ll-field-value">@EnumHelper.GetDescription(_correspondence.RecipientType)</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Recipient Email</p>
+                        <p class="ll-field-value">@_correspondence.RecipientEmail</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Sent At</p>
+                        <p class="ll-field-value @(_correspondence.SentAt == null ? "ll-field-empty" : "")">@(_correspondence.SentAt?.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt") ?? "—")</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Delivery Status</p>
+                        <p class="ll-field-value"><span class="ll-badge @GetDeliveryClass(_correspondence.DeliveryStatus)">@EnumHelper.GetDescription(_correspondence.DeliveryStatus)</span></p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Delivery Updated</p>
+                        <p class="ll-field-value @(_correspondence.DeliveryUpdatedAt == null ? "ll-field-empty" : "")">@(_correspondence.DeliveryUpdatedAt?.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt") ?? "—")</p>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(_correspondence.TemplateUsed))
+                    {
+                        <div>
+                            <p class="ll-field-label">Template Used</p>
+                            <p class="ll-field-value">@_correspondence.TemplateUsed</p>
+                        </div>
+                    }
+                </div>
+                <div style="margin-top:12px;">
+                    <p class="ll-field-label">Subject</p>
+                    <p style="font-size:.875rem;font-weight:600;color:#1e293b;margin:4px 0 0;">@_correspondence.Subject</p>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_correspondence.BodyPreview))
+                {
+                    <div style="margin-top:12px;">
+                        <p class="ll-field-label">Body Preview</p>
+                        <p style="font-size:.875rem;color:#1e293b;line-height:1.6;margin:4px 0 0;white-space:pre-wrap;">@_correspondence.BodyPreview</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* ── Audit Details ────────────────────────────────────────────────────── *@
+        <AuditSection Entity="_correspondence" />
+    }
+</div>
+
+@code {
+    private string GetDeliveryClass(EmailDeliveryStatus s) => s switch
+    {
+        EmailDeliveryStatus.DELIVERED => "ll-badge-decision_issued",
+        EmailDeliveryStatus.OPENED    => "ll-badge-accepted",
+        EmailDeliveryStatus.BOUNCED   => "ll-badge-incomplete",
+        EmailDeliveryStatus.FAILED    => "ll-badge-incomplete",
+        _                             => "ll-badge-submitted"
+    };
+}

@@ -1,0 +1,205 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Core.Enums
+
+<div class="ll-wrap">
+
+    @if (_loading)
+    {
+        <div class="ll-loading"><span class="ll-spinner"></span><span>Loading dealer outreach…</span></div>
+    }
+    else if (_loadError != null)
+    {
+        <div class="ll-error-box">@_loadError</div>
+    }
+    else if (_outreach != null)
+    {
+        var app = _outreach.Application;
+
+        @* ── Case Header ──────────────────────────────────────────────────────── *@
+        @if (app != null)
+        {
+            <div class="ll-header">
+                <div class="ll-header-left">
+                    <p class="ll-case-number">Case @app.CaseNumber</p>
+                    <div class="ll-meta-row">
+                        <span class="ll-badge ll-badge-@app.Status.ToString().ToLower()">@app.Status.ToString().Replace("_", " ")</span>
+                        <span class="ll-meta-item"><span class="ll-meta-label">Type:</span> @app.ApplicationType.ToString().Replace("_", " ")</span>
+                        @if (app.SubmittedAt != default)
+                        {
+                            <span class="ll-meta-item"><span class="ll-meta-label">Submitted:</span> @app.SubmittedAt.ToLocalTime().ToString("MM/dd/yyyy")</span>
+                        }
+                        <span class="ll-meta-item"><span class="ll-meta-label">Last Activity:</span> @app.LastActivityAt.ToLocalTime().ToString("MM/dd/yyyy")</span>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* ── Dealer Outreach Details ──────────────────────────────────────────── *@
+        <div class="ll-card">
+            <div class="ll-card-head">
+                <p class="ll-card-title">Dealer Outreach</p>
+                @* ── Send Follow-Up dropdown ──────────────────────────────────── *@
+                <div class="ll-action-dropdown-wrap">
+                    <button class="ll-btn ll-btn-ghost ll-btn-sm" type="button" @onclick="ToggleFollowUpMenu"
+                            disabled="@(_outreach.Status == OutreachStatus.RESPONDED || _outreach.Status == OutreachStatus.CLOSED)">
+                        Send Follow-Up &#9660;
+                    </button>
+                    @if (_showFollowUpMenu)
+                    {
+                        <div class="ll-action-dropdown" @onclick:stopPropagation="true">
+                            <button class="ll-action-dropdown-item" type="button"
+                                    disabled="@(_outreach.FollowUp1SentAt != null)"
+                                    @onclick='() => SendFollowUpAsync("DEALER_FOLLOW_UP_1")'>
+                                Follow-Up 1
+                                @if (_outreach.FollowUp1SentAt != null) { <span class="ll-action-dropdown-sent">Sent</span> }
+                            </button>
+                            <button class="ll-action-dropdown-item" type="button"
+                                    disabled="@(_outreach.FollowUp2SentAt != null)"
+                                    @onclick='() => SendFollowUpAsync("DEALER_FOLLOW_UP_2")'>
+                                Follow-Up 2
+                                @if (_outreach.FollowUp2SentAt != null) { <span class="ll-action-dropdown-sent">Sent</span> }
+                            </button>
+                            <button class="ll-action-dropdown-item" type="button"
+                                    disabled="@(_outreach.FinalNoticeSentAt != null)"
+                                    @onclick='() => SendFollowUpAsync("DEALER_FINAL_NOTICE")'>
+                                Final Notice
+                                @if (_outreach.FinalNoticeSentAt != null) { <span class="ll-action-dropdown-sent">Sent</span> }
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="ll-card-body">
+                <div class="ll-fields ll-fields-3">
+                    <div>
+                        <p class="ll-field-label">Dealer Name</p>
+                        <p class="ll-field-value">@_outreach.DealerName</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Dealer Email</p>
+                        <p class="ll-field-value">@_outreach.DealerEmail</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Dealer Phone</p>
+                        <p class="ll-field-value @(_outreach.DealerPhone == null ? "ll-field-empty" : "")">@(_outreach.DealerPhone ?? "—")</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Outreach Type</p>
+                        <p class="ll-field-value">@EnumHelper.GetDescription(_outreach.OutreachType)</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Status</p>
+                        <p class="ll-field-value"><span class="ll-badge @GetStatusClass(_outreach.Status)">@EnumHelper.GetDescription(_outreach.Status)</span></p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Response Deadline</p>
+                        <p class="ll-field-value">@_outreach.ResponseDeadline.ToString("MM/dd/yyyy")</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Sent At</p>
+                        <p class="ll-field-value @(_outreach.SentAt == null ? "ll-field-empty" : "")">@(_outreach.SentAt?.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt") ?? "—")</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Delivery Status</p>
+                        <p class="ll-field-value">@EnumHelper.GetDescription(_outreach.DeliveryStatus)</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Escalated to Hearing</p>
+                        <p class="ll-field-value">@EnumHelper.BoolBadge(_outreach.EscalatedToHearing)</p>
+                    </div>
+                </div>
+
+                @* ── Follow-Up Tracking ───────────────────────────────────────── *@
+                <hr style="border:none;border-top:1px solid #f1f5f9;margin:14px 0;" />
+                <p class="ll-field-label" style="margin-bottom:10px;">Follow-Up Tracking</p>
+                <div class="ll-fields ll-fields-3">
+                    <div>
+                        <p class="ll-field-label">Follow-Up 1 Sent</p>
+                        <p class="ll-field-value @(_outreach.FollowUp1SentAt == null ? "ll-field-empty" : "")">@(_outreach.FollowUp1SentAt?.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt") ?? "—")</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Follow-Up 2 Sent</p>
+                        <p class="ll-field-value @(_outreach.FollowUp2SentAt == null ? "ll-field-empty" : "")">@(_outreach.FollowUp2SentAt?.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt") ?? "—")</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Final Notice Sent</p>
+                        <p class="ll-field-value @(_outreach.FinalNoticeSentAt == null ? "ll-field-empty" : "")">@(_outreach.FinalNoticeSentAt?.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt") ?? "—")</p>
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_outreach.EscalationNotes))
+                {
+                    <div style="margin-top:12px;">
+                        <p class="ll-field-label">Escalation Notes</p>
+                        <p style="font-size:.875rem;color:#1e293b;line-height:1.6;margin:4px 0 0;">@_outreach.EscalationNotes</p>
+                    </div>
+                }
+
+                @* ── Dealer Response ──────────────────────────────────────────── *@
+                @if (_outreach.Response != null)
+                {
+                    <hr style="border:none;border-top:1px solid #f1f5f9;margin:14px 0;" />
+                    <p class="ll-field-label" style="margin-bottom:10px;">Dealer Response</p>
+                    <div class="ll-fields ll-fields-3">
+                        <div>
+                            <p class="ll-field-label">Responder Name</p>
+                            <p class="ll-field-value">@_outreach.Response.ResponderName</p>
+                        </div>
+                        <div>
+                            <p class="ll-field-label">Responder Email</p>
+                            <p class="ll-field-value">@_outreach.Response.ResponderEmail</p>
+                        </div>
+                        <div>
+                            <p class="ll-field-label">Submitted At</p>
+                            <p class="ll-field-value">@_outreach.Response.SubmittedAt.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt")</p>
+                        </div>
+                        @if (_outreach.Response.SettlementOffer.HasValue)
+                        {
+                            <div>
+                                <p class="ll-field-label">Settlement Offer</p>
+                                <p class="ll-field-value">@_outreach.Response.SettlementOffer.Value.ToString("C")</p>
+                            </div>
+                        }
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(_outreach.Response.ResponseNarrative))
+                    {
+                        <div style="margin-top:12px;">
+                            <p class="ll-field-label">Response Narrative</p>
+                            <p style="font-size:.875rem;color:#1e293b;line-height:1.6;margin:4px 0 0;">@_outreach.Response.ResponseNarrative</p>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(_outreach.Response.SettlementDetails))
+                    {
+                        <div style="margin-top:12px;">
+                            <p class="ll-field-label">Settlement Details</p>
+                            <p style="font-size:.875rem;color:#1e293b;line-height:1.6;margin:4px 0 0;">@_outreach.Response.SettlementDetails</p>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        @* ── Audit Details ────────────────────────────────────────────────────── *@
+        <AuditSection Entity="_outreach" />
+
+        @if (_followUpSuccess != null)
+        {
+            <div class="ll-alert ll-alert-success" style="margin-top:8px;">@_followUpSuccess</div>
+        }
+        @if (_followUpError != null)
+        {
+            <div class="ll-alert ll-alert-error" style="margin-top:8px;">@_followUpError</div>
+        }
+    }
+</div>
+
+@code {
+    private string GetStatusClass(OutreachStatus s) => s switch
+    {
+        OutreachStatus.RESPONDED => "ll-badge-decision_issued",
+        OutreachStatus.OVERDUE   => "ll-badge-incomplete",
+        OutreachStatus.SENT      => "ll-badge-accepted",
+        OutreachStatus.OPENED    => "ll-badge-dealer_responded",
+        OutreachStatus.CLOSED    => "ll-badge-withdrawn",
+        _                        => "ll-badge-submitted"
+    };
+}

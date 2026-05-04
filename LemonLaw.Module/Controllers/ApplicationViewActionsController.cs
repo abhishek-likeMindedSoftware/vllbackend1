@@ -23,6 +23,14 @@ namespace LemonLaw.Module.Controllers
         {
             typeof(VllApplication),
             typeof(DecisionEntity),
+            typeof(Defect),
+            typeof(RepairAttempt),
+            typeof(Expense),
+            typeof(Hearing),
+            typeof(ApplicationDocument),
+            typeof(Correspondence),
+            typeof(DealerOutreach),
+            typeof(CaseNote),
         };
 
         protected override void OnActivated()

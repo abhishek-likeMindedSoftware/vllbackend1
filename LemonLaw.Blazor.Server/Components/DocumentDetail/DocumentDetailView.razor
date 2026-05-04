@@ -1,0 +1,158 @@
+@using LemonLaw.Core.Entities
+@using LemonLaw.Core.Enums
+
+<div class="ll-wrap">
+
+    @if (_loading)
+    {
+        <div class="ll-loading"><span class="ll-spinner"></span><span>Loading document…</span></div>
+    }
+    else if (_loadError != null)
+    {
+        <div class="ll-error-box">@_loadError</div>
+    }
+    else if (_document != null)
+    {
+        var app = _document.Application;
+
+        @* ── Case Header ──────────────────────────────────────────────────────── *@
+        @if (app != null)
+        {
+            <div class="ll-header">
+                <div class="ll-header-left">
+                    <p class="ll-case-number">Case @app.CaseNumber</p>
+                    <div class="ll-meta-row">
+                        <span class="ll-badge ll-badge-@app.Status.ToString().ToLower()">@app.Status.ToString().Replace("_", " ")</span>
+                        <span class="ll-meta-item"><span class="ll-meta-label">Type:</span> @app.ApplicationType.ToString().Replace("_", " ")</span>
+                        @if (app.SubmittedAt != default)
+                        {
+                            <span class="ll-meta-item"><span class="ll-meta-label">Submitted:</span> @app.SubmittedAt.ToLocalTime().ToString("MM/dd/yyyy")</span>
+                        }
+                        <span class="ll-meta-item"><span class="ll-meta-label">Last Activity:</span> @app.LastActivityAt.ToLocalTime().ToString("MM/dd/yyyy")</span>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* ── Document Details ─────────────────────────────────────────────────── *@
+        <div class="ll-card">
+            <div class="ll-card-head">
+                <p class="ll-card-title">Document</p>
+                <button class="ll-edit-btn" type="button" @onclick="OpenEdit"><EditIcon /> Edit</button>
+            </div>
+            <div class="ll-card-body">
+                <div class="ll-fields ll-fields-3">
+                    <div>
+                        <p class="ll-field-label">File Name</p>
+                        <p class="ll-field-value">@_document.FileName</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Document Type</p>
+                        <p class="ll-field-value">@EnumHelper.GetDescription(_document.DocumentType)</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Status</p>
+                        <p class="ll-field-value"><span class="ll-badge @GetDocStatusClass(_document.Status)">@EnumHelper.GetDescription(_document.Status)</span></p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Uploaded By</p>
+                        <p class="ll-field-value">@EnumHelper.GetDescription(_document.UploadedByRole)</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Uploaded At</p>
+                        <p class="ll-field-value">@_document.UploadedAt.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt")</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Virus Scan</p>
+                        <p class="ll-field-value">@EnumHelper.GetDescription(_document.VirusScanResult)</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">File Size</p>
+                        <p class="ll-field-value">@FormatFileSize(_document.FileSizeBytes)</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">MIME Type</p>
+                        <p class="ll-field-value">@_document.MimeType</p>
+                    </div>
+                    <div>
+                        <p class="ll-field-label">Visible To</p>
+                        <p class="ll-field-value">
+                            @(_document.IsVisible_Consumer ? "Consumer" : "")
+                            @(_document.IsVisible_Consumer && _document.IsVisible_Dealer ? " · " : "")
+                            @(_document.IsVisible_Dealer ? "Dealer" : "")
+                            @(!_document.IsVisible_Consumer && !_document.IsVisible_Dealer ? "—" : "")
+                        </p>
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_document.StaffNotes))
+                {
+                    <div style="margin-top:12px;">
+                        <p class="ll-field-label">Staff Notes</p>
+                        <p style="font-size:.875rem;color:#1e293b;line-height:1.6;margin:4px 0 0;">@_document.StaffNotes</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* ── Audit Details ────────────────────────────────────────────────────── *@
+        <AuditSection Entity="_document" />
+    }
+</div>
+
+@* ── Edit Popup ───────────────────────────────────────────────────────────── *@
+<DxPopup @bind-Visible="_showEdit" HeaderText="Review Document" Width="560px" ShowFooter="true" CloseOnOutsideClick="false">
+    <BodyContentTemplate>
+        @if (_form != null)
+        {
+            <div class="ll-form-row"><div class="ll-form-group"><label class="ll-form-label">File Name</label><input class="ll-input" value="@_form.FileName" disabled /></div></div>
+            <div class="ll-form-row ll-form-row-2">
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Status</label>
+                    <select class="ll-select" @bind="_form.Status">
+                        @foreach (var v in Enum.GetValues<DocumentStatus>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
+                    </select>
+                </div>
+                <div class="ll-form-group">
+                    <label class="ll-form-label">Document Type</label>
+                    <select class="ll-select" @bind="_form.DocumentType">
+                        @foreach (var v in Enum.GetValues<DocumentType>()) { <option value="@v">@EnumHelper.GetDescription(v)</option> }
+                    </select>
+                </div>
+            </div>
+            <div class="ll-form-row"><div class="ll-form-group"><label class="ll-form-label">Staff Notes</label><textarea class="ll-textarea" @bind="_form.StaffNotes"></textarea></div></div>
+            <div class="ll-form-row ll-form-row-2" style="margin-top:4px;">
+                <div class="ll-checkbox-row">
+                    <input type="checkbox" id="doc-consumer" @bind="_form.IsVisibleConsumer" />
+                    <label for="doc-consumer">Visible to Consumer</label>
+                </div>
+                <div class="ll-checkbox-row">
+                    <input type="checkbox" id="doc-dealer" @bind="_form.IsVisibleDealer" />
+                    <label for="doc-dealer">Visible to Dealer</label>
+                </div>
+            </div>
+            @if (_saveError != null) { <div class="ll-alert ll-alert-error" style="margin-top:10px;">@_saveError</div> }
+        }
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <button class="ll-btn ll-btn-ghost" type="button" @onclick="CloseEdit" disabled="@_saving">Cancel</button>
+        <button class="ll-btn ll-btn-primary" type="button" @onclick="SaveAsync" disabled="@_saving">@(_saving ? "Saving…" : "Save")</button>
+    </FooterContentTemplate>
+</DxPopup>
+
+@code {
+    private string GetDocStatusClass(DocumentStatus s) => s switch
+    {
+        DocumentStatus.ACCEPTED       => "ll-badge-decision_issued",
+        DocumentStatus.REJECTED       => "ll-badge-incomplete",
+        DocumentStatus.PENDING_REVIEW => "ll-badge-submitted",
+        DocumentStatus.REQUESTED      => "ll-badge-accepted",
+        _ => ""
+    };
+
+    private static string FormatFileSize(long bytes) => bytes switch
+    {
+        < 1024        => $"{bytes} B",
+        < 1024 * 1024 => $"{bytes / 1024.0:F1} KB",
+        _             => $"{bytes / (1024.0 * 1024):F1} MB"
+    };
+}

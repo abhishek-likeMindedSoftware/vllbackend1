@@ -7,10 +7,13 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+using LemonLaw.Core.Attributes;
+
 namespace LemonLaw.Core.Entities;
 
 [DefaultProperty(nameof(DefectDescription))]
 [XafDisplayName("Defect")]
+[HideXafAuditFields]
 public class Defect : AuditDetails,
         INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {
@@ -86,6 +89,7 @@ public class Defect : AuditDetails,
 
     [ForeignKey("ApplicationId")]
     [DevExpress.Xpo.Association("Application-Defects")]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual VllApplication? Application
     {
         get => _application;
@@ -117,6 +121,7 @@ public class Defect : AuditDetails,
     private string _defectDescription = string.Empty;
 
     [XafDisplayName("Description")]
+    [VisibleInDetailView(false)]
     public virtual string DefectDescription
     {
         get => _defectDescription;
@@ -134,6 +139,7 @@ public class Defect : AuditDetails,
     private DefectCategory _defectCategory;
 
     [XafDisplayName("Category")]
+    [VisibleInDetailView(false)]
     public virtual DefectCategory DefectCategory
     {
         get => _defectCategory;
@@ -151,6 +157,7 @@ public class Defect : AuditDetails,
     private DateOnly _firstOccurrenceDate;
 
     [XafDisplayName("First Occurrence")]
+    [VisibleInDetailView(false)]
     public virtual DateOnly FirstOccurrenceDate
     {
         get => _firstOccurrenceDate;
@@ -168,6 +175,7 @@ public class Defect : AuditDetails,
     private bool _isOngoing;
 
     [XafDisplayName("Ongoing")]
+    [VisibleInDetailView(false)]
     public virtual bool IsOngoing
     {
         get => _isOngoing;
@@ -198,6 +206,15 @@ public class Defect : AuditDetails,
             }
         }
     }
+
+    #endregion
+
+    #region Custom Detail View Hook
+
+    [NotMapped]
+    [XafDisplayName("Defect Detail")]
+    [VisibleInDetailView(true), VisibleInListView(false)]
+    public object? DetailPanel => this;
 
     #endregion
 }

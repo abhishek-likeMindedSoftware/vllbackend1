@@ -6,10 +6,13 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+using LemonLaw.Core.Attributes;
+
 namespace LemonLaw.Core.Entities;
 
 [DefaultProperty(nameof(RepairFacilityName))]
 [XafDisplayName("Repair Attempt")]
+[HideXafAuditFields]
 public class RepairAttempt : AuditDetails,
         INotifyPropertyChanging, INotifyPropertyChanged, IObjectSpaceLink
 {
@@ -83,6 +86,7 @@ public class RepairAttempt : AuditDetails,
 
     [ForeignKey("ApplicationId")]
     [DevExpress.Xpo.Association("Application-RepairAttempts")]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual VllApplication? Application
     {
         get => _application;
@@ -112,6 +116,7 @@ public class RepairAttempt : AuditDetails,
     private DateOnly _repairDate;
 
     [XafDisplayName("Repair Date")]
+    [VisibleInDetailView(false)]
     public virtual DateOnly RepairDate
     {
         get => _repairDate;
@@ -129,6 +134,7 @@ public class RepairAttempt : AuditDetails,
     private string _repairFacilityName = string.Empty;
 
     [XafDisplayName("Facility Name")]
+    [VisibleInDetailView(false)]
     public virtual string RepairFacilityName
     {
         get => _repairFacilityName;
@@ -146,7 +152,7 @@ public class RepairAttempt : AuditDetails,
     private string? _repairFacilityAddr;
 
     [XafDisplayName("Facility Address")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual string? RepairFacilityAddr
     {
         get => _repairFacilityAddr;
@@ -181,7 +187,7 @@ public class RepairAttempt : AuditDetails,
     private string? _roNumber;
 
     [XafDisplayName("RO Number")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual string? RoNumber
     {
         get => _roNumber;
@@ -199,7 +205,7 @@ public class RepairAttempt : AuditDetails,
     private int? _mileageAtRepair;
 
     [XafDisplayName("Mileage at Repair")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual int? MileageAtRepair
     {
         get => _mileageAtRepair;
@@ -217,6 +223,7 @@ public class RepairAttempt : AuditDetails,
     private string _defectsAddressed = string.Empty;
 
     [XafDisplayName("Defects Addressed")]
+    [VisibleInDetailView(false)]
     public virtual string DefectsAddressed
     {
         get => _defectsAddressed;
@@ -234,6 +241,7 @@ public class RepairAttempt : AuditDetails,
     private bool _repairSuccessful;
 
     [XafDisplayName("Repair Successful")]
+    [VisibleInDetailView(false)]
     public virtual bool RepairSuccessful
     {
         get => _repairSuccessful;
@@ -251,7 +259,7 @@ public class RepairAttempt : AuditDetails,
     private int? _daysOutOfService;
 
     [XafDisplayName("Days Out of Service")]
-    [VisibleInListView(false)]
+    [VisibleInDetailView(false), VisibleInListView(false)]
     public virtual int? DaysOutOfService
     {
         get => _daysOutOfService;
@@ -282,6 +290,15 @@ public class RepairAttempt : AuditDetails,
             }
         }
     }
+
+    #endregion
+
+    #region Custom Detail View Hook
+
+    [NotMapped]
+    [XafDisplayName("Repair Attempt Detail")]
+    [VisibleInDetailView(true), VisibleInListView(false)]
+    public object? DetailPanel => this;
 
     #endregion
 }
