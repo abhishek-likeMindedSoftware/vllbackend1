@@ -7,7 +7,6 @@
 
 /* ── Fonts & box-sizing ───────────────────────────────────────────────────── */
 .ll-wrap, .ll-wrap * {
-    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif !important;
     box-sizing: border-box !important;
 }
 
